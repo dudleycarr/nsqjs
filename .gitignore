@@ -1,0 +1,10 @@
+.Python
+.template
+bin
+include/python2.7
+lib/dtrace
+lib/node_modules/
+lib/python2.7
+node_modules/
+share/man
+src/node-*
