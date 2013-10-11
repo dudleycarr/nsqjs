@@ -1,0 +1,44 @@
+{
+  "name": "nsqjs",
+  "description": "NodeJS client for NSQ",
+  "version": "0.1.0",
+  "homepage": "https://github.com/dudleycarr/nsqjs",
+  "author": {
+    "name": "Dudley Carr",
+    "email": "dudley.carr@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dudleycarr/nsqjs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dudleycarr/nsqjs/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/dudleycarr/nsqjs/blob/master/LICENSE-MIT"
+    }
+  ],
+  "main": "lib/nsqjs",
+  "engines": {
+    "node": ">= 0.10.0"
+  },
+  "scripts": {
+    "test": "grunt test"
+  },
+  "devDependencies": {
+    "grunt-contrib-coffee": "~0.7",
+    "grunt-contrib-watch": "~0.5.1",
+    "grunt-simple-mocha": "~0.4.0",
+    "mocha": "~1.9.0",
+    "sinon": "~1.7.3",
+    "chai": "~1.7.2",
+    "sinon-chai": "~2.4.0",
+    "grunt": "~0.4.1"
+  },
+  "keywords": [],
+  "dependencies": {
+    "underscore": "~1.5.2"
+  }
+}
