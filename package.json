@@ -38,5 +38,9 @@
     "scaffolt": "*",
     "grunt": "~0.4.1"
   },
-  "keywords": []
+  "keywords": [],
+  "dependencies": {
+    "node-state": "~1.4.1",
+    "node-int64": "~0.3.0",
+  }
 }

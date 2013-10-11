@@ -1,5 +1,6 @@
 _ = require 'underscore'
 assert = require 'assert'
+Int64 = require 'node-int64'
 
 exports.MAGIC_V2 = '  V2'
 exports.FRAME_TYPE_RESPONSE = 0
@@ -18,12 +19,12 @@ JSON_stringify = (obj, emit_unicode) ->
     json.replace /[\u007f-\uffff]/g, (c) ->
       '\\u' + ('0000'+c.charCodeAt(0).toString(16)).slice(-4)
 
-exports.decodeMessage = (data) ->
-  timestamp = data.readInt64BE()
+exports.unpackMessage = (data) ->
+  timestamp = (new Int64 data, 0).toNumber(true)
   attempts = data.readInt16BE 8 
-  id = data[10..26]
+  id = data[10...26].toString()
   body = data[26..]
-  Message id, body, timestamp, attempts
+  [id, timestamp, attempts, body]
 
 command = (cmd, body) ->
   buffers = []
@@ -86,10 +87,8 @@ exports.finish = (id) ->
 exports.requeue = (id, timeMs=0) ->
   assert Buffer.byteLength(id) <= 16
   assert _.isNumber timeMs
-  assert timeMs >= 0
 
-  parameters = ['REQ', null, id]
-  parameters.push(timeMs.toString()) if timeMs > 0
+  parameters = ['REQ', null, id, timeMs]
   command.apply null, parameters
 
 exports.touch = (id) ->
