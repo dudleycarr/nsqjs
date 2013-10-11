@@ -12,10 +12,10 @@ _ = require 'underscore'
 #       size      frame ID     data
 
 # Given the frame offset, return the frame size.
-frameSize = (buffer, offset) =>
+frameSize = (buffer, offset) ->
   4 + 4 + dataSize(buffer, offset)
 
-dataSize = (buffer, offset) =>
+dataSize = (buffer, offset) ->
   buffer.readInt32BE(offset) if offset + 4 <= buffer.length
 
 # Given the offset of the current frame in the buffer, find the offset
@@ -31,7 +31,7 @@ unpackFrame = (frame) ->
   [frameId, frame[8..]]
 
 # Given an offset into a buffer, get the frame ID and data tuple.
-pluckFrame = (buffer, offset) =>
+pluckFrame = (buffer, offset) ->
   unpackFrame buffer[offset...offset + frameSize(buffer, offset)]
 
 class FrameBuffer
@@ -50,7 +50,8 @@ class FrameBuffer
 
   _parseFrames: ->
     # Find all frame offsets within the buffer.
-    [frameOffsets, offset] = [[], 0]
+    frameOffsets = []
+    offset = 0
     while not _.isNull offset
       frameOffsets.push offset
       offset = nextFrameOffset @_buffer, offset

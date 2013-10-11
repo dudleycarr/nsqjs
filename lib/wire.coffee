@@ -6,17 +6,13 @@ exports.FRAME_TYPE_RESPONSE = 0
 exports.FRAME_TYPE_ERROR = 1
 exports.FRAME_TYPE_MESSAGE = 2
 
-NL = '\n'
-[FIN, REQ, TOUCH] = ['_fin', '_req', '_touch']
-
-
 JSON_stringify = (obj, emit_unicode) ->
   json = JSON.stringify obj
   if emit_unicode
     json
   else
     json.replace /[\u007f-\uffff]/g, (c) ->
-      '\\u' + ('0000'+c.charCodeAt(0).toString(16)).slice(-4)
+      '\\u' + ('0000' + c.charCodeAt(0).toString 16).slice -4
 
 exports.decodeMessage = (data) ->
   timestamp = data.readInt64BE()
@@ -32,7 +28,7 @@ command = (cmd, body) ->
   parameters = _.toArray(arguments)[2..]
   parameters.unshift('') if parameters.length > 0
   parametersStr = parameters.join ' '
-  header = cmd + parametersStr + NL
+  header = cmd + parametersStr + '\n'
 
   buffers.push new Buffer(header)
 

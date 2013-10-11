@@ -1,10 +1,10 @@
-chai      = require('chai')
+chai      = require 'chai'
 expect    = chai.expect
 should    = chai.should()
-sinon     = require('sinon')
-sinonChai = require('sinon-chai')
+sinon     = require 'sinon'
+sinonChai = require 'sinon-chai'
 
-chai.use(sinonChai)
+chai.use sinonChai 
 
 FrameBuffer = require '../lib/framebuffer.coffee'
 message = require '../lib/message'
@@ -16,9 +16,9 @@ createFrame = (frameId, payload) ->
   frame.write(payload, 8)
   frame
 
-describe "FrameBuffer", ->
+describe 'FrameBuffer', ->
 
-  it "should parse a single, full frame", ->
+  it 'should parse a single, full frame', ->
     frameBuffer = new FrameBuffer()
     data = createFrame message.FRAME_TYPE_RESPONSE, 'OK'
     frames = frameBuffer.consume data
@@ -27,7 +27,7 @@ describe "FrameBuffer", ->
     frameId.should.eq message.FRAME_TYPE_RESPONSE
     payload.toString().should.eq 'OK'
 
-  it "should parse two full frames", ->
+  it 'should parse two full frames', ->
     frameBuffer = new FrameBuffer()
 
     firstFrame = createFrame message.FRAME_TYPE_RESPONSE, 'OK'
@@ -45,7 +45,7 @@ describe "FrameBuffer", ->
     frameId.should.eq message.FRAME_TYPE_ERROR
     data.toString().should.eq JSON.stringify {shortname: 'localhost'}
 
-  it "should parse frame delivered in partials", ->
+  it 'should parse frame delivered in partials', ->
     frameBuffer = new FrameBuffer()
     data = createFrame message.FRAME_TYPE_RESPONSE, 'OK'
 
@@ -61,7 +61,7 @@ describe "FrameBuffer", ->
     frames = frameBuffer.consume data[8..]
     frames.length.should.eq 1
 
-  it "should parse multiple frames delivered in partials", ->
+  it 'should parse multiple frames delivered in partials', ->
     frameBuffer = new FrameBuffer()
     first = createFrame message.FRAME_TYPE_RESPONSE, 'OK'
     second = createFrame message.FRAME_TYPE_RESPONSE, '{}'
@@ -83,7 +83,7 @@ describe "FrameBuffer", ->
     frames = frameBuffer.consume data[12..]
     frames.length.should.eq 1
 
-  it "empty internal buffer when all frames are consumed", ->
+  it 'empty internal buffer when all frames are consumed', ->
     frameBuffer = new FrameBuffer()
     data = createFrame message.FRAME_TYPE_RESPONSE, 'OK'
     
