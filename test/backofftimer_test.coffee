@@ -1,6 +1,6 @@
 should = require('chai').should()
 decimal = require 'bignumber.js'
-BackoffTimer = require '../lib/BackoffTimer'
+BackoffTimer = require '../lib/backofftimer'
 
 describe 'backofftimer', ->
   timer = null
