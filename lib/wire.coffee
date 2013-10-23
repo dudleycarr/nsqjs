@@ -1,15 +1,12 @@
 _ = require 'underscore'
 assert = require 'assert'
 Int64 = require 'node-int64'
+BigNumber = require 'bignumber.js'
 
 exports.MAGIC_V2 = '  V2'
 exports.FRAME_TYPE_RESPONSE = 0
 exports.FRAME_TYPE_ERROR = 1
 exports.FRAME_TYPE_MESSAGE = 2
-
-NL = '\n'
-[FIN, REQ, TOUCH] = ['_fin', '_req', '_touch']
-
 
 JSON_stringify = (obj, emit_unicode) ->
   json = JSON.stringify obj
@@ -17,10 +14,14 @@ JSON_stringify = (obj, emit_unicode) ->
     json
   else
     json.replace /[\u007f-\uffff]/g, (c) ->
-      '\\u' + ('0000'+c.charCodeAt(0).toString(16)).slice(-4)
+      '\\u' + ('0000' + c.charCodeAt(0).toString 16).slice -4
 
 exports.unpackMessage = (data) ->
-  timestamp = (new Int64 data, 0).toNumber(true)
+  # Int64 to read the 64bit Int from the buffer
+  timestamp = (new Int64 data, 0).toOctetString()
+  # BigNumber to represent the timestamp in a workable way.
+  timestamp = new BigNumber timestamp, 16
+
   attempts = data.readInt16BE 8 
   id = data[10...26].toString()
   body = data[26..]
@@ -33,7 +34,7 @@ command = (cmd, body) ->
   parameters = _.toArray(arguments)[2..]
   parameters.unshift('') if parameters.length > 0
   parametersStr = parameters.join ' '
-  header = cmd + parametersStr + NL
+  header = cmd + parametersStr + '\n'
 
   buffers.push new Buffer(header)
 

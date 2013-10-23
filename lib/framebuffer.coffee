@@ -47,7 +47,8 @@ class FrameBuffer
 
   parseFrames: ->
     # Find all frame offsets within the buffer.
-    [frameOffsets, offset] = [[], 0]
+    frameOffsets = []
+    offset = 0
     while not _.isNull offset
       frameOffsets.push offset
       offset = nextFrameOffset @buffer, offset
@@ -58,7 +59,7 @@ class FrameBuffer
 
     # Get the last frame if it's not a partial frame.
     consumedOffset = lastOffset = frameOffsets.pop()
-    if lastOffset + frameSize(@buffer, lastOffset) <= @_buffer.length
+    if lastOffset + frameSize(@buffer, lastOffset) <= @buffer.length
       # Parse out the last frame since it's a whole frame
       frames.push pluckFrame(@buffer, lastOffset)
       # Advance the consumed pointer to the end of the last frame

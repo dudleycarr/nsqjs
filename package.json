@@ -31,16 +31,16 @@
     "grunt-contrib-coffee": "~0.7",
     "grunt-contrib-watch": "~0.5.1",
     "grunt-simple-mocha": "~0.4.0",
-    "mocha": "*",
-    "sinon": "*",
+    "mocha": "~1.9.0",
+    "sinon": "~1.7.3",
     "chai": "~1.7.2",
-    "sinon-chai": "*",
-    "scaffolt": "*",
+    "sinon-chai": "~2.4.0",
     "grunt": "~0.4.1"
   },
   "keywords": [],
   "dependencies": {
     "node-state": "~1.4.1",
     "node-int64": "~0.3.0",
+    "underscore": "~1.5.2"
   }
 }

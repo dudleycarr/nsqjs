@@ -57,6 +57,8 @@ wire = require './wire'
 class NSQDConnection extends EventEmitter
   rdyCount: 0                    # RDY value given to the conn by the Reader
   maxRdyCount: 0                 # Max RDY value for a conn to this NSQD
+  msgTimeout: 0                  # Timeout time in milliseconds for a Message
+  maxMsgTimeout: 0               # Max time to process a Message in milliseconds
   inFlight: 0                    # No. messages processed by this conn.
   lastMessageTimestamp: null     # Timestamp of last message received
   lastReceivedTimestamp: null    # Timestamp of last data received
@@ -65,12 +67,7 @@ class NSQDConnection extends EventEmitter
   constructor: (@nsqdHost, @nsqdPort, @topic, @channel, @maxInFlight=1,
     @heartbeatInterval=30) ->
     @frameBuffer = new FrameBuffer()
-
-    stateMachineOptions =
-      autostart: false,
-      initial_state: 'CONNECTED'
-      sync_goto: true
-    @statemachine = new ConnectionState @, stateMachineOptions
+    @statemachine = new ConnectionState @
 
   connect: ->
     callback = _.bind @statemachine.start, @statemachine
@@ -133,8 +130,11 @@ class NSQDConnection extends EventEmitter
 
 
 class ConnectionState extends NodeState
-  constructor: (connection, stateMachineOptions) ->
-    super stateMachineOptions
+  constructor: (connection) ->
+    super 
+      autostart: false,
+      initial_state: 'CONNECTED'
+      sync_goto: true
     @conn = connection
 
   states:
@@ -229,8 +229,10 @@ class ConnectionState extends NodeState
   transitions:
     '*':
       '*': (data, callback) ->
-        console.error "Enter: #{@current_state_name}"
+#       console.error "Enter: #{@current_state_name}"
         callback(data)
 
 
-module.exports = NSQDConnection
+module.exports =
+  NSQDConnection: NSQDConnection
+  ConnectionState: ConnectionState
