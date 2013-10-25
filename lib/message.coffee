@@ -29,18 +29,18 @@ class Message extends EventEmitter
   timeUntilTimeout: ->
     return null if @hasResponded
 
-    delta = (@receivedOn + @msgTimeout) - Date.now()
+    delta = @receivedOn + @msgTimeout - Date.now()
     if delta > 0 then delta else null
 
   finish: ->
-    @respond Message.FINISH, wire.finish(@id)
+    @respond Message.FINISH, wire.finish @id
 
   requeue: (delay, backoff=true) ->
-    @respond Message.REQUEUE, wire.requeue(@id, delay)
+    @respond Message.REQUEUE, wire.requeue @id, delay
     @emit Message.BACKOFF if backoff
 
   touch: ->
-    @respond TOUCH, wire.requeue(@id)
+    @respond TOUCH, wire.requeue @id
 
   respond: (responseType, wireData) ->
     assert not @hasResponded

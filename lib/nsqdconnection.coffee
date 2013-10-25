@@ -79,7 +79,7 @@ class NSQDConnection extends EventEmitter
     @conn.on 'data', (data) =>
       @receiveData data
     @conn.on 'error', (err) =>
-      @statemachine.goto 'ERROR', err.message
+      @statemachine.goto 'ERROR', err
     @conn.on 'close', =>
       @statemachine.raise 'close'
 
@@ -117,8 +117,10 @@ class NSQDConnection extends EventEmitter
     msg.on Message.RESPOND, (responseType, wireData) =>
       @conn.write wireData
       @inFlight -= 1 if responseType in [Message.FINISH, Message.REQUEUE]
-      @emit NSQDConnection.FINISHED if responseType is Message.FINISH
-      @emit NSQDConnection.REQUEUED if responseType is Message.REQUEUE
+      if responseType is Message.FINISH
+        @emit NSQDConnection.FINISHED
+      else if responseType is Message.REQUEUE
+        @emit NSQDConnection.REQUEUED
 
     msg.on Message.BACKOFF, =>
       @emit NSQDConnection.BACKOFF
@@ -207,8 +209,8 @@ class ConnectionState extends NodeState
         @goto 'CLOSED'
 
     ERROR:
-      Enter: (data) ->
-        @conn.emit NSQDConnection.ERROR, data.toString()
+      Enter: (err) ->
+        @conn.emit NSQDConnection.ERROR, err
         @goto 'CLOSED'
 
       close: ->
@@ -227,7 +229,7 @@ class ConnectionState extends NodeState
   transitions:
     '*':
       '*': (data, callback) ->
-        callback(data)
+        callback data
 
 
 module.exports =
