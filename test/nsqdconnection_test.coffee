@@ -62,7 +62,7 @@ describe 'ConnectionState', ->
 
   it 'create a subscription', (done) ->
     {sent, statemachine, connection} = state
-    connection.on 'subscribed',  ->
+    connection.on NSQDConnection.SUBSCRIBED,  ->
       # Subscribe notification
       done()
 
@@ -75,7 +75,7 @@ describe 'ConnectionState', ->
 
   it 'handle a message', (done) ->
     {statemachine, connection} = state
-    connection.on 'message', (msg) ->
+    connection.on NSQDConnection.MESSAGE, (msg) ->
       done()
 
     statemachine.start()

@@ -4,6 +4,15 @@ wire = require './wire'
 {EventEmitter} = require 'events'
 
 class Message extends EventEmitter
+  # Event types
+  @BACKOFF: 'backoff'
+  @RESPOND: 'respond'
+
+  # Response types
+  @FINISH = 0
+  @REQUEUE = 1
+  @TOUCH = 2
+
   constructor: (@id, @timestamp, @attempts, @body, @msgTimeout,
     @maxMsgTimeout) ->
     @hasResponded = false
@@ -11,33 +20,33 @@ class Message extends EventEmitter
 
     # The worker is not allowed to stall longer than this configured
     # timeout.
-    @maxMsgTimeoutId = setTimeout (=> @requeue 0), @maxMsgTimeout
+    noDelayRequeue = =>
+      @requeue 0
+    @maxMsgTimeoutId = setTimeout noDelayRequeue, @maxMsgTimeout
 
   # Returns in milliseconds the time until this message expires. Returns
   # null if that time has already ellapsed.
   timeUntilTimeout: ->
-    return true if @hasResponded
+    return null if @hasResponded
 
     delta = (@receivedOn + @msgTimeout) - Date.now()
     if delta > 0 then delta else null
 
   finish: ->
-    @respond wire.finish @id
-    @emit 'finish'
+    @respond Message.FINISH, wire.finish(@id)
 
   requeue: (delay, backoff=true) ->
-    @respond wire.requeue @id, delay
-    if backoff
-      @emit 'backoff'
+    @respond Message.REQUEUE, wire.requeue(@id, delay)
+    @emit Message.BACKOFF if backoff
 
   touch: ->
-    @respond wire.requeue @id
+    @respond TOUCH, wire.requeue(@id)
 
-  respond: (wireData) ->
+  respond: (responseType, wireData) ->
     assert not @hasResponded
     @hasResponded = true
     clearTimeout @maxMsgTimeoutId
-    @emit 'respond', wireData
+    @emit Message.RESPOND, responseType, wireData
 
 
 module.exports = Message
