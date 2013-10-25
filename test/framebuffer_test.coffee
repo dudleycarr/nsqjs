@@ -11,7 +11,7 @@ wire = require '../lib/wire'
 
 createFrame = (frameId, payload) ->
   frame = new Buffer(4 + 4 + payload.length)
-  frame.writeInt32BE(payload.length, 0)
+  frame.writeInt32BE(payload.length + 4, 0)
   frame.writeInt32BE(frameId, 4)
   frame.write(payload, 8)
   frame
@@ -88,4 +88,4 @@ describe 'FrameBuffer', ->
     data = createFrame wire.FRAME_TYPE_RESPONSE, 'OK'
     
     frame = frameBuffer.consume data
-    expect(frameBuffer._buffer).to.be.null
+    expect(frameBuffer.buffer).to.be.null

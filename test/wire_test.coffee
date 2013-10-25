@@ -36,7 +36,7 @@ describe "nsq wire", ->
       'FIN \u00fcn\u00ee\u00e7\u00f8\u2202\u00e9\n'
 
   it "should requeue a message", ->
-    matchCommand wire.requeue, ['test'], 'REQ test\n'
+    matchCommand wire.requeue, ['test'], 'REQ test 0\n'
 
   it "should requeue a message with timeout", ->
     matchCommand wire.requeue, ['test', 60], 'REQ test 60\n'
@@ -59,3 +59,17 @@ describe "nsq wire", ->
       ['MPUB test_topic\n\u0000\u0000\u0000\u001c\u0000\u0000\u0000\u0003'
        '\u0000\u0000\u0000\u0004abcd', '\u0000\u0000\u0000\u0004efgh',
        '\u0000\u0000\u0000\u0004ijkl'].join ''
+
+  it 'should unpack a received message', ->
+    msgPayload = [
+      '132cb60626e9fd7a00013035356335626531636534333330323769747265616c6c7974',
+      '696564746865726f6f6d746f676574686572'
+    ]
+    msgParts = wire.unpackMessage new Buffer msgPayload.join(''), 'hex'
+
+    [id, timestamp, attempts, body] = msgParts
+    timestamp.toString(10).should.eq '1381679323234827642'
+    id.should.eq '055c5be1ce433027'
+    attempts.should.eq 1
+
+    
