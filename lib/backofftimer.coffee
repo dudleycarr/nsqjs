@@ -6,6 +6,11 @@ min = (a, b) ->
 max = (a, b) ->
   if a.gte b then a else b
 
+# This is a timer that is smart about backing off exponentially when there 
+# are problems
+#
+# Ported from pynsq:
+#   https://github.com/bitly/pynsq/blob/master/nsq/BackoffTimer.py
 class BackoffTimer
 
   constructor: (minInterval, maxInterval, ratio=.25, shortLength=10,
@@ -15,11 +20,11 @@ class BackoffTimer
       @maxInterval = decimal maxInterval
 
       ratio = decimal ratio
-      intervalDelta = decimal(@maxInterval - @minInterval)
+      intervalDelta = decimal @maxInterval - @minInterval
       # (maxInterval - minInterval) * ratio
       @maxShortTimer = intervalDelta.times ratio
       # (maxInterval - minInterval) * (1 - ratio)
-      @maxLongTimer = intervalDelta.times  decimal(1).minus(ratio)
+      @maxLongTimer = intervalDelta.times decimal(1).minus ratio
 
       @shortUnit = @maxShortTimer.dividedBy shortLength
       @longUnit = @maxLongTimer.dividedBy longLength
@@ -30,8 +35,8 @@ class BackoffTimer
   success: ->
     @shortInterval = @shortInterval.minus @shortUnit
     @longInterval = @longInterval.minus @longUnit
-    @shortInterval = max(@shortInterval, decimal(0))
-    @longInterval = max @longInterval, decimal(0)
+    @shortInterval = max @shortInterval, decimal 0
+    @longInterval = max @longInterval, decimal 0
 
   failure: ->
     @shortInterval = @shortInterval.plus @shortUnit
