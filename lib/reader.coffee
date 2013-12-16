@@ -12,22 +12,23 @@ class Reader extends EventEmitter
 
   # Responsibilities
   # 1. Responsible for periodically querying the nsqlookupds
-  # 2. Producer of messages
-  # 3. Starts the ReaderRdy instance
-  # 4. Hands nsqd connections to the ReaderRdy instance
-  # 5. Stores Reader configurations
+  # 2. Connects and subscribes to discovered/configured nsqd
+  # 3. Consumes messages and triggers MESSAGE events
+  # 4. Starts the ReaderRdy instance
+  # 5. Hands nsqd connections to the ReaderRdy instance
+  # 6. Stores Reader configurations
 
   # Reader events
   @MESSAGE: 'message'
   @DISCARD: 'discard'
 
-  constructor: (@topic, @channel, options={}) ->
+  constructor: (@topic, @channel, options) ->
     defaults =
       name: null
       maxInFlight: 1
       heartbeatInterval: 30
       maxBackoffDuration: 128
-      maxRetries: 5
+      maxAttempts: 5
       requeueDelay: 90
       nsqdTCPAddresses: []
       lookupdHTTPAddresses: []
@@ -40,10 +41,10 @@ class Reader extends EventEmitter
     assert _.isString(channel) and channel.length > 0, 'Invalid channel'
     assert _.isNumber(params.maxInFlight) and params.maxInFlight > 0,
       'maxInFlight needs to be an integer greater than 0'
-    assert _.isNumber(params.heartbeatInterval) and 
+    assert _.isNumber(params.heartbeatInterval) and
       params.heartbeatInterval >= 1,
       'heartbeatInterval needs to be an integer greater than 1'
-    assert _.isNumber(params.maxBackoffDuration) and 
+    assert _.isNumber(params.maxBackoffDuration) and
       params.maxBackoffDuration > 0,
       'maxBackoffDuration needs to be a number greater than 1'
     assert params.name is null or _.isString params.name,
@@ -55,9 +56,10 @@ class Reader extends EventEmitter
     assert 0 <= params.lookupdPollJitter <= 1,
       'lookupdPollJitter needs to be between 0 and 1'
 
-    makeList = (lst) ->
-      lst = [lst] unless _.isArray lst
-      (entry for entry in lst when entry?)
+    # Returns a compacted list given a list, string, integer, or object.
+    makeList = (list) ->
+      list = [list] unless _.isArray list
+      (entry for entry in list when entry?)
 
     params.nsqdTCPAddresses = makeList params.nsqdTCPAddresses
     params.lookupdHTTPAddresses = makeList params.lookupdHTTPAddresses
@@ -78,26 +80,26 @@ class Reader extends EventEmitter
     @connectionIds = []
 
   connect: ->
-    if not _.isEmpty @nsqdTCPAddresses
+    unless _.isEmpty @nsqdTCPAddresses
       for addr in @nsqdTCPAddresses
         [address, port] = addr.split ':'
         @connectToNSQD address, Number(port)
 
-    return if not @lookupdHTTPAddresses
+    return unless @lookupdHTTPAddresses
 
     # Force the first lookup now.
     @queryLookupd()
 
     interval = @lookupdPollInterval * 1000
     delayedStart = =>
-      @lookupdId = setInterval (=> @queryLookupd()), interval
+      @lookupdId = setTimeout @queryLookupd.bind(this), interval
 
     delay = Math.random() * @lookupdPollJitter * interval
     setTimeout delayedStart, delay
 
 
   queryLookupd: ->
-    # Trigger a query of the configured ``nsqLookupHTTPAddresses``
+    # Trigger a query of the configured ``lookupdHTTPAddresses``
     endpoint = @roundrobinLookupd.next()
 
     options =
@@ -109,7 +111,7 @@ class Reader extends EventEmitter
       errPrefix = =>
         "[#{@name}] Reader: lookupd #{options.url}"
 
-      if err?
+      if err
         console.error "#{errPrefix()} query error: #{error}"
         return
 
@@ -124,7 +126,7 @@ class Reader extends EventEmitter
         return
 
       for producer in lookupData.data.producers
-        address = producer.broadcast_address or producer.address
+        address = producer.broadcast_address
         assert address?
         @connectToNSQD address, producer.tcp_port
 
@@ -152,7 +154,7 @@ class Reader extends EventEmitter
       # Give the internal event listeners a chance at the events before clients
       # of the Reader.
       process.nextTick =>
-        if message.attempts < @maxRetries
+        if message.attempts < @maxAttempts
           @emit Reader.MESSAGE, message
         else
           @emit Reader.DISCARD, message
@@ -161,5 +163,4 @@ class Reader extends EventEmitter
     conn.connect()
 
 
-module.exports =
-  Reader: Reader
+module.exports = Reader

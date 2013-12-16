@@ -22,7 +22,7 @@ exports.unpackMessage = (data) ->
   # BigNumber to represent the timestamp in a workable way.
   timestamp = new BigNumber timestamp, 16
 
-  attempts = data.readInt16BE 8 
+  attempts = data.readInt16BE 8
   id = data[10...26].toString()
   body = data[26..]
   [id, timestamp, attempts, body]

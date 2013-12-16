@@ -26,7 +26,7 @@ class Message extends EventEmitter
     @maxMsgTimeoutId = setTimeout noDelayRequeue, @maxMsgTimeout
 
   json: ->
-    if not @parsed?
+    unless @parsed?
       try
         @parsed = JSON.parse @body
       catch err
@@ -39,7 +39,7 @@ class Message extends EventEmitter
   # for a message. There are the soft timeouts that can be extended by touching
   # the message. There is the hard timeout that cannot be exceeded without
   # reconfiguring the nsqd.
-  timeUntilTimeout: (hard=false) ->
+  timeUntilTimeout: (hard = false) ->
     return null if @hasResponded
 
     delta = if hard
@@ -52,8 +52,7 @@ class Message extends EventEmitter
   finish: ->
     @respond Message.FINISH, wire.finish @id
 
-  requeue: (delay=null, backoff=true) ->
-    delay = @requeueDelay unless delay?
+  requeue: (delay = @requeueDelay, backoff = true) ->
     @respond Message.REQUEUE, wire.requeue @id, delay
     @emit Message.BACKOFF if backoff
 

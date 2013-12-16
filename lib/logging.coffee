@@ -1,11 +1,10 @@
 _ = require 'underscore'
+moment = require 'moment'
 
 # Stores and/or prints state transitions for the various state machines. Useful
 # for debugging and testing.
 class StateChangeLogger
-  constructor: () ->
-    @storeLogs = false
-    @debug = false
+  constructor: (@storeLogs = false, @debug = false) ->
     @logs = []
 
   log: (component, id, description) ->
@@ -18,9 +17,8 @@ class StateChangeLogger
       console.log @format args...
 
   format: (timestamp, component, id, description) ->
-    ts = new Date(timestamp)
-    time = "#{ts.getFullYear()}/#{ts.getMonth()+1}/#{ts.getDate()}"
-    time += " #{ts.getHours()}:#{ts.getMinutes()}:#{ts.getSeconds()}"
+    ts = moment timestamp
+    time = ts.format 'YYYY/MM/DD HH:mm:ss'
 
     if id?
       "#{time} #{component}(#{id}): #{description}"

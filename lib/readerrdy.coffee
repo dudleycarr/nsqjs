@@ -8,24 +8,25 @@ NodeState = require 'node-state'
 RoundRobinList = require './roundrobinlist'
 StateChangeLogger = require './logging'
 
-# Maintains the RDY and in-flight counts for a nsqd connection. ConnectionRdy
-# ensures that the RDY count will not exceed the max set for this connection.
-# The max for the connection can be adjusted at any time.
-#
-# Usage:
-#
-# connRdy = ConnectionRdy conn
-# connRdy.setConnectionRdyMax 10
-#
-# conn.on 'message', ->
-#   # On a successful message, bump up the RDY count for this connection.
-#   connRdy.raise 'bump'
-# conn.on 'requeue', ->
-#   # We're backing off when we encounter a requeue. Wait 5 seconds to try
-#   # again.
-#   connRdy.raise 'backoff'
-#   setTimeout (-> connRdy.raise 'bump'), 5000
-#
+###
+Maintains the RDY and in-flight counts for a nsqd connection. ConnectionRdy
+ensures that the RDY count will not exceed the max set for this connection.
+The max for the connection can be adjusted at any time.
+
+Usage:
+
+connRdy = ConnectionRdy conn
+connRdy.setConnectionRdyMax 10
+
+conn.on 'message', ->
+  # On a successful message, bump up the RDY count for this connection.
+  connRdy.raise 'bump'
+conn.on 'requeue', ->
+  # We're backing off when we encounter a requeue. Wait 5 seconds to try
+  # again.
+  connRdy.raise 'backoff'
+  setTimeout (-> connRdy.raise 'bump'), 5000
+###
 class ConnectionRdy extends EventEmitter
   # Events emitted by ConnectionRdy
   @READY: 'ready'
@@ -35,8 +36,10 @@ class ConnectionRdy extends EventEmitter
     @inFlight = 0
     @lastRdySent = 0
     @idleId = null
-    @statemachine = new ConnectionRdyState @
+    @statemachine = new ConnectionRdyState this
 
+    @conn.on NSQDConnection.ERROR, (err) =>
+      @log err
     @conn.on NSQDConnection.MESSAGE, =>
       clearTimeout @idleId if @idleId?
       @idleId = null
@@ -49,7 +52,7 @@ class ConnectionRdy extends EventEmitter
       @start()
 
   name: ->
-    "#{@conn.conn.localPort}"
+    String @conn.conn.localPort
 
   start: ->
     @statemachine.start()
@@ -71,18 +74,18 @@ class ConnectionRdy extends EventEmitter
   # time. This is useful when maxInFlight is less than the number of
   # connections.
   backoffOnIdle: (maxIdleTime) ->
-    @idleId = setTimeout (=> @backoff()), maxIdleTime
+    @idleId = setTimeout @backoff.bind(this), maxIdleTime
 
   isStarved: ->
     assert @inFlight <= @maxConnRdy
-    @inFlight == @maxConnRdy
+    @inFlight is @lastRdySent
 
   setRdy: (rdyCount) ->
     @log "RDY #{rdyCount}"
     @conn.setRdy rdyCount if 0 <= rdyCount <= @maxConnRdy
     @lastRdySent = rdyCount
 
-  log: (message='') ->
+  log: (message = '') ->
     msg = "#{@statemachine.current_state_name} #{message}"
     StateChangeLogger.log 'ConnectionRdy', @name(), msg
 
@@ -95,7 +98,7 @@ class ConnectionRdyState extends NodeState
       initial_state: 'INIT'
       sync_goto: true
 
-  log: (message='') ->
+  log: (message = '') ->
     @connRdy.log message
 
   states:
@@ -141,34 +144,37 @@ class ConnectionRdyState extends NodeState
         callback data
 
 
-# backoffTime = 90
-# heartbeat = 30
-#
-# [topic, channel] = ['sample', 'default']
-# [host1, port1] = ['127.0.0.1', '4150']
-# c1 = new NSQDConnection host1, port1, topic, channel, backoffTime, heartbeat
-#
-# readerRdy = new ReaderRdy 1, 128
-# readerRdy.addConnection c1
-#
-# message = (msg) ->
-#   console.log "Callback [message]: #{msg.attempts}, #{msg.body.toString()}"
-#   if msg.attempts >= 5
-#     msg.finish()
-#     return
-#
-#   if msg.body.toString() is 'requeue'
-#     msg.requeue()
-#   else
-#     msg.finish()
-#
-# discard = (msg) ->
-#   console.log "Giving up on this message: #{msg.id}"
-#   msg.finish()
-#
-# c1.on NSQDConnection.MESSAGE, message
-# c1.connect()
+###
+Usage:
 
+backoffTime = 90
+heartbeat = 30
+
+[topic, channel] = ['sample', 'default']
+[host1, port1] = ['127.0.0.1', '4150']
+c1 = new NSQDConnection host1, port1, topic, channel, backoffTime, heartbeat
+
+readerRdy = new ReaderRdy 1, 128
+readerRdy.addConnection c1
+
+message = (msg) ->
+  console.log "Callback [message]: #{msg.attempts}, #{msg.body.toString()}"
+  if msg.attempts >= 5
+    msg.finish()
+    return
+
+  if msg.body.toString() is 'requeue'
+    msg.requeue()
+  else
+    msg.finish()
+
+discard = (msg) ->
+  console.log "Giving up on this message: #{msg.id}"
+  msg.finish()
+
+c1.on NSQDConnection.MESSAGE, message
+c1.connect()
+###
 class ReaderRdy extends NodeState
 
   # This will:
@@ -202,18 +208,18 @@ class ReaderRdy extends NodeState
 
     conn.on NSQDConnection.CLOSED, =>
       @removeConnection conn
+      @balance()
 
     conn.on NSQDConnection.FINISHED, =>
       @backoffTimer.success()
 
-      # When we're not in a low RDY situation, restore the consumed RDY count
-      # to the connection that finished the message. If we are in a low RDY
-      # situation, rebalance so that other connections can get a crack at
-      # processing messages.
-      if not @isLowRdy()
-        connectionRdy.bump()
-      else
+      if @isLowRdy()
+        # Balance the RDY count amoung existing connections given the low RDY
+        # condition.
         @balance()
+      else
+        # Restore RDY count for connection to the connection max.
+        connectionRdy.bump()
 
       @raise 'success'
 
@@ -254,11 +260,8 @@ class ReaderRdy extends NodeState
   backoff: ->
     @backoffTimer.failure()
 
-    for conn in @connections
-      conn.backoff()
-
-    if @backoffId
-      clearTimeout @backoffId
+    conn.backoff() for conn in @connections
+    clearTimeout @backoffId if @backoffId
 
     onTimeout = =>
       @raise 'try'
@@ -266,19 +269,24 @@ class ReaderRdy extends NodeState
     @backoffId = setTimeout onTimeout, @backoffTimer.getInterval() * 1000
 
   inFlight: ->
-    (c.inFlight for c in @connections).reduce (acc, entry) -> acc + entry
+    @connections.reduce (previous, conn) ->
+      previous + conn.inFlight
 
-  # Evenly or fairly distributes RDY count based on the maxInFlight across
-  # all nsqd connections.
+  ###
+  Evenly or fairly distributes RDY count based on the maxInFlight across
+  all nsqd connections.
+  ###
   balance: ->
-    # In the perverse situation where there are more connections than max in
-    # flight, we do the following:
-    #
-    # There is a sliding window where each of the connections gets a RDY count
-    # of 1. When the connection has processed it's single message, then the RDY
-    # count is distributed to the next waiting connection. If the connection
-    # does nothing with it's RDY count, then it should timeout and give it's
-    # RDY count to another connection.
+    ###
+    In the perverse situation where there are more connections than max in
+    flight, we do the following:
+
+    There is a sliding window where each of the connections gets a RDY count
+    of 1. When the connection has processed it's single message, then the RDY
+    count is distributed to the next waiting connection. If the connection
+    does nothing with it's RDY count, then it should timeout and give it's
+    RDY count to another connection.
+    ###
 
     max = if @current_state_name is 'TRY_ONE' then 1 else @maxInFlight
     perConnectionMax = Math.floor max / @connections.length
@@ -311,16 +319,18 @@ class ReaderRdy extends NodeState
 
         @connections[i].setConnectionRdyMax connMax
 
-  log: (message='') ->
+  log: (message = '') ->
     msg = "#{@current_state_name} #{message}"
     StateChangeLogger.log 'ReaderRdy', null, msg
 
-  # The following events results in transitions in the ReaderRdy state machine:
-  # 1. Adding the first connection
-  # 2. Remove the last connections
-  # 3. Finish event from message handling
-  # 4. Backoff event from message handling
-  # 5. Backoff timeout
+  ###
+  The following events results in transitions in the ReaderRdy state machine:
+  1. Adding the first connection
+  2. Remove the last connections
+  3. Finish event from message handling
+  4. Backoff event from message handling
+  5. Backoff timeout
+  ###
   states:
     ZERO:
       backoff: -> # No-op
@@ -354,7 +364,7 @@ class ReaderRdy extends NodeState
         @goto 'TRY_ONE'
 
   transitions:
-   '*':
+    '*':
       '*': (data, callback) ->
         @log()
         callback data

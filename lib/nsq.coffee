@@ -1,3 +1,4 @@
 module.exports =
-  Reader: require('./reader').Reader
-  Writer: require('./writer').Writer
+  Reader: require './reader'
+  Writer: require './writer'
+  StateChangeLogger: require './logging'

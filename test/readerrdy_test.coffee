@@ -25,10 +25,11 @@ describe 'ConnectionRdy', ->
   it 'should register listeners on a connection', ->
     conn = new NSQDConnection 'localhost', 1234, 'test', 'test'
     mock = sinon.mock conn
-    mock.expects('on').withArgs(NSQDConnection.FINISHED)
-    mock.expects('on').withArgs(NSQDConnection.MESSAGE)
-    mock.expects('on').withArgs(NSQDConnection.REQUEUED)
-    mock.expects('on').withArgs(NSQDConnection.SUBSCRIBED)
+    mock.expects('on').withArgs NSQDConnection.ERROR
+    mock.expects('on').withArgs NSQDConnection.FINISHED
+    mock.expects('on').withArgs NSQDConnection.MESSAGE
+    mock.expects('on').withArgs NSQDConnection.REQUEUED
+    mock.expects('on').withArgs NSQDConnection.SUBSCRIBED
 
     cRdy = new ConnectionRdy conn
     mock.verify()

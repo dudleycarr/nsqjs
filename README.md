@@ -124,7 +124,7 @@ reader.on Reader.MESSAGE, (msg) ->
   console.log "Received message [#{msg.id}]"
 
   touch = ->
-    if not msg.hasResponded
+    unless msg.hasResponded
       console.log "Touch [#{msg.id}]"
       msg.touch()
       # Touch the message again a second before the next timeout.
@@ -139,6 +139,14 @@ reader.on Reader.MESSAGE, (msg) ->
 
   # Finish the message after 2 timeout periods and 1 second.
   setTimeout finish, msg.timeUntilTimeout() * 2 + 1000
+```
+
+### Enable nsqjs debugging
+If you want to see the internal events of nsqjs, you can do so by doing the
+following:
+```coffee-script
+nsq = require 'nsqjs'
+nsq.StateChangeLogger.debug = true
 ```
 
 Changes

@@ -1,5 +1,4 @@
 class Writer
   # Empty
 
-module.exports =
-  Writer: Writer
+module.exports = Writer

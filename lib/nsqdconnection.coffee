@@ -54,7 +54,7 @@ class NSQDConnection extends EventEmitter
   # Events emitted by NSQDConnection
   @BACKOFF: 'backoff'
   @CLOSED: 'closed'
-  @ERROR: 'connection_error'
+  @ERROR: 'error'
   @FINISHED: 'finished'
   @MESSAGE: 'message'
   @REQUEUED: 'requeued'
@@ -78,6 +78,8 @@ class NSQDConnection extends EventEmitter
     StateChangeLogger.log 'NSQDConnection', @id, msg
 
   connect: ->
+    # Using nextTick so that clients of Reader can register event listeners
+    # right after calling connect.
     process.nextTick =>
       @conn = net.connect @nsqdPort, @nsqdHost, =>
         @id = @conn.localPort
@@ -238,11 +240,11 @@ class ConnectionState extends NodeState
         @log()
         callback data
 
-      'CONNECTED': (data, callback) ->
+      CONNECTED: (data, callback) ->
         @log "#{@conn.nsqdHost}:#{@conn.nsqdPort}"
         callback data
 
-      'ERROR': (err, callback) ->
+      ERROR: (err, callback) ->
         @log "#{err}"
         callback err
 
