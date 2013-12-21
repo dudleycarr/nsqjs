@@ -3,6 +3,9 @@ nsqjs
 A NodeJS client for the [nsq](http://bitly.github.io/nsq/) client protocol. This implementation attempts to be
 fully compliant and maintain feature parity with the official Go ([go-nsq](https://github.com/bitly/go-nsq)) and Python ([pynsq](https://github.com/bitly/pynsq)) clients.
 
+[![Build Status](https://travis-ci.org/dudleycarr/nsqjs.png?branch=master)](https://travis-ci.org/dudleycarr/nsqjs)
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/dudleycarr/nsqjs/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
 Usage
 -----
 
