@@ -62,7 +62,7 @@ class Message extends EventEmitter
 
   respond: (responseType, wireData) ->
     process.nextTick =>
-      assert not @hasResponded
+      assert not @hasResponded, "Already responded to message (#{@id})"
 
       if responseType isnt Message.TOUCH
         @hasResponded = true

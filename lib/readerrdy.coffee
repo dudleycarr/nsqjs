@@ -30,12 +30,12 @@ conn.on 'requeue', ->
 class ConnectionRdy extends EventEmitter
   # Events emitted by ConnectionRdy
   @READY: 'ready'
+  @STATE_CHANGE: 'statechange'
 
   constructor: (@conn) ->
     @maxConnRdy = 0
     @inFlight = 0
     @lastRdySent = 0
-    @idleId = null
     @statemachine = new ConnectionRdyState this
 
     @conn.on NSQDConnection.ERROR, (err) =>
@@ -59,6 +59,7 @@ class ConnectionRdy extends EventEmitter
     @emit ConnectionRdy.READY
 
   setConnectionRdyMax: (maxConnRdy) ->
+    @log "setConnectionRdyMax #{maxConnRdy}"
     # The RDY count for this connection should not exceed the max RDY count
     # configured for this nsqd connection.
     @maxConnRdy = Math.min maxConnRdy, @conn.maxRdyCount
@@ -70,14 +71,8 @@ class ConnectionRdy extends EventEmitter
   backoff: ->
     @statemachine.raise 'backoff'
 
-  # Fires a backoff event if this connection is idle for a given period of
-  # time. This is useful when maxInFlight is less than the number of
-  # connections.
-  backoffOnIdle: (maxIdleTime) ->
-    @idleId = setTimeout @backoff.bind(this), maxIdleTime
-
   isStarved: ->
-    assert @inFlight <= @maxConnRdy
+    assert @inFlight <= @maxConnRdy, 'isStarved check is failing'
     @inFlight is @lastRdySent
 
   setRdy: (rdyCount) ->
@@ -86,8 +81,8 @@ class ConnectionRdy extends EventEmitter
     @lastRdySent = rdyCount
 
   log: (message = '') ->
-    msg = "#{@statemachine.current_state_name} #{message}"
-    StateChangeLogger.log 'ConnectionRdy', @name(), msg
+    StateChangeLogger.log 'ConnectionRdy', @statemachine.current_state_name,
+      @name(), message
 
 
 class ConnectionRdyState extends NodeState
@@ -142,6 +137,7 @@ class ConnectionRdyState extends NodeState
       '*': (data, callback) ->
         @log()
         callback data
+        @connRdy.emit ConnectionRdy.STATE_CHANGE
 
 
 ###
@@ -175,23 +171,43 @@ discard = (msg) ->
 c1.on NSQDConnection.MESSAGE, message
 c1.connect()
 ###
+
+READER_COUNT = 0
+
 class ReaderRdy extends NodeState
 
-  # This will:
-  # 1. Manage the RDY account across connections for this reader
-  # 2. Handle backoff on failures across connections
+  # Class method
+  @getId: ->
+    READER_COUNT += 1
+    READER_COUNT - 1
 
-  constructor: (@maxInFlight, maxBackoffDuration) ->
+  ###
+  Parameters:
+  - maxInFlight        : Maximum number of messages in-flight across all
+                           connections.
+  - maxBackoffDuration : The longest amount of time (secs) for a backoff event.
+  - lowRdyTimeout      : Time (secs) to rebalance RDY count among connections
+                           during low RDY conditions.
+  ###
+  constructor: (@maxInFlight, @maxBackoffDuration, @lowRdyTimeout=1.5) ->
     super
       autostart: true,
       initial_state: 'ZERO'
       sync_goto: true
 
-    @backoffTimer = new BackoffTimer 0, maxBackoffDuration
+    @id = ReaderRdy.getId()
+    @backoffTimer = new BackoffTimer 0, @maxBackoffDuration
     @backoffId = null
     @balanceId = null
     @connections = []
     @roundRobinConnections = new RoundRobinList []
+
+  close: ->
+    clearTimeout @backoffId
+    clearTimeout @balanceId
+
+  log: (message = '') ->
+    StateChangeLogger.log 'ReaderRdy', @current_state_name, @id, message
 
   isStarved: ->
     return false if _.isEmpty @connections
@@ -207,7 +223,7 @@ class ReaderRdy extends NodeState
     connectionRdy = @createConnectionRdy conn
 
     conn.on NSQDConnection.CLOSED, =>
-      @removeConnection conn
+      @removeConnection connectionRdy
       @balance()
 
     conn.on NSQDConnection.FINISHED, =>
@@ -223,9 +239,9 @@ class ReaderRdy extends NodeState
 
       @raise 'success'
 
-    conn.on NSQDConnection.REQUEUE, =>
-      # Since there isn't a guaranteed order for the REQUEUE and BACKOFF
-      # events, handle the case when we handle BACKOFF and then REQUEUE.
+    conn.on NSQDConnection.REQUEUED, =>
+      # Since there isn't a guaranteed order for the REQUEUED and BACKOFF
+      # events, handle the case when we handle BACKOFF and then REQUEUED.
       if @current_state_name isnt 'BACKOFF'
         connectionRdy.bump()
 
@@ -269,8 +285,9 @@ class ReaderRdy extends NodeState
     @backoffId = setTimeout onTimeout, @backoffTimer.getInterval() * 1000
 
   inFlight: ->
-    @connections.reduce (previous, conn) ->
+    add = (previous, conn) ->
       previous + conn.inFlight
+    @connections.reduce add, 0
 
   ###
   Evenly or fairly distributes RDY count based on the maxInFlight across
@@ -288,23 +305,29 @@ class ReaderRdy extends NodeState
     RDY count to another connection.
     ###
 
+    StateChangeLogger.log 'ReaderRdy', @current_state_name, @id, 'balance'
+
+    if @balanceId?
+      clearTimeout @balanceId
+      @balanceId = null
+
     max = if @current_state_name is 'TRY_ONE' then 1 else @maxInFlight
     perConnectionMax = Math.floor max / @connections.length
 
     # Low RDY and try conditions
     if perConnectionMax is 0
-      # All connections have a max of 1 in low RDY situations.
+      # Backoff on all connections. In-flight messages from connections
+      # will still be processed.
       for c in @connections
-        c.setConnectionRdyMax 1
+        c.backoff()
 
       # Distribute available RDY count to the connections next in line.
       for c in @roundRobinConnections.next max - @inFlight()
+        c.setConnectionRdyMax 1
         c.bump()
-        c.backoffOnIdle 1000
 
       # Rebalance periodically. Needed when no messages are received.
-      clearTimeout @balanceId if @balanceId
-      @balanceId = setTimeout (=> @balance()), 1500
+      @balanceId = setTimeout @balance.bind(this), @lowRdyTimeout * 1000
 
     else
       rdyRemainder = @maxInFlight % @connectionsLength
@@ -318,10 +341,8 @@ class ReaderRdy extends NodeState
           rdyRemainder -= 1
 
         @connections[i].setConnectionRdyMax connMax
+        @connections[i].bump()
 
-  log: (message = '') ->
-    msg = "#{@current_state_name} #{message}"
-    StateChangeLogger.log 'ReaderRdy', null, msg
 
   ###
   The following events results in transitions in the ReaderRdy state machine:

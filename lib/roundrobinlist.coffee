@@ -16,6 +16,9 @@ class RoundRobinList
     @lst = lst[..]
     @index = 0
 
+  length: ->
+    @lst.length
+
   add: (item) ->
     @lst.push item
 

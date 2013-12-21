@@ -1,4 +1,3 @@
-assert = require 'assert'
 net = require 'net'
 os = require 'os'
 {EventEmitter} = require 'events'
@@ -73,9 +72,9 @@ class NSQDConnection extends EventEmitter
     conn: null                   # Socket connection to NSQD
     id: null                     # Id that comes from the connection local port
 
-  log: (message='') ->
-    msg = "#{@statemachine.current_state_name} #{message}"
-    StateChangeLogger.log 'NSQDConnection', @id, msg
+  log: (message) ->
+    StateChangeLogger.log 'NSQDConnection', @statemachine.current_state_name,
+      @id, message
 
   connect: ->
     # Using nextTick so that clients of Reader can register event listeners
@@ -148,7 +147,7 @@ class ConnectionState extends NodeState
       initial_state: 'CONNECTED'
       sync_goto: true
 
-  log: (message='') ->
+  log: (message) ->
     @conn.log message
 
   states:

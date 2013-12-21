@@ -7,23 +7,36 @@ class StateChangeLogger
   constructor: (@storeLogs = false, @debug = false) ->
     @logs = []
 
-  log: (component, id, description) ->
-    timestamp = Date.now()
-    args = [timestamp, component, id, description]
+  log: (component, state, id, message) ->
+    args =
+      timestamp: Date.now()
+      component: component
+      state: state
+      id: id
+      message: message
 
     if @storeLogs
       @logs.push args
     if @debug
-      console.log @format args...
+      console.log @format args
 
-  format: (timestamp, component, id, description) ->
-    ts = moment timestamp
+  format: (logEntry) ->
+    ts = moment logEntry.timestamp
     time = ts.format 'YYYY/MM/DD HH:mm:ss'
 
-    if id?
-      "#{time} #{component}(#{id}): #{description}"
+    if logEntry.id?
+      prefix = "#{time} #{logEntry.component}(#{logEntry.id})"
     else
-      "#{time} #{component}: #{description}"
+      prefix = "#{time} #{logEntry.component}"
+
+    if logEntry.state?
+      "#{prefix} #{logEntry.state}: #{logEntry.message}"
+    else
+      "#{prefix}: #{logEntry.message}"
+
+  print: ->
+    for entry in @logs
+      console.log @format entry
 
 # Expose singleton instance
 module.exports = new StateChangeLogger()
