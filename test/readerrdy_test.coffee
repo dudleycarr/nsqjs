@@ -14,16 +14,54 @@ Message = require '../lib/message'
 {ReaderRdy, ConnectionRdy} = require '../lib/readerrdy'
 StateChangeLogger = require '../lib/logging'
 
+
+class StubNSQDConnection extends EventEmitter
+  constructor: (@nsqdHost, @nsqdPort, @topic, @channel, @requeueDelay,
+    @heartbeatInterval) ->
+    @conn =
+      localPort: 1
+    @maxRdyCount = 2500
+    @msgTimeout = 60 * 1000
+    @maxMsgTimeout = 15 * 60 * 1000
+ 
+  connect: ->
+    # Empty
+  setRdy: (rdyCount) ->
+    # Empty
+  createMessage: (msgId, msgTimestamp, attempts, msgBody) ->
+
+    msgComponents = [msgId, msgTimestamp, attempts, msgBody]
+    msgArgs = msgComponents.concat [@requeueDelay, @msgTimeout, @maxMsgTimeout]
+    msg = new Message msgArgs...
+
+    msg.on Message.RESPOND, (responseType, wireData) =>
+      if responseType is Message.FINISH
+        StateChangeLogger.log 'NSQDConnection', null, @conn.localPort,
+          'msg finished'
+        @emit NSQDConnection.FINISHED
+      else if responseType is Message.REQUEUE
+        StateChangeLogger.log 'NSQDConnection', null, @conn.localPort,
+          'msg requeued'
+        @emit NSQDConnection.REQUEUED
+    msg.on Message.BACKOFF, =>
+      @emit NSQDConnection.BACKOFF
+
+    StateChangeLogger.log 'NSQDConnection', 'WAIT_FOR', '1',
+      "message (#{msgId})"
+    @emit NSQDConnection.MESSAGE, msg
+    msg
+
+createNSQDConnection = (id) ->
+  conn = new StubNSQDConnection 'localhost', '4151', 'test', 'default', 60, 30
+  conn.conn.localPort = id
+  conn
+
+
 describe 'ConnectionRdy', ->
   [conn, spy, cRdy] = [null, null, null]
 
   beforeEach ->
-    conn =
-      conn:
-        localPort: 1
-      on: (eventName, f) ->
-      setRdy: (count) ->
-      maxRdyCount: 100
+    conn = createNSQDConnection 1
     spy = sinon.spy conn, 'setRdy'
     cRdy = new ConnectionRdy conn
     cRdy.start()
@@ -94,7 +132,7 @@ describe 'ConnectionRdy', ->
 
     expect(spy.lastCall.args[0]).is.eql 0
 
-  it 'should reduce RDY when new connection RDY max is lower', ->
+  it 'should raise RDY when new connection RDY max is lower', ->
     cRdy.setConnectionRdyMax 3
     cRdy.bump()
     cRdy.setConnectionRdyMax 5
@@ -102,7 +140,7 @@ describe 'ConnectionRdy', ->
     expect(cRdy.maxConnRdy).is.eql 5
     expect(spy.lastCall.args[0]).is.eql 5
 
-  it 'should raise RDY when new connection RDY max is higher', ->
+  it 'should reduce RDY when new connection RDY max is higher', ->
     cRdy.setConnectionRdyMax 3
     cRdy.bump()
     cRdy.setConnectionRdyMax 2
@@ -110,47 +148,26 @@ describe 'ConnectionRdy', ->
     expect(cRdy.maxConnRdy).is.eql 2
     expect(spy.lastCall.args[0]).is.eql 2
 
+  it 'should update RDY when 75% of previous RDY is consumed', ->
+    cRdy.setConnectionRdyMax 10
+    cRdy.bump()
 
-class StubNSQDConnection extends EventEmitter
-  constructor: (@nsqdHost, @nsqdPort, @topic, @channel, @requeueDelay,
-    @heartbeatInterval) ->
-    @conn =
-      localPort: 1
-    @maxRdyCount = 2500
-    @msgTimeout = 60 * 1000
-    @maxMsgTimeout = 15 * 60 * 1000
- 
-  connect: ->
-    # Empty
-  setRdy: (rdyCount) ->
-    # Empty
-  createMessage: (msgId, msgTimestamp, attempts, msgBody) ->
+    expect(spy.firstCall.args[0]).is.eql 10
 
-    msgComponents = [msgId, msgTimestamp, attempts, msgBody]
-    msgArgs = msgComponents.concat [@requeueDelay, @msgTimeout, @maxMsgTimeout]
-    msg = new Message msgArgs...
+    for i in [1..7]
+      msg = conn.createMessage "#{i}", Date.now(), 0, "Message #{i}"
+      msg.finish()
+      cRdy.bump()
 
-    msg.on Message.RESPOND, (responseType, wireData) =>
-      if responseType is Message.FINISH
-        StateChangeLogger.log 'NSQDConnection', null, @conn.localPort,
-          'msg finished'
-        @emit NSQDConnection.FINISHED
-      else if responseType is Message.REQUEUE
-        StateChangeLogger.log 'NSQDConnection', null, @conn.localPort,
-          'msg requeued'
-        @emit NSQDConnection.REQUEUED
-    msg.on Message.BACKOFF, =>
-      @emit NSQDConnection.BACKOFF
+    expect(spy.callCount).is.eql 1
 
-    StateChangeLogger.log 'NSQDConnection', 'WAIT_FOR', '1',
-      "message (#{msgId})"
-    @emit NSQDConnection.MESSAGE, msg
-    msg
+    msg = conn.createMessage '8', Date.now(), 0, 'Message 8'
+    msg.finish()
+    cRdy.bump()
 
-createNSQDConnection = (id) ->
-  conn = new StubNSQDConnection 'localhost', '4151', 'test', 'default', 60, 30
-  conn.conn.localPort = id
-  conn
+    expect(spy.callCount).is.eql 2
+    expect(spy.lastCall.args[0]).is.eql 10
+
 
 ###
 Helper functions for dealing with StateChangeLogger entries.
