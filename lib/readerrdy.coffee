@@ -33,9 +33,10 @@ class ConnectionRdy extends EventEmitter
   @STATE_CHANGE: 'statechange'
 
   constructor: (@conn) ->
-    @maxConnRdy = 0
-    @inFlight = 0
-    @lastRdySent = 0
+    @maxConnRdy = 0      # The absolutely maximum the RDY count can be per conn.
+    @inFlight = 0        # The num. messages currently in-flight for this conn.
+    @lastRdySent = 0     # The RDY value last sent to the server.
+    @availableRdy = 0    # The RDY count remaining on the server for this conn.
     @statemachine = new ConnectionRdyState this
 
     @conn.on NSQDConnection.ERROR, (err) =>
@@ -44,6 +45,7 @@ class ConnectionRdy extends EventEmitter
       clearTimeout @idleId if @idleId?
       @idleId = null
       @inFlight += 1
+      @availableRdy -= 1
     @conn.on NSQDConnection.FINISHED, =>
       @inFlight -= 1
     @conn.on NSQDConnection.REQUEUED, =>
@@ -77,8 +79,11 @@ class ConnectionRdy extends EventEmitter
 
   setRdy: (rdyCount) ->
     @log "RDY #{rdyCount}"
-    @conn.setRdy rdyCount if 0 <= rdyCount <= @maxConnRdy
-    @lastRdySent = rdyCount
+    if rdyCount < 0 or rdyCount > @maxConnRdy
+      return
+
+    @conn.setRdy rdyCount
+    @availableRdy = @lastRdySent = rdyCount
 
   log: (message = '') ->
     StateChangeLogger.log 'ConnectionRdy', @statemachine.current_state_name,
@@ -125,7 +130,8 @@ class ConnectionRdyState extends NodeState
       Enter: ->
         @raise 'bump'
       bump: ->
-        @connRdy.setRdy @connRdy.maxConnRdy
+        if @connRdy.availableRdy <= @connRdy.lastRdySent * 0.25
+          @connRdy.setRdy @connRdy.maxConnRdy
       backoff: ->
         @goto 'BACKOFF'
       adjustMax: ->
@@ -266,12 +272,11 @@ class ReaderRdy extends NodeState
       @goto 'ZERO'
 
   bump: ->
-    # RDY 1 to each connection to test the waters.
     for conn in @connections
       conn.bump()
 
   try: ->
-    @connections[0].bump()
+    @roundRobinConnections.next()
 
   backoff: ->
     @backoffTimer.failure()
@@ -354,6 +359,8 @@ class ReaderRdy extends NodeState
   ###
   states:
     ZERO:
+      Enter: ->
+        clearTimeout @backoffId if @backoffId
       backoff: -> # No-op
       success: -> # No-op
       try: ->     # No-op

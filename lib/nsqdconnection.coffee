@@ -236,7 +236,7 @@ class ConnectionState extends NodeState
   transitions:
     '*':
       '*': (data, callback) ->
-        @log()
+        @log ''
         callback data
 
       CONNECTED: (data, callback) ->
