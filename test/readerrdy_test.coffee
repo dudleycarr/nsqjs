@@ -383,11 +383,6 @@ describe 'ReaderRdy', ->
         expect(readerRdy.isLowRdy()).is.eql false
         expect(readerRdy.balanceId).is.null
 
-        if readerRdy.connections[0].lastRdySent isnt 1
-          StateChangeLogger.print()
-          console.log readerRdy.connections
-          console.log readerRdy.roundRobinConnections
-
         expect(readerRdy.connections[0].lastRdySent).is.eql 1
         done()
 
@@ -495,7 +490,7 @@ describe 'ReaderRdy', ->
 
     it 'should recover losing a connection with a message in-flight', (done) ->
       ###
-      # Detailed description:
+      Detailed description:
       1. Connect to 5 nsqds and add them to the ReaderRdy
       2. When the 1st connection has the shared RDY count, it receives a
          message.
@@ -561,3 +556,103 @@ describe 'ReaderRdy', ->
       # We have to wait a small period of time for log events to occur since the
       # `balance` call is invoked perdiocally.
       setTimeout sendOnRdy, 10
+
+  describe 'try', ->
+    it 'should on completion of backoff attempt a single connection', (done) ->
+      ###
+      Detailed description:
+      1. Create ReaderRdy with connections to 5 nsqds.
+      2. Generate a message from an nsqd that causes a backoff.
+      3. Verify that all the nsqds are in backoff mode.
+      4. At the end of the backoff period, verify that only one ConnectionRdy
+         is in the try one state and the others are still in backoff.
+      ###
+
+      # Set to true to see the debug the test.
+      StateChangeLogger.debug = false
+
+      # Shortening the periodica `balance` calls to every 10ms. Changing the
+      # max backoff duration to 1 sec.
+      readerRdy = new ReaderRdy 100, 1, 0.01
+
+      connections = for i in [1..5]
+        createNSQDConnection i
+
+      for conn in connections
+        readerRdy.addConnection conn
+        conn.emit NSQDConnection.SUBSCRIBED
+
+      msg = connections[0].createMessage "1", Date.now(), 0,
+        'Message causing a backoff'
+      msg.requeue()
+
+      checkInBackoff = ->
+        for connRdy in readerRdy.connections
+          expect(connRdy.statemachine.current_state_name).is.eql 'BACKOFF'
+
+      setTimeout checkInBackoff, 0
+
+      afterBackoff = ->
+        states = for connRdy in readerRdy.connections
+          connRdy.statemachine.current_state_name
+
+        ones = (s for s in states when s is 'ONE')
+        backoffs = (s for s in states when s is 'BACKOFF')
+
+        expect(ones).to.have.length 1
+        expect(backoffs).to.have.length 4
+        done()
+        
+      delay = readerRdy.backoffTimer.getInterval() + 100
+      setTimeout afterBackoff, delay * 1000
+
+    it 'should after backoff with a successful message go to MAX', (done) ->
+      ###
+      Detailed description:
+      1. Create ReaderRdy with connections to 5 nsqds.
+      2. Generate a message from an nsqd that causes a backoff.
+      3. At the end of backoff, generate a message that will succeed.
+      4. Verify that ReaderRdy is in MAX and ConnectionRdy instances are in
+         either ONE or MAX. At least on ConnectionRdy should be in MAX as well.
+      ###
+
+      # Set to true to see the debug the test.
+      StateChangeLogger.debug = false
+
+      # Shortening the periodica `balance` calls to every 10ms. Changing the
+      # max backoff duration to 1 sec.
+      readerRdy = new ReaderRdy 100, 1, 0.01
+
+      connections = for i in [1..5]
+        createNSQDConnection i
+
+      for conn in connections
+        readerRdy.addConnection conn
+        conn.emit NSQDConnection.SUBSCRIBED
+
+      msg = connections[0].createMessage "1", Date.now(), 0,
+        'Message causing a backoff'
+      msg.requeue()
+
+      afterBackoff = ->
+        [connRdy] = for connRdy in readerRdy.connections
+          if connRdy.statemachine.current_state_name is 'ONE'
+            connRdy
+
+        msg = connRdy.conn.createMessage "1", Date.now(), 0, 'Success'
+        msg.finish()
+
+        verifyMax = ->
+          states = for connRdy in readerRdy.connections
+            connRdy.statemachine.current_state_name
+
+          max = (s for s in states when s in ['ONE', 'MAX'])
+
+          expect(max).to.have.length 5
+          expect(states).to.contain 'MAX'
+          done()
+
+        setTimeout verifyMax, 0
+        
+      delay = readerRdy.backoffTimer.getInterval() + 100
+      setTimeout afterBackoff, delay * 1000

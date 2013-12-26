@@ -276,7 +276,7 @@ class ReaderRdy extends NodeState
       conn.bump()
 
   try: ->
-    @roundRobinConnections.next()
+    @balance()
 
   backoff: ->
     @backoffTimer.failure()
