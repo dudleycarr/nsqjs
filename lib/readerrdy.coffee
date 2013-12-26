@@ -85,7 +85,7 @@ class ConnectionRdy extends EventEmitter
     @conn.setRdy rdyCount
     @availableRdy = @lastRdySent = rdyCount
 
-  log: (message = '') ->
+  log: (message) ->
     StateChangeLogger.log 'ConnectionRdy', @statemachine.current_state_name,
       @name(), message
 
@@ -98,7 +98,7 @@ class ConnectionRdyState extends NodeState
       initial_state: 'INIT'
       sync_goto: true
 
-  log: (message = '') ->
+  log: (message) ->
     @connRdy.log message
 
   states:
@@ -141,7 +141,7 @@ class ConnectionRdyState extends NodeState
   transitions:
     '*':
       '*': (data, callback) ->
-        @log()
+        @log ''
         callback data
         @connRdy.emit ConnectionRdy.STATE_CHANGE
 
@@ -212,7 +212,7 @@ class ReaderRdy extends NodeState
     clearTimeout @backoffId
     clearTimeout @balanceId
 
-  log: (message = '') ->
+  log: (message) ->
     StateChangeLogger.log 'ReaderRdy', @current_state_name, @id, message
 
   isStarved: ->
@@ -394,7 +394,7 @@ class ReaderRdy extends NodeState
   transitions:
     '*':
       '*': (data, callback) ->
-        @log()
+        @log ''
         callback data
 
 
