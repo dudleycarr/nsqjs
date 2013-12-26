@@ -4,7 +4,7 @@ should    = chai.should()
 sinon     = require 'sinon'
 sinonChai = require 'sinon-chai'
 
-chai.use sinonChai 
+chai.use sinonChai
 
 FrameBuffer = require '../lib/framebuffer.coffee'
 wire = require '../lib/wire'

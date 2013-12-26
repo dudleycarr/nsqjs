@@ -1,4 +1,3 @@
-assert = require 'assert'
 net = require 'net'
 os = require 'os'
 {EventEmitter} = require 'events'
@@ -9,6 +8,7 @@ NodeState = require 'node-state'
 FrameBuffer = require './framebuffer'
 Message = require './message'
 wire = require './wire'
+StateChangeLogger = require './logging'
 
 # NSQDConnection is a reader connection to a nsqd instance. It manages all
 # aspects of the nsqd connection with the exception of the RDY count which
@@ -19,7 +19,7 @@ wire = require './wire'
 #
 # Usage:
 #
-# c = new NSQDConnection '127.0.0.1', 4150, 'test', 'default', 100, 30
+# c = new NSQDConnection '127.0.0.1', 4150, 'test', 'default', 60, 30
 #
 # c.on NSQDConnection.MESSAGE, (msg) ->
 #   console.log "Callback [message]: #{msg.attempts}, #{msg.body.toString()}"
@@ -59,29 +59,36 @@ class NSQDConnection extends EventEmitter
   @REQUEUED: 'requeued'
   @SUBSCRIBED: 'subscribed'
 
-  constructor: (@nsqdHost, @nsqdPort, @topic, @channel, @maxInFlight=1,
-    @heartbeatInterval=30) ->
+  constructor: (@nsqdHost, @nsqdPort, @topic, @channel, @requeueDelay,
+    @heartbeatInterval) ->
     @frameBuffer = new FrameBuffer()
     @statemachine = new ConnectionState @
 
-    rdyCount: 0                  # RDY value given to the conn by the Reader
     maxRdyCount: 0               # Max RDY value for a conn to this NSQD
     msgTimeout: 0                # Timeout time in milliseconds for a Message
     maxMsgTimeout: 0             # Max time to process a Message in milliseconds
-    inFlight: 0                  # No. messages processed by this conn.
     lastMessageTimestamp: null   # Timestamp of last message received
     lastReceivedTimestamp: null  # Timestamp of last data received
     conn: null                   # Socket connection to NSQD
+    id: null                     # Id that comes from the connection local port
+
+  log: (message) ->
+    StateChangeLogger.log 'NSQDConnection', @statemachine.current_state_name,
+      @id, message
 
   connect: ->
-    callback = _.bind @statemachine.start, @statemachine
-    @conn = net.connect @nsqdPort, @nsqdHost, callback
-    @conn.on 'data', (data) =>
-      @receiveData data
-    @conn.on 'error', (err) =>
-      @statemachine.goto 'ERROR', err
-    @conn.on 'close', =>
-      @statemachine.raise 'close'
+    # Using nextTick so that clients of Reader can register event listeners
+    # right after calling connect.
+    process.nextTick =>
+      @conn = net.connect @nsqdPort, @nsqdHost, =>
+        @id = @conn.localPort
+        @statemachine.start()
+      @conn.on 'data', (data) =>
+        @receiveData data
+      @conn.on 'error', (err) =>
+        @statemachine.goto 'ERROR', err
+      @conn.on 'close', =>
+        @statemachine.raise 'close'
 
   setRdy: (rdyCount) ->
     @statemachine.raise 'ready', rdyCount
@@ -99,8 +106,6 @@ class NSQDConnection extends EventEmitter
         when wire.FRAME_TYPE_ERROR
           @statemachine.goto 'ERROR', payload
         when wire.FRAME_TYPE_MESSAGE
-          @rdyCount -= 1
-          @inFlight += 1
           @lastMessageTimestamp = @lastReceivedTimestamp
           @statemachine.raise 'message', @createMessage payload
 
@@ -112,11 +117,12 @@ class NSQDConnection extends EventEmitter
 
   createMessage: (msgPayload) ->
     msgComponents = wire.unpackMessage msgPayload
-    msg = new Message msgComponents..., @msgTimeout, @maxMsgTimeout
+    msg = new Message msgComponents..., @requeueDelay, @msgTimeout,
+      @maxMsgTimeout
 
     msg.on Message.RESPOND, (responseType, wireData) =>
       @conn.write wireData
-      @inFlight -= 1 if responseType in [Message.FINISH, Message.REQUEUE]
+
       if responseType is Message.FINISH
         @emit NSQDConnection.FINISHED
       else if responseType is Message.REQUEUE
@@ -140,6 +146,9 @@ class ConnectionState extends NodeState
       autostart: false,
       initial_state: 'CONNECTED'
       sync_goto: true
+
+  log: (message) ->
+    @conn.log message
 
   states:
     CONNECTED:
@@ -201,8 +210,6 @@ class ConnectionState extends NodeState
         # RDY count for this nsqd cannot exceed the nsqd configured
         # max rdy count.
         rdyCount = @conn.maxRdyCount if rdyCount > @conn.maxRdyCount
-
-        @conn.rdyCount = rdyCount
         @conn.write wire.ready rdyCount
 
       close: ->
@@ -229,7 +236,16 @@ class ConnectionState extends NodeState
   transitions:
     '*':
       '*': (data, callback) ->
+        @log ''
         callback data
+
+      CONNECTED: (data, callback) ->
+        @log "#{@conn.nsqdHost}:#{@conn.nsqdPort}"
+        callback data
+
+      ERROR: (err, callback) ->
+        @log "#{err}"
+        callback err
 
 
 module.exports =

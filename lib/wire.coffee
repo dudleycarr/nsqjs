@@ -22,7 +22,7 @@ exports.unpackMessage = (data) ->
   # BigNumber to represent the timestamp in a workable way.
   timestamp = new BigNumber timestamp, 16
 
-  attempts = data.readInt16BE 8 
+  attempts = data.readInt16BE 8
   id = data[10...26].toString()
   body = data[26..]
   [id, timestamp, attempts, body]
@@ -53,8 +53,8 @@ command = (cmd, body) ->
   Buffer.concat buffers
 
 exports.subscribe = (topic, channel) ->
-  assert validTopicName topic
-  assert validChannelName channel
+  assert validTopicName topic, 'Invalid topic name'
+  assert validChannelName channel, 'Invalid channel name'
   command 'SUB', null, topic, channel
 
 exports.identify = (data) ->
@@ -72,22 +72,22 @@ exports.identify = (data) ->
   unexpectedKeys = _.filter _.keys(data), (k) ->
     k not in validIdentifyKeys
   console.log unexpectedKeys if unexpectedKeys.length > 0
-  assert unexpectedKeys.length is 0
+  assert unexpectedKeys.length is 0, 'Unexpected IDENTIFY keys'
 
   command 'IDENTIFY', JSON_stringify data
 
 exports.ready = (count) ->
-  assert _.isNumber count
-  assert count >= 0
+  assert _.isNumber count, "RDY count (#{count}) is not a number"
+  assert count >= 0, "RDY count (#{count}) is not positive"
   command 'RDY', null, count.toString()
 
 exports.finish = (id) ->
-  assert Buffer.byteLength(id) <= 16
+  assert Buffer.byteLength(id) <= 16, "FINISH invalid id (#{id})"
   command 'FIN', null, id
 
 exports.requeue = (id, timeMs=0) ->
-  assert Buffer.byteLength(id) <= 16
-  assert _.isNumber timeMs
+  assert Buffer.byteLength(id) <= 16, "REQUEUE invalid id (#{id})"
+  assert _.isNumber timeMs, "REQUEUE delay time is invalid (#{timeMs})"
 
   parameters = ['REQ', null, id, timeMs]
   command.apply null, parameters
@@ -102,7 +102,7 @@ exports.pub = (topic, data) ->
   command 'PUB', data, topic
 
 exports.mpub = (topic, data) ->
-  assert _.isArray data
+  assert _.isArray data, "MPUB requires an array of message"
   messages = _.map data, (message) ->
     buffer = new Buffer(4 + message.length)
     buffer.writeInt32BE message.length, 0

@@ -9,29 +9,29 @@ module.exports = (grunt) ->
           bare: true
           sourceMap: true
         expand: true
-        src: ["lib/**/*.coffee"]
-        dest: "dest"
-        ext: ".js"
+        src: ['lib/**/*.coffee']
+        dest: 'dest'
+        ext: '.js'
 
       test:
         options:
           bare: true
         expand: true
-        src: ["test/**/*.coffee"]
-        dest: "test"
-        ext: ".js"
+        src: ['test/**/*.coffee']
+        dest: 'test'
+        ext: '.js'
 
     watch:
       lib:
-        files: "<%= coffee.lib.src %>"
-        tasks: ["coffee:lib"]
+        files: '<%= coffee.lib.src %>'
+        tasks: ['coffee:lib']
 
       test:
         files: [
-          "<%= coffee.lib.src %>"
-          "<%= coffee.test.src %>"
+          '<%= coffee.lib.src %>'
+          '<%= coffee.test.src %>'
         ]
-        tasks: ["coffee", "test"]
+        tasks: ['coffee', 'test']
 
     simplemocha:
       all:
@@ -42,11 +42,16 @@ module.exports = (grunt) ->
           ui: 'bdd'
           compilers: 'coffee:coffee-script'
 
+    coffeelint:
+      lib: ['*.coffee', 'lib/*.coffee', 'test/*.coffee', 'examples/.*coffee']
+
 
   # These plugins provide necessary tasks.
-  grunt.loadNpmTasks "grunt-contrib-coffee"
-  grunt.loadNpmTasks "grunt-contrib-watch"
-  grunt.loadNpmTasks "grunt-simple-mocha"
+  grunt.loadNpmTasks 'grunt-contrib-coffee'
+  grunt.loadNpmTasks 'grunt-contrib-watch'
+  grunt.loadNpmTasks 'grunt-simple-mocha'
+  grunt.loadNpmTasks 'grunt-coffeelint'
 
-  grunt.registerTask "default", ["watch"]
-  grunt.registerTask "test", ["simplemocha"]
+  grunt.registerTask 'default', ['watch']
+  grunt.registerTask 'test', ['simplemocha']
+  grunt.registerTask 'lint', ['coffeelint']
