@@ -21,8 +21,7 @@ describe "nsq wire", ->
   it 'should construct an identity message with unicode', ->
     matchCommand wire.identify,
       [{"long_id": "w\u00c3\u00a5\u00e2\u0080\u00a0"}],
-      'IDENTIFY\n\u0000\u0000\u0000-{"long_id":"w\\u00c3\\u00a5\\u00e2' +
-        '\\u0080\\u00a0"}'
+      'IDENTIFY\n\u0000\u0000\u0000-{"long_id":"w\\u00c3\\u00a5\\u00e2\\u0080\\u00a0"}'
 
   it "should subscribe to a topic and channel", ->
     matchCommand wire.subscribe, ['test_topic', 'test_channel'],
