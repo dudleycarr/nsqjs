@@ -1,0 +1,215 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/local/Cellar/node/0.10.24/bin/node',
+1 verbose cli   '/usr/local/bin/npm',
+1 verbose cli   'publish',
+1 verbose cli   '.' ]
+2 info using npm@1.3.21
+3 info using node@v0.10.24
+4 verbose publish [ '.' ]
+5 verbose cache add [ '.', null ]
+6 verbose cache add name=undefined spec="." args=[".",null]
+7 verbose parsed url { protocol: null,
+7 verbose parsed url   slashes: null,
+7 verbose parsed url   auth: null,
+7 verbose parsed url   host: null,
+7 verbose parsed url   port: null,
+7 verbose parsed url   hostname: null,
+7 verbose parsed url   hash: null,
+7 verbose parsed url   search: null,
+7 verbose parsed url   query: null,
+7 verbose parsed url   pathname: '.',
+7 verbose parsed url   path: '.',
+7 verbose parsed url   href: '.' }
+8 silly lockFile 3a52ce78- .
+9 verbose lock . /Users/dudley/.npm/3a52ce78-.lock
+10 verbose tar pack [ '/var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/tmp.tgz',
+10 verbose tar pack   '.' ]
+11 verbose tarball /var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/tmp.tgz
+12 verbose folder .
+13 info prepublish nsqjs@0.1.0
+14 silly lockFile 1f1177db-tar tar://.
+15 verbose lock tar://. /Users/dudley/.npm/1f1177db-tar.lock
+16 silly lockFile 6ce96508-03099-0-7675312487408519-tmp-tgz tar:///var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/tmp.tgz
+17 verbose lock tar:///var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/tmp.tgz /Users/dudley/.npm/6ce96508-03099-0-7675312487408519-tmp-tgz.lock
+18 silly lockFile 1f1177db-tar tar://.
+19 silly lockFile 1f1177db-tar tar://.
+20 silly lockFile 6ce96508-03099-0-7675312487408519-tmp-tgz tar:///var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/tmp.tgz
+21 silly lockFile 6ce96508-03099-0-7675312487408519-tmp-tgz tar:///var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/tmp.tgz
+22 verbose tar unpack /var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/tmp.tgz
+23 silly lockFile a618985e-03099-0-7675312487408519-package tar:///var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/package
+24 verbose lock tar:///var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/package /Users/dudley/.npm/a618985e-03099-0-7675312487408519-package.lock
+25 silly lockFile 6ce96508-03099-0-7675312487408519-tmp-tgz tar:///var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/tmp.tgz
+26 verbose lock tar:///var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/tmp.tgz /Users/dudley/.npm/6ce96508-03099-0-7675312487408519-tmp-tgz.lock
+27 silly gunzTarPerm modes [ '755', '644' ]
+28 silly gunzTarPerm extractEntry package.json
+29 silly gunzTarPerm modified mode [ 'package.json', 436, 420 ]
+30 silly gunzTarPerm extractEntry .npmignore
+31 silly gunzTarPerm modified mode [ '.npmignore', 436, 420 ]
+32 silly gunzTarPerm extractEntry README.md
+33 silly gunzTarPerm modified mode [ 'README.md', 436, 420 ]
+34 silly gunzTarPerm extractEntry LICENSE-MIT
+35 silly gunzTarPerm modified mode [ 'LICENSE-MIT', 436, 420 ]
+36 silly gunzTarPerm extractEntry test_reader.coffee
+37 silly gunzTarPerm modified mode [ 'test_reader.coffee', 436, 420 ]
+38 silly gunzTarPerm extractEntry async_test.coffee
+39 silly gunzTarPerm modified mode [ 'async_test.coffee', 436, 420 ]
+40 silly gunzTarPerm extractEntry examples/news.coffee
+41 silly gunzTarPerm modified mode [ 'examples/news.coffee', 436, 420 ]
+42 silly gunzTarPerm extractEntry examples/simpletest.coffee
+43 silly gunzTarPerm modified mode [ 'examples/simpletest.coffee', 436, 420 ]
+44 silly gunzTarPerm extractEntry examples/timeout.coffee
+45 silly gunzTarPerm modified mode [ 'examples/timeout.coffee', 436, 420 ]
+46 silly gunzTarPerm extractEntry index.coffee
+47 silly gunzTarPerm modified mode [ 'index.coffee', 436, 420 ]
+48 silly gunzTarPerm extractEntry .travis.yml
+49 silly gunzTarPerm modified mode [ '.travis.yml', 436, 420 ]
+50 silly gunzTarPerm extractEntry test_conn.coffee
+51 silly gunzTarPerm modified mode [ 'test_conn.coffee', 436, 420 ]
+52 silly gunzTarPerm extractEntry Gruntfile.coffee
+53 silly gunzTarPerm modified mode [ 'Gruntfile.coffee', 436, 420 ]
+54 silly gunzTarPerm extractEntry test/backofftimer_test.coffee
+55 silly gunzTarPerm modified mode [ 'test/backofftimer_test.coffee', 436, 420 ]
+56 silly gunzTarPerm extractEntry test/framebuffer_test.coffee
+57 silly gunzTarPerm modified mode [ 'test/framebuffer_test.coffee', 436, 420 ]
+58 silly gunzTarPerm extractEntry test/nsqdconnection_test.coffee
+59 silly gunzTarPerm modified mode [ 'test/nsqdconnection_test.coffee', 436, 420 ]
+60 silly gunzTarPerm extractEntry test/readerrdy_test.coffee
+61 silly gunzTarPerm modified mode [ 'test/readerrdy_test.coffee', 436, 420 ]
+62 silly gunzTarPerm extractEntry test/roundrobinlist_test.coffee
+63 silly gunzTarPerm modified mode [ 'test/roundrobinlist_test.coffee', 436, 420 ]
+64 silly gunzTarPerm extractEntry test/wire_test.coffee
+65 silly gunzTarPerm modified mode [ 'test/wire_test.coffee', 436, 420 ]
+66 silly gunzTarPerm extractEntry test.coffee
+67 silly gunzTarPerm modified mode [ 'test.coffee', 436, 420 ]
+68 silly gunzTarPerm extractEntry lib/nsqdconnection.coffee
+69 silly gunzTarPerm modified mode [ 'lib/nsqdconnection.coffee', 436, 420 ]
+70 silly gunzTarPerm extractEntry lib/backofftimer.coffee
+71 silly gunzTarPerm modified mode [ 'lib/backofftimer.coffee', 436, 420 ]
+72 silly gunzTarPerm extractEntry lib/logging.coffee
+73 silly gunzTarPerm modified mode [ 'lib/logging.coffee', 436, 420 ]
+74 silly gunzTarPerm extractEntry lib/message.coffee
+75 silly gunzTarPerm modified mode [ 'lib/message.coffee', 436, 420 ]
+76 silly gunzTarPerm extractEntry lib/wire.coffee
+77 silly gunzTarPerm modified mode [ 'lib/wire.coffee', 436, 420 ]
+78 silly gunzTarPerm extractEntry lib/nsq.coffee
+79 silly gunzTarPerm modified mode [ 'lib/nsq.coffee', 436, 420 ]
+80 silly gunzTarPerm extractEntry lib/framebuffer.coffee
+81 silly gunzTarPerm modified mode [ 'lib/framebuffer.coffee', 436, 420 ]
+82 silly gunzTarPerm extractEntry lib/reader.coffee
+83 silly gunzTarPerm modified mode [ 'lib/reader.coffee', 436, 420 ]
+84 silly gunzTarPerm extractEntry lib/readerrdy.coffee
+85 silly gunzTarPerm modified mode [ 'lib/readerrdy.coffee', 436, 420 ]
+86 silly gunzTarPerm extractEntry lib/roundrobinlist.coffee
+87 silly gunzTarPerm modified mode [ 'lib/roundrobinlist.coffee', 436, 420 ]
+88 silly gunzTarPerm extractEntry lib/writer.coffee
+89 silly gunzTarPerm modified mode [ 'lib/writer.coffee', 436, 420 ]
+90 silly lockFile a618985e-03099-0-7675312487408519-package tar:///var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/package
+91 silly lockFile a618985e-03099-0-7675312487408519-package tar:///var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/package
+92 silly lockFile 6ce96508-03099-0-7675312487408519-tmp-tgz tar:///var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/tmp.tgz
+93 silly lockFile 6ce96508-03099-0-7675312487408519-tmp-tgz tar:///var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/tmp.tgz
+94 verbose tar pack [ '/Users/dudley/.npm/nsqjs/0.1.0/package.tgz',
+94 verbose tar pack   '/var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/package' ]
+95 verbose tarball /Users/dudley/.npm/nsqjs/0.1.0/package.tgz
+96 verbose folder /var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/package
+97 silly lockFile a618985e-03099-0-7675312487408519-package tar:///var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/package
+98 verbose lock tar:///var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/package /Users/dudley/.npm/a618985e-03099-0-7675312487408519-package.lock
+99 silly lockFile 07ca5d79-dley-npm-nsqjs-0-1-0-package-tgz tar:///Users/dudley/.npm/nsqjs/0.1.0/package.tgz
+100 verbose lock tar:///Users/dudley/.npm/nsqjs/0.1.0/package.tgz /Users/dudley/.npm/07ca5d79-dley-npm-nsqjs-0-1-0-package-tgz.lock
+101 silly lockFile a618985e-03099-0-7675312487408519-package tar:///var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/package
+102 silly lockFile a618985e-03099-0-7675312487408519-package tar:///var/folders/3c/s35341yx57s2c0xj8spc7qww0000gp/T/npm-86834-XO8r1WlG/1388078903099-0.7675312487408519/package
+103 silly lockFile 07ca5d79-dley-npm-nsqjs-0-1-0-package-tgz tar:///Users/dudley/.npm/nsqjs/0.1.0/package.tgz
+104 silly lockFile 07ca5d79-dley-npm-nsqjs-0-1-0-package-tgz tar:///Users/dudley/.npm/nsqjs/0.1.0/package.tgz
+105 silly lockFile f3454632-s-dudley-npm-nsqjs-0-1-0-package /Users/dudley/.npm/nsqjs/0.1.0/package
+106 verbose lock /Users/dudley/.npm/nsqjs/0.1.0/package /Users/dudley/.npm/f3454632-s-dudley-npm-nsqjs-0-1-0-package.lock
+107 silly lockFile f3454632-s-dudley-npm-nsqjs-0-1-0-package /Users/dudley/.npm/nsqjs/0.1.0/package
+108 silly lockFile f3454632-s-dudley-npm-nsqjs-0-1-0-package /Users/dudley/.npm/nsqjs/0.1.0/package
+109 verbose tar unpack /Users/dudley/.npm/nsqjs/0.1.0/package.tgz
+110 silly lockFile a2e1c15d-s-dudley-npm-nsqjs-0-1-0-package tar:///Users/dudley/.npm/nsqjs/0.1.0/package
+111 verbose lock tar:///Users/dudley/.npm/nsqjs/0.1.0/package /Users/dudley/.npm/a2e1c15d-s-dudley-npm-nsqjs-0-1-0-package.lock
+112 silly lockFile 07ca5d79-dley-npm-nsqjs-0-1-0-package-tgz tar:///Users/dudley/.npm/nsqjs/0.1.0/package.tgz
+113 verbose lock tar:///Users/dudley/.npm/nsqjs/0.1.0/package.tgz /Users/dudley/.npm/07ca5d79-dley-npm-nsqjs-0-1-0-package-tgz.lock
+114 silly gunzTarPerm modes [ '755', '644' ]
+115 silly gunzTarPerm extractEntry package.json
+116 silly gunzTarPerm extractEntry .npmignore
+117 silly gunzTarPerm extractEntry README.md
+118 silly gunzTarPerm extractEntry LICENSE-MIT
+119 silly gunzTarPerm extractEntry test_reader.coffee
+120 silly gunzTarPerm extractEntry async_test.coffee
+121 silly gunzTarPerm extractEntry examples/news.coffee
+122 silly gunzTarPerm extractEntry examples/simpletest.coffee
+123 silly gunzTarPerm extractEntry examples/timeout.coffee
+124 silly gunzTarPerm extractEntry .travis.yml
+125 silly gunzTarPerm extractEntry lib/nsqdconnection.coffee
+126 silly gunzTarPerm extractEntry lib/backofftimer.coffee
+127 silly gunzTarPerm extractEntry lib/logging.coffee
+128 silly gunzTarPerm extractEntry lib/message.coffee
+129 silly gunzTarPerm extractEntry lib/nsq.coffee
+130 silly gunzTarPerm extractEntry lib/framebuffer.coffee
+131 silly gunzTarPerm extractEntry lib/reader.coffee
+132 silly gunzTarPerm extractEntry lib/readerrdy.coffee
+133 silly gunzTarPerm extractEntry lib/roundrobinlist.coffee
+134 silly gunzTarPerm extractEntry lib/wire.coffee
+135 silly gunzTarPerm extractEntry lib/writer.coffee
+136 silly gunzTarPerm extractEntry Gruntfile.coffee
+137 silly gunzTarPerm extractEntry test/backofftimer_test.coffee
+138 silly gunzTarPerm extractEntry test/framebuffer_test.coffee
+139 silly gunzTarPerm extractEntry test/nsqdconnection_test.coffee
+140 silly gunzTarPerm extractEntry test/readerrdy_test.coffee
+141 silly gunzTarPerm extractEntry test/roundrobinlist_test.coffee
+142 silly gunzTarPerm extractEntry test/wire_test.coffee
+143 silly gunzTarPerm extractEntry test.coffee
+144 silly gunzTarPerm extractEntry test_conn.coffee
+145 silly gunzTarPerm extractEntry index.coffee
+146 silly lockFile a2e1c15d-s-dudley-npm-nsqjs-0-1-0-package tar:///Users/dudley/.npm/nsqjs/0.1.0/package
+147 silly lockFile a2e1c15d-s-dudley-npm-nsqjs-0-1-0-package tar:///Users/dudley/.npm/nsqjs/0.1.0/package
+148 silly lockFile 07ca5d79-dley-npm-nsqjs-0-1-0-package-tgz tar:///Users/dudley/.npm/nsqjs/0.1.0/package.tgz
+149 silly lockFile 07ca5d79-dley-npm-nsqjs-0-1-0-package-tgz tar:///Users/dudley/.npm/nsqjs/0.1.0/package.tgz
+150 verbose chmod /Users/dudley/.npm/nsqjs/0.1.0/package.tgz 644
+151 verbose chown /Users/dudley/.npm/nsqjs/0.1.0/package.tgz [ 502, 20 ]
+152 silly lockFile 3a52ce78- .
+153 silly lockFile 3a52ce78- .
+154 silly publish { name: 'nsqjs',
+154 silly publish   description: 'NodeJS client for NSQ',
+154 silly publish   version: '0.1.0',
+154 silly publish   homepage: 'https://github.com/dudleycarr/nsqjs',
+154 silly publish   author: { name: 'Dudley Carr', email: 'dudley.carr@gmail.com' },
+154 silly publish   repository: { type: 'git', url: 'https://github.com/dudleycarr/nsqjs.git' },
+154 silly publish   bugs: { url: 'https://github.com/dudleycarr/nsqjs/issues' },
+154 silly publish   licenses:
+154 silly publish    [ { type: 'MIT',
+154 silly publish        url: 'https://github.com/dudleycarr/nsqjs/blob/master/LICENSE-MIT' } ],
+154 silly publish   main: 'lib/nsqjs',
+154 silly publish   engines: { node: '>= 0.10.0' },
+154 silly publish   scripts: { test: 'grunt test' },
+154 silly publish   devDependencies:
+154 silly publish    { 'grunt-contrib-coffee': '~0.7',
+154 silly publish      'grunt-contrib-watch': '~0.5.1',
+154 silly publish      'grunt-simple-mocha': '~0.4.0',
+154 silly publish      mocha: '~1.9.0',
+154 silly publish      sinon: '~1.7.3',
+154 silly publish      chai: '~1.7.2',
+154 silly publish      'sinon-chai': '~2.4.0',
+154 silly publish      grunt: '~0.4.1',
+154 silly publish      coffeelint: '~1.0.2',
+154 silly publish      'grunt-coffeelint': '0.0.8' },
+154 silly publish   keywords: [],
+154 silly publish   dependencies:
+154 silly publish    { 'node-state': '~1.4.1',
+154 silly publish      'node-int64': '~0.3.0',
+154 silly publish      underscore: '~1.5.2',
+154 silly publish      'bignumber.js': '~1.2.1',
+154 silly publish      moment: '~2.4.0' },
+154 silly publish   readme: 'nsqjs\n=====\nA NodeJS client for the [nsq](http://bitly.github.io/nsq/) client protocol. This implementation attempts to be\nfully compliant and maintain feature parity with the official Go ([go-nsq](https://github.com/bitly/go-nsq)) and Python ([pynsq](https://github.com/bitly/pynsq)) clients.\n\n[![Build Status](https://travis-ci.org/dudleycarr/nsqjs.png?branch=master)](https://travis-ci.org/dudleycarr/nsqjs)\n[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/dudleycarr/nsqjs/trend.png)](https://bitdeli.com/free "Bitdeli Badge")\n\nUsage\n-----\n\n### new Reader(topic, channel, options)\nThe topic and channel arguments are strings and must be specified. The options\nargument is optional. Below are the parameters that can be specified in the\noptions object.\n\n* ```maxInFlight: 1``` <br/>\n  The maximum number of messages to process at once. This value is shared between nsqd connections. It\'s highly recommended that this value is greater than the number of nsqd connections.\n* ```heartbeatInterval: 30``` <br/>\n  The frequency in seconds at which the nsqd will send heartbeats to this Reader.\n* ```maxBackoffDuration: 128``` <br/>\n  The maximum amount of time (seconds) the Reader will backoff for any single backoff\n  event.\n* ```maxRetries: 5``` <br/>\n  The number of times to a message can be requeued before it will be handed to the DISCARD handler and then automatically finished.\n* ```requeueDelay: 90``` <br/>\n  The default amount of time (seconds) a message requeued should be delayed by before being dispatched by nsqd.\n* ```nsqdTCPAddresses``` <br/>\n  A string or an array of string representing the host/port pair for nsqd instances.\n  <br/> For example: `[\'localhost:4151\']`\n* ```lookupdHTTPAddresses``` <br/>\n  A string or an array of strings representing the host/port pair of nsqlookupd instaces.\n  <br/> For example: `[\'localhost:4161\']`\n* ```lookupdPollInterval: 60``` <br/>\n  The frequency in seconds for querying lookupd instances.\n* ```lookupdPollJitter: 0.3``` <br/>\n  The jitter applied to the start of querying lookupd instances periodically.\n\nReader events are:\n\n* `Reader.MESSAGE`\n* `Reader.DISCARD`\n\nBoth events produce a Message object.\n\n### Message\nThe following properties and methods are available on Message objects produced by a Reader\ninstance.\n\n* `timestamp` <br/>\n  Numeric timestamp for the Message provided by nsqd.\n* `attempts` <br/>\n  The number of attempts that have been made to process this message.\n* `id` <br/>\n  The opaque string id for the Message provided by nsqd.\n* `hasResponded` <br/>\n  Boolean for whether or not a response has been sent.\n* `body` <br/>\n  The message payload as a Buffer object.\n* `json()` <br/>\n  Parses message payload as JSON and caches the result.\n* `timeUntilTimeout(hard=false)`: <br/>\n  Returns the amount of time until the message times out. If the hard argument\n  is provided, then it calculates the time until the hard timeout when nsqd\n  will requeue inspite of touch events.\n* `finish()` <br/>\n  Finish the message as successful.\n* `requeue(delay=null, backoff=true)`\n  The delay is in seconds. This is how long nsqd will hold on the message\n  before attempting it again. The backoff parameter indicates that we should\n  treat this as an error within this process and we need to backoff to recover.\n* `touch()` <br/>\n  Tell nsqd that you want extra time to process the message. It extends the\n  soft timeout by the normal timeout amount.\n\n\n### Simple example\n\nStart [nsqd](http://bitly.github.io/nsq/components/nsqd.html) and\n[nsqdlookupd](http://bitly.github.io/nsq/components/nsqlookupd.html)\n```bash\n# nsqdLookupd Listens on 4161 for HTTP requests\n$ nsqlookupd &\n$ nsqd &\n```\n\nSample CoffeeScript client:\n```coffee-script\nnsq = require \'nsqjs\'\n\ntopic = \'sample\'\nchannel = \'test_channel\'\noptions =\n  lookupdHTTPAddresses: \'127.0.0.1:4161\'\n\nreader = new nsq.Reader topic, channel, options\nreader.connect()\n\nreader.on nsq.Reader.MESSAGE, (msg) ->\n  console.log "Received message [#{msg.id}]: #{msg.body.toString()}"\n  msg.finish()\n```\n\nPublish a message to nsqd to be consumed by the sample client:\n```bash\n$ curl -d "it really tied the room together" http://localhost:4151/pub?topic=sample\n```\n\n### Example with message timeouts\n\nThis script simulates a message that takes a long time to process or at least\nlonger than the default message timeout. To ensure that the message doesn\'t\ntimeout while being processed, touch events are sent to keep it alive.\n\n```coffee-script\n{Reader} = require \'nsqjs\'\n\ntopic = \'sample\'\nchannel = \'test_channel\'\noptions =\n  lookupdHTTPAddresses: \'127.0.0.1:4161\'\n\nreader = new Reader topic, channel, options\nreader.connect()\n\nreader.on Reader.MESSAGE, (msg) ->\n  console.log "Received message [#{msg.id}]"\n\n  touch = ->\n    unless msg.hasResponded\n      console.log "Touch [#{msg.id}]"\n      msg.touch()\n      # Touch the message again a second before the next timeout.\n      setTimeout touch, msg.timeUntilTimeout() - 1000\n\n  finish = ->\n    console.log "Finished message [#{msg.id}]: #{msg.body.toString()}"\n    msg.finish()\n\n  console.log "Message timeout is #{msg.timeUntilTimeout() / 1000} secs."\n  setTimeout touch, msg.timeUntilTimeout() - 1000\n\n  # Finish the message after 2 timeout periods and 1 second.\n  setTimeout finish, msg.timeUntilTimeout() * 2 + 1000\n```\n\n### Enable nsqjs debugging\nIf you want to see the internal events of nsqjs, you can do so by doing the\nfollowing:\n```coffee-script\nnsq = require \'nsqjs\'\nnsq.StateChangeLogger.debug = true\n```\n\nChanges\n-------\n* **0.2.0**\n  * `ReaderRdy`, `ConnectionRdy` implementation\n  * `Reader` implementation\n  * Initial documentation\n  * `NSQDConnection`\n    * Moved defaults to `Reader`\n    * Support protocol / state logging\n    * `connect()` now happens on next tick so that it can be called before event\n      handlers are registered.\n  * `Message`\n    * Correctly support `TOUCH` events\n    * Support soft and hard timeout timings\n    * JSON parsing of message body\n* **0.1.0**\n  * `NSQDConnection` implementation\n  * `wire` implementation\n  * `Message` implementation\n',
+154 silly publish   readmeFilename: 'README.md',
+154 silly publish   _id: 'nsqjs@0.1.0',
+154 silly publish   dist: { shasum: '7269bb36e283a6f38d0a79d239b4281a5e4bee93' },
+154 silly publish   _from: '.' }
+155 error need auth auth and email required for publishing
+155 error need auth You need to authorize this machine using `npm adduser`
+156 error System Darwin 12.5.0
+157 error command "/usr/local/Cellar/node/0.10.24/bin/node" "/usr/local/bin/npm" "publish" "."
+158 error cwd /Users/dudley/src/nsqjs
+159 error node -v v0.10.24
+160 error npm -v 1.3.21
+161 error code ENEEDAUTH
+162 verbose exit [ 1, true ]
