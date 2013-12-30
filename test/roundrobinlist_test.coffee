@@ -1,7 +1,7 @@
 _ = require 'underscore'
 assert = require 'assert'
 should = require('chai').should()
-RoundRobinList = require '../lib/roundrobinlist'
+RoundRobinList = require '../src/roundrobinlist'
 
 describe 'roundrobinlist', ->
   lst = null

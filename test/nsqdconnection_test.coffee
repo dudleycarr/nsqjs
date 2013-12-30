@@ -8,7 +8,7 @@ sinonChai = require 'sinon-chai'
 
 chai.use sinonChai
 
-{ConnectionState, NSQDConnection} = require '../lib/nsqdconnection.coffee'
+{ConnectionState, NSQDConnection} = require '../src/nsqdconnection.coffee'
 
 describe 'ConnectionState', ->
   state =
