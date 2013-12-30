@@ -20,12 +20,15 @@
       "url": "https://github.com/dudleycarr/nsqjs/blob/master/LICENSE-MIT"
     }
   ],
-  "main": "lib/nsqjs",
+  "main": "lib/nsq",
+  "scripts": {
+    "build": "coffee --bare --compile --output lib src/*.coffee",
+    "prepublish": "coffee --bare --compile --output lib src/*.coffee",
+    "postpublish": "rm -rf lib",
+    "test": "grunt test"
+  },
   "engines": {
     "node": ">= 0.10.0"
-  },
-  "scripts": {
-    "test": "grunt test"
   },
   "devDependencies": {
     "grunt-contrib-coffee": "~0.7",
@@ -45,6 +48,7 @@
     "node-int64": "~0.3.0",
     "underscore": "~1.5.2",
     "bignumber.js": "~1.2.1",
-    "moment": "~2.4.0"
+    "moment": "~2.4.0",
+    "request": "~2.30.0"
   }
 }

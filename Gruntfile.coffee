@@ -9,7 +9,7 @@ module.exports = (grunt) ->
           bare: true
           sourceMap: true
         expand: true
-        src: ['lib/**/*.coffee']
+        src: ['src/**/*.coffee']
         dest: 'dest'
         ext: '.js'
 
@@ -28,7 +28,7 @@ module.exports = (grunt) ->
 
       test:
         files: [
-          '<%= coffee.lib.src %>'
+          '<%= coffee.src.src %>'
           '<%= coffee.test.src %>'
         ]
         tasks: ['coffee', 'test']
@@ -43,7 +43,7 @@ module.exports = (grunt) ->
           compilers: 'coffee:coffee-script'
 
     coffeelint:
-      lib: ['*.coffee', 'lib/*.coffee', 'test/*.coffee', 'examples/.*coffee']
+      lib: ['*.coffee', 'src/*.coffee', 'test/*.coffee', 'examples/.*coffee']
 
 
   # These plugins provide necessary tasks.
