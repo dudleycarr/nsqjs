@@ -98,6 +98,9 @@ These methods are available on a Writer object:
   lookupd.
 * `close()` <br/>
   Disconnect from the nsqd.
+* `publish(topic, msgs)` <br/>
+  `topic` is a string. `msgs` is either a string, a `Buffer`, or a list of
+  strings / `Buffers`.
 
 ### Simple example
 
@@ -179,9 +182,7 @@ nsq.StateChangeLogger.debug = true
 
 ### A Writer Example
 
-This script simulates a message that takes a long time to process or at least
-longer than the default message timeout. To ensure that the message doesn't
-timeout while being processed, touch events are sent to keep it alive.
+The writer sends a single message and then a list of messages.
 
 ```coffee-script
 {Writer} = require 'nsqjs'
@@ -192,6 +193,7 @@ w.connect()
 w.on Writer.READY, ->
   # Send a single message
   w.publish 'sample_topic', 'it really tied the room together'
+  w.publish 'sample_topic', ['two', 'three']
 w.on Writer.CLOSED, ->
   console.log 'Writer closed'
 ```
