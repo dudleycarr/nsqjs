@@ -1,3 +1,4 @@
+assert = require 'assert'
 net = require 'net'
 os = require 'os'
 {EventEmitter} = require 'events'
@@ -10,44 +11,44 @@ Message = require './message'
 wire = require './wire'
 StateChangeLogger = require './logging'
 
-# NSQDConnection is a reader connection to a nsqd instance. It manages all
-# aspects of the nsqd connection with the exception of the RDY count which
-# needs to be managed across all nsqd connections for a given topic / channel
-# pair.
-#
-# This shouldn't be used directly. Use a Reader instead.
-#
-# Usage:
-#
-# c = new NSQDConnection '127.0.0.1', 4150, 'test', 'default', 60, 30
-#
-# c.on NSQDConnection.MESSAGE, (msg) ->
-#   console.log "Callback [message]: #{msg.attempts}, #{msg.body.toString()}"
-#   console.log "Timeout of message is #{msg.timeUntilTimeout()}"
-#   setTimeout (-> console.log "timeout = #{msg.timeUntilTimeout()}"), 5000
-#   msg.finish()
-#
-# c.on NSQDConnection.FINISHED, ->
-#   c.setRdy 1
-#
-# c.on NSQDConnection.SUBSCRIBED, ->
-#   console.log "Callback [subscribed]: Set RDY to 100"
-#   c.setRdy 10
-#
-# c.on NSQDConnection.CLOSED, ->
-#   console.log "Callback [closed]: Lost connection to nsqd"
-#
-# c.on NSQDConnection.ERROR, (err) ->
-#   console.log "Callback [error]: #{err}"
-#
-# c.on NSQDConnection.BACKOFF, ->
-#   console.log "Callback [backoff]: RDY 0"
-#   c.setRdy 0
-#   setTimeout (-> c.setRdy 100; console.log 'RDY 100'), 10 * 1000
+###
+NSQDConnection is a reader connection to a nsqd instance. It manages all
+aspects of the nsqd connection with the exception of the RDY count which
+needs to be managed across all nsqd connections for a given topic / channel
+pair.
 
-# c.connect()
+This shouldn't be used directly. Use a Reader instead.
 
+Usage:
 
+c = new NSQDConnection '127.0.0.1', 4150, 'test', 'default', 60, 30
+
+c.on NSQDConnection.MESSAGE, (msg) ->
+  console.log "Callback [message]: #{msg.attempts}, #{msg.body.toString()}"
+  console.log "Timeout of message is #{msg.timeUntilTimeout()}"
+  setTimeout (-> console.log "timeout = #{msg.timeUntilTimeout()}"), 5000
+  msg.finish()
+
+c.on NSQDConnection.FINISHED, ->
+  c.setRdy 1
+
+c.on NSQDConnection.READY, ->
+  console.log "Callback [ready]: Set RDY to 100"
+  c.setRdy 10
+
+c.on NSQDConnection.CLOSED, ->
+  console.log "Callback [closed]: Lost connection to nsqd"
+
+c.on NSQDConnection.ERROR, (err) ->
+  console.log "Callback [error]: #{err}"
+
+c.on NSQDConnection.BACKOFF, ->
+  console.log "Callback [backoff]: RDY 0"
+  c.setRdy 0
+  setTimeout (-> c.setRdy 100; console.log 'RDY 100'), 10 * 1000
+
+c.connect()
+###
 class NSQDConnection extends EventEmitter
 
   # Events emitted by NSQDConnection
@@ -57,20 +58,20 @@ class NSQDConnection extends EventEmitter
   @FINISHED: 'finished'
   @MESSAGE: 'message'
   @REQUEUED: 'requeued'
-  @SUBSCRIBED: 'subscribed'
+  @READY: 'ready'
 
   constructor: (@nsqdHost, @nsqdPort, @topic, @channel, @requeueDelay,
-    @heartbeatInterval) ->
+    @heartbeatInterval, @isReader=true) ->
     @frameBuffer = new FrameBuffer()
-    @statemachine = new ConnectionState @
+    @statemachine = new ConnectionState this
 
-    maxRdyCount: 0               # Max RDY value for a conn to this NSQD
-    msgTimeout: 0                # Timeout time in milliseconds for a Message
-    maxMsgTimeout: 0             # Max time to process a Message in milliseconds
-    lastMessageTimestamp: null   # Timestamp of last message received
-    lastReceivedTimestamp: null  # Timestamp of last data received
-    conn: null                   # Socket connection to NSQD
-    id: null                     # Id that comes from the connection local port
+    @maxRdyCount = 0               # Max RDY value for a conn to this NSQD
+    @msgTimeout = 0                # Timeout time in milliseconds for a Message
+    @maxMsgTimeout = 0             # Max time to process a Message in millisecs
+    @lastMessageTimestamp = null   # Timestamp of last message received
+    @lastReceivedTimestamp = null  # Timestamp of last data received
+    @conn = null                   # Socket connection to NSQD
+    @id = null                     # Id that comes from connection local port
 
   log: (message) ->
     StateChangeLogger.log 'NSQDConnection', @statemachine.current_state_name,
@@ -98,8 +99,6 @@ class NSQDConnection extends EventEmitter
     frames = @frameBuffer.consume data
 
     for [frameId, payload] in frames
-      # TODO(dudley): What to do with frames when we encounter backoff in the
-      #   state machine.
       switch frameId
         when wire.FRAME_TYPE_RESPONSE
           @statemachine.raise 'response', payload
@@ -107,7 +106,7 @@ class NSQDConnection extends EventEmitter
           @statemachine.goto 'ERROR', payload
         when wire.FRAME_TYPE_MESSAGE
           @lastMessageTimestamp = @lastReceivedTimestamp
-          @statemachine.raise 'message', @createMessage payload
+          @statemachine.raise 'consumeMessage', @createMessage payload
 
   identify: ->
     short_id: os.hostname().split('.')[0]
@@ -115,13 +114,14 @@ class NSQDConnection extends EventEmitter
     feature_negotiation: true,
     heartbeat_interval: @heartbeatInterval * 1000
 
+  # Create a Message object from the message payload received from nsqd.
   createMessage: (msgPayload) ->
     msgComponents = wire.unpackMessage msgPayload
     msg = new Message msgComponents..., @requeueDelay, @msgTimeout,
       @maxMsgTimeout
 
     msg.on Message.RESPOND, (responseType, wireData) =>
-      @conn.write wireData
+      @write wireData
 
       if responseType is Message.FINISH
         @emit NSQDConnection.FINISHED
@@ -137,7 +137,33 @@ class NSQDConnection extends EventEmitter
     @conn.write data
 
   destroy: ->
-    @conn.destroy
+    @conn.destroy()
+
+
+###
+c = new NSQDConnectionWriter '127.0.0.1', 4150, 30
+c.connect()
+
+c.on NSQDConnectionWriter.CLOSED, ->
+  console.log "Callback [closed]: Lost connection to nsqd"
+
+c.on NSQDConnectionWriter.ERROR, (err) ->
+  console.log "Callback [error]: #{err}"
+
+c.on NSQDConnectionWriter.READY, ->
+  c.produceMessages 'sample_topic', ['first message']
+  c.produceMessages 'sample_topic', ['second message', 'third message']
+  c.destroy()
+###
+class NSQDConnectionWriter extends NSQDConnection
+
+  constructor: (@nsqdHost, @nsqdPort, @heartbeatInterval) ->
+    super @nsqdHost, @nsqdPort, null, null, 0, @heartbeatInterval, false
+
+  produceMessages: (topic, msgs) ->
+    err = 'Can\'t send messages when the connection is for a Reader'
+    assert not @isReader, err
+    @statemachine.raise 'produceMessages', [topic, msgs]
 
 
 class ConnectionState extends NodeState
@@ -180,7 +206,10 @@ class ConnectionState extends NodeState
         @conn.maxMsgTimeout = identifyResponse.max_msg_timeout
         @conn.msgTimeout = identifyResponse.msg_timeout
 
-        @goto 'SUBSCRIBE'
+        if @conn.isReader
+          @goto 'SUBSCRIBE'
+        else
+          @goto 'READY_SEND'
 
     SUBSCRIBE:
       Enter: ->
@@ -190,16 +219,15 @@ class ConnectionState extends NodeState
     SUBSCRIBE_RESPONSE:
       response: (data) ->
         if data.toString() is 'OK'
-          @goto 'WAIT_FOR_DATA'
+          @goto 'READY_RECV'
 
-          # Notify listener that this nsqd connection has passed the subscribe
-          # phase.
-          @conn.emit NSQDConnection.SUBSCRIBED
-
-    WAIT_FOR_DATA:
-      message: (msg) ->
+    READY_RECV:
+      Enter: ->
         # Notify listener that this nsqd connection has passed the subscribe
         # phase.
+        @conn.emit NSQDConnection.READY
+
+      consumeMessage: (msg) ->
         @conn.emit NSQDConnection.MESSAGE, msg
 
       response: (data) ->
@@ -211,6 +239,24 @@ class ConnectionState extends NodeState
         # max rdy count.
         rdyCount = @conn.maxRdyCount if rdyCount > @conn.maxRdyCount
         @conn.write wire.ready rdyCount
+
+      close: ->
+        @goto 'CLOSED'
+
+    READY_SEND:
+      Enter: ->
+        # Notify listener that this nsqd connection is ready to send.
+        @conn.emit NSQDConnection.READY
+
+      produceMessages: ([topic, msgs]) ->
+        if msgs.length is 1
+          @conn.write wire.pub topic, msgs[0]
+        else
+          @conn.write wire.mpub topic, msgs
+
+      response: (data) ->
+        if data.toString() is '_heartbeat_'
+          @conn.write wire.nop()
 
       close: ->
         @goto 'CLOSED'
@@ -250,4 +296,5 @@ class ConnectionState extends NodeState
 
 module.exports =
   NSQDConnection: NSQDConnection
+  NSQDConnectionWriter: NSQDConnectionWriter
   ConnectionState: ConnectionState

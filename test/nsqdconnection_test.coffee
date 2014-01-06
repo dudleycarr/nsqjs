@@ -8,7 +8,8 @@ sinonChai = require 'sinon-chai'
 
 chai.use sinonChai
 
-{ConnectionState, NSQDConnection} = require '../lib/nsqdconnection.coffee'
+{ConnectionState, NSQDConnection, NQDConnectionWriter} =
+  require '../lib/nsqdconnection.coffee'
 
 describe 'ConnectionState', ->
   state =
@@ -62,7 +63,7 @@ describe 'ConnectionState', ->
 
   it 'create a subscription', (done) ->
     {sent, statemachine, connection} = state
-    connection.on NSQDConnection.SUBSCRIBED,  ->
+    connection.on NSQDConnection.READY,  ->
       # Subscribe notification
       done()
 
@@ -82,7 +83,7 @@ describe 'ConnectionState', ->
     statemachine.raise 'response', 'OK' # Identify response
     statemachine.raise 'response', 'OK' # Subscribe response
 
-    statemachine.current_state_name.should.eq 'WAIT_FOR_DATA'
+    statemachine.current_state_name.should.eq 'READY_RECV'
 
-    statemachine.raise 'message', {}
-    statemachine.current_state_name.should.eq 'WAIT_FOR_DATA'
+    statemachine.raise 'consumeMessage', {}
+    statemachine.current_state_name.should.eq 'READY_RECV'

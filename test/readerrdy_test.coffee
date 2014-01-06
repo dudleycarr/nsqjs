@@ -46,7 +46,7 @@ class StubNSQDConnection extends EventEmitter
     msg.on Message.BACKOFF, =>
       @emit NSQDConnection.BACKOFF
 
-    StateChangeLogger.log 'NSQDConnection', 'WAIT_FOR', '1',
+    StateChangeLogger.log 'NSQDConnection', 'READY_RECV', '1',
       "message (#{msgId})"
     @emit NSQDConnection.MESSAGE, msg
     msg
@@ -73,7 +73,7 @@ describe 'ConnectionRdy', ->
     mock.expects('on').withArgs NSQDConnection.FINISHED
     mock.expects('on').withArgs NSQDConnection.MESSAGE
     mock.expects('on').withArgs NSQDConnection.REQUEUED
-    mock.expects('on').withArgs NSQDConnection.SUBSCRIBED
+    mock.expects('on').withArgs NSQDConnection.READY
 
     cRdy = new ConnectionRdy conn
     mock.verify()
@@ -254,14 +254,14 @@ describe 'ReaderRdy', ->
     expect(readerRdy.current_state_name).is.eql 'ZERO'
     readerRdy.addConnection conn
     expect(readerRdy.current_state_name).is.eql 'ZERO'
-    conn.emit NSQDConnection.SUBSCRIBED
+    conn.emit NSQDConnection.READY
     expect(readerRdy.current_state_name).is.eql 'MAX'
 
   it 'should be in the zero state if it loses all connections', ->
     conn = createNSQDConnection 1
 
     readerRdy.addConnection conn
-    conn.emit NSQDConnection.SUBSCRIBED
+    conn.emit NSQDConnection.READY
     conn.emit NSQDConnection.CLOSED
     expect(readerRdy.current_state_name).is.eql 'ZERO'
 
@@ -275,12 +275,12 @@ describe 'ReaderRdy', ->
     setRdyStub2 = sinon.spy conn2, 'setRdy'
 
     readerRdy.addConnection conn1
-    conn1.emit NSQDConnection.SUBSCRIBED
+    conn1.emit NSQDConnection.READY
 
     expect(setRdyStub1.lastCall.args[0]).is.eql 100
 
     readerRdy.addConnection conn2
-    conn2.emit NSQDConnection.SUBSCRIBED
+    conn2.emit NSQDConnection.READY
 
     expect(setRdyStub1.lastCall.args[0]).is.eql 50
     expect(setRdyStub2.lastCall.args[0]).is.eql 50
@@ -301,7 +301,7 @@ describe 'ReaderRdy', ->
       # listeners that the connections are connected and ready for message flow.
       for conn in connections
         readerRdy.addConnection conn
-        conn.emit NSQDConnection.SUBSCRIBED
+        conn.emit NSQDConnection.READY
 
       # Given the number of connections and the maxInFlight, we should be in low
       # RDY conditions.
@@ -329,13 +329,13 @@ describe 'ReaderRdy', ->
       # Add the connections and trigger the NSQDConnection event that tells
       # listeners that the connections are connected and ready for message flow.
       readerRdy.addConnection conn1
-      conn1.emit NSQDConnection.SUBSCRIBED
+      conn1.emit NSQDConnection.READY
 
       expect(readerRdy.isLowRdy()).is.eql false
 
       addConnection = ->
         readerRdy.addConnection conn2
-        conn2.emit NSQDConnection.SUBSCRIBED
+        conn2.emit NSQDConnection.READY
 
         # Given the number of connections and the maxInFlight, we should be in
         # low RDY conditions.
@@ -368,7 +368,7 @@ describe 'ReaderRdy', ->
       # listeners that the connections are connected and ready for message flow.
       for conn in connections
         readerRdy.addConnection conn
-        conn.emit NSQDConnection.SUBSCRIBED
+        conn.emit NSQDConnection.READY
 
       expect(readerRdy.isLowRdy()).is.eql true
 
@@ -409,7 +409,7 @@ describe 'ReaderRdy', ->
 
       for conn in connections
         readerRdy.addConnection conn
-        conn.emit NSQDConnection.SUBSCRIBED
+        conn.emit NSQDConnection.READY
 
       expect(readerRdy.isLowRdy()).is.eql true
 
@@ -451,7 +451,7 @@ describe 'ReaderRdy', ->
 
       for conn in connections
         readerRdy.addConnection conn
-        conn.emit NSQDConnection.SUBSCRIBED
+        conn.emit NSQDConnection.READY
 
       # Handle the message but delay finishing the message so that several
       # balance calls happen and the check to ensure that RDY count is zero for
@@ -514,7 +514,7 @@ describe 'ReaderRdy', ->
       # listeners that the connections are connected and ready for message flow.
       for conn in connections
         readerRdy.addConnection conn
-        conn.emit NSQDConnection.SUBSCRIBED
+        conn.emit NSQDConnection.READY
 
       handleMessage = (msg) ->
         delayFinish = ->
@@ -580,7 +580,7 @@ describe 'ReaderRdy', ->
 
       for conn in connections
         readerRdy.addConnection conn
-        conn.emit NSQDConnection.SUBSCRIBED
+        conn.emit NSQDConnection.READY
 
       msg = connections[0].createMessage "1", Date.now(), 0,
         'Message causing a backoff'
@@ -628,7 +628,7 @@ describe 'ReaderRdy', ->
 
       for conn in connections
         readerRdy.addConnection conn
-        conn.emit NSQDConnection.SUBSCRIBED
+        conn.emit NSQDConnection.READY
 
       msg = connections[0].createMessage "1", Date.now(), 0,
         'Message causing a backoff'

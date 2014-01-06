@@ -37,7 +37,8 @@
     "sinon-chai": "~2.4.0",
     "grunt": "~0.4.1",
     "coffeelint": "~1.0.2",
-    "grunt-coffeelint": "0.0.8"
+    "grunt-coffeelint": "0.0.8",
+    "coffee-script": "~1.6.3"
   },
   "keywords": [],
   "dependencies": {
@@ -45,6 +46,7 @@
     "node-int64": "~0.3.0",
     "underscore": "~1.5.2",
     "bignumber.js": "~1.2.1",
-    "moment": "~2.4.0"
+    "moment": "~2.4.0",
+    "async": "~0.2.9"
   }
 }

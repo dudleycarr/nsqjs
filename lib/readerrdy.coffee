@@ -50,7 +50,7 @@ class ConnectionRdy extends EventEmitter
       @inFlight -= 1
     @conn.on NSQDConnection.REQUEUED, =>
       @inFlight -= 1
-    @conn.on NSQDConnection.SUBSCRIBED, =>
+    @conn.on NSQDConnection.READY, =>
       @start()
 
   name: ->

@@ -27,7 +27,7 @@ options object.
   The default amount of time (seconds) a message requeued should be delayed by before being dispatched by nsqd.
 * ```nsqdTCPAddresses``` <br/>
   A string or an array of string representing the host/port pair for nsqd instances.
-  <br/> For example: `['localhost:4151']`
+  <br/> For example: `['localhost:4150']`
 * ```lookupdHTTPAddresses``` <br/>
   A string or an array of strings representing the host/port pair of nsqlookupd instaces.
   <br/> For example: `['localhost:4161']`
@@ -73,6 +73,31 @@ instance.
   Tell nsqd that you want extra time to process the message. It extends the
   soft timeout by the normal timeout amount.
 
+### new Writer(options)
+Allows messages to be sent to an nsqd. The nsqd can be directly specified or it
+can be discovered via lookupds. Below are the parameters that can be specified
+in the options object.
+
+* ```nsqdTCPAddress``` <br/>
+  A string representing the host/port pair for nsqd 
+  instances.
+  <br/> For example: `'localhost:4150'`
+* ```lookupdHTTPAddresses``` <br/>
+  A string or an array of strings representing the host/port pair of nsqlookupd
+  instaces.
+  <br/> For example: `['localhost:4161']`
+
+Writer events are:
+
+* `Writer.READY`
+* `Writer.CLOSED`
+
+These methods are available on a Writer object:
+* `connect()` <br/>
+  Connect to the nsqd specified or connect to a random nsqd discovered via
+  lookupd.
+* `close()` <br/>
+  Disconnect from the nsqd.
 
 ### Simple example
 
@@ -152,8 +177,31 @@ nsq = require 'nsqjs'
 nsq.StateChangeLogger.debug = true
 ```
 
+### A Writer Example
+
+This script simulates a message that takes a long time to process or at least
+longer than the default message timeout. To ensure that the message doesn't
+timeout while being processed, touch events are sent to keep it alive.
+
+```coffee-script
+{Writer} = require 'nsqjs'
+
+w = new Writer {lookupdHTTPAddresses: ['127.0.0.1:4161']}
+w.connect()
+
+w.on Writer.READY, ->
+  # Send a single message
+  w.publish 'sample_topic', 'it really tied the room together'
+w.on Writer.CLOSED, ->
+  console.log 'Writer closed'
+```
+
 Changes
 -------
+* **0.3.0**
+  * Added Writer implementation
+* **0.2.1**
+  * Added prepublish compilation to JavaScript.
 * **0.2.0**
   * `ReaderRdy`, `ConnectionRdy` implementation
   * `Reader` implementation

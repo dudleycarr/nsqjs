@@ -6,6 +6,7 @@ request = require 'request'
 {NSQDConnection} = require './nsqdconnection'
 {ReaderRdy} = require './readerrdy'
 RoundRobinList = require './roundrobinlist'
+{lookup} = require './lookupd'
 
 
 class Reader extends EventEmitter
@@ -51,8 +52,10 @@ class Reader extends EventEmitter
       'name needs to be unspecified or a string'
     assert _.isNumber params.lookupdPollInterval,
       'lookupdPollInterval needs to be a number'
+    assert 0 <= params.lookupdPollInterval,
+      'lookupdPollInterval needs to be greater than 0'
     assert _.isNumber params.lookupdPollJitter,
-      'lookupdPollInterval needs to be a number'
+      'lookupdPollJitter needs to be a number'
     assert 0 <= params.lookupdPollJitter <= 1,
       'lookupdPollJitter needs to be between 0 and 1'
 
@@ -101,34 +104,10 @@ class Reader extends EventEmitter
   queryLookupd: ->
     # Trigger a query of the configured ``lookupdHTTPAddresses``
     endpoint = @roundrobinLookupd.next()
-
-    options =
-      url: "http://#{endpoint}/lookup?topic=#{@topic}"
-      method: 'GET'
-      timeout: 2000
-
-    request options, (err, response, body) =>
-      errPrefix = =>
-        "[#{@name}] Reader: lookupd #{options.url}"
-
-      if err
-        console.error "#{errPrefix()} query error: #{error}"
-        return
-
-      try
-        lookupData = JSON.parse body
-      catch error
-        console.error "#{errPrefix()} failed to parse JSON: #{body}"
-        return
-
-      if lookupData.status_code isnt 200
-        console.error "#{errPrefix()} responded with #{lookupData.status_code}"
-        return
-
-      for producer in lookupData.data.producers
-        address = producer.broadcast_address
-        assert address?
-        @connectToNSQD address, producer.tcp_port
+    lookup endpoint, @topic, (err, nodes) =>
+      if not err
+        for node in nodes
+          @connectToNSQD node.broadcast_address, node.tcp_port
 
   connectToNSQD: (host, port) ->
     assert _.isString host
