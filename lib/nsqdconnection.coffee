@@ -298,7 +298,6 @@ class WriterNSQDConnection extends NSQDConnection
     @statemachine or new WriterConnectionState this
 
   produceMessages: (topic, msgs) ->
-    err = 'Can\'t send messages when the connection is for a Reader'
     @statemachine.raise 'produceMessages', [topic, msgs]
 
 
