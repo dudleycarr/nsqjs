@@ -73,19 +73,9 @@ instance.
   Tell nsqd that you want extra time to process the message. It extends the
   soft timeout by the normal timeout amount.
 
-### new Writer(options)
+### new Writer(nsqdHost, nsqdPort)
 Allows messages to be sent to an nsqd. The nsqd can be directly specified or it
-can be discovered via lookupds. Below are the parameters that can be specified
-in the options object.
-
-* ```nsqdTCPAddress``` <br/>
-  A string representing the host/port pair for nsqd 
-  instances.
-  <br/> For example: `'localhost:4150'`
-* ```lookupdHTTPAddresses``` <br/>
-  A string or an array of strings representing the host/port pair of nsqlookupd
-  instaces.
-  <br/> For example: `['localhost:4161']`
+can be discovered via lookupds.
 
 Writer events are:
 
@@ -187,13 +177,14 @@ The writer sends a single message and then a list of messages.
 ```coffee-script
 {Writer} = require 'nsqjs'
 
-w = new Writer {lookupdHTTPAddresses: ['127.0.0.1:4161']}
+w = new Writer '127.0.0.1', 4150
 w.connect()
 
 w.on Writer.READY, ->
   # Send a single message
   w.publish 'sample_topic', 'it really tied the room together'
-  w.publish 'sample_topic', ['two', 'three']
+  w.publish 'sample_topic', ['Uh, excuse me. Mark it zero. Next frame.', 
+    'Smokey, this is not \'Nam. This is bowling. There are rules.']
 w.on Writer.CLOSED, ->
   console.log 'Writer closed'
 ```

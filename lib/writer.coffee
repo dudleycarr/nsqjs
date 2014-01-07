@@ -2,17 +2,14 @@ assert = require 'assert'
 {EventEmitter} = require 'events'
 
 _ = require 'underscore'
-{nodes} = require './lookupd'
-{NSQDConnectionWriter} = require './nsqdconnection'
+{WriterNSQDConnection} = require './nsqdconnection'
 
 ###
-Write messages to nsqds. Allows the client to specify a particular nsqd or use
-an arbitrary nsqd instance discovered the provided lookupds. Once connected,
-this writer will only publish messages to one nsqd.
+Publish messages to nsqds.
 
 Usage:
 
-w = new Writer {lookupdHTTPAddresses: ['127.0.0.1:4161', '127.0.0.1:5161']}
+w = new Writer '127.0.0.1', 4150
 w.connect()
 
 w.on Writer.READY, ->
@@ -29,59 +26,17 @@ class Writer extends EventEmitter
   @READY: 'ready'
   @CLOSED: 'closed'
 
-  constructor: (options) ->
-    defaults =
-      nsqdTCPAddress: null
-      lookupdHTTPAddresses: []
-
-    params = _.extend {}, defaults, options
-
-    # Returns a compacted list given a list, string, integer, or object.
-    makeList = (list) ->
-      list = [list] unless _.isArray list
-      (entry for entry in list when entry?)
-
-    params.lookupdHTTPAddresses = makeList params.lookupdHTTPAddresses
-    _.extend @, params
-
-    @conn = null
-
-  ###
-  Query lookupds for nsqd nodes and return an arbitrary nsqd node.
-
-  Arguments:
-    callback: signature `(node) ->` where `node` is an object with a nsqd
-    details.
-  ###
-  chooseNSQD: (callback) ->
-    if @nsqdTCPAddress
-      callback @nsqdTCPAddress
-      return
-
-    if _.isEmpty @lookupdHTTPAddresses
-      callback null
-      return
-
-    nodes @lookupdHTTPAddresses, (err, nodes) ->
-      if err
-        callback null
-      else
-        node = _.sample nodes
-        callback "#{node.broadcast_address}:#{node.tcp_port}"
+  constructor: (@nsqdHost, @nsqdPort) ->
 
   connect: ->
-    @chooseNSQD (address) =>
-      assert address, 'No nsqd address provided or nsqd discovered via lookupd'
-      [host, port] = address.split ':'
+    @conn = new WriterNSQDConnection @nsqdHost, @nsqdPort, 30
+    @conn.connect()
 
-      @conn = new NSQDConnectionWriter host, port, 30
-      @conn.connect()
+    @conn.on WriterNSQDConnection.READY, =>
+      @emit Writer.READY
 
-      @conn.on NSQDConnectionWriter.READY, =>
-        @emit Writer.READY
-
-      @conn.on NSQDConnectionWriter.CLOSED, =>
-        @emit Writer.CLOSED
+    @conn.on WriterNSQDConnection.CLOSED, =>
+      @emit Writer.CLOSED
 
   ###
   Publish a message or a list of messages to the connected nsqd. The contents
@@ -93,7 +48,10 @@ class Writer extends EventEmitter
   ###
   publish: (topic, msgs) ->
     assert not _.isNull @conn, "No active Writer connection to send messages."
-    msgs = [msgs] if not _.isArray msgs
+    msgs = [msgs] unless _.isArray msgs
     @conn.produceMessages topic, msgs
+
+  close: ->
+    @conn.destroy()
 
 module.exports = Writer

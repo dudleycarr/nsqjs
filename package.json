@@ -38,7 +38,8 @@
     "grunt": "~0.4.1",
     "coffeelint": "~1.0.2",
     "grunt-coffeelint": "0.0.8",
-    "coffee-script": "~1.6.3"
+    "coffee-script": "~1.6.3",
+    "nock": "~0.27.1"
   },
   "keywords": [],
   "dependencies": {

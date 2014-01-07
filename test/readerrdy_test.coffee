@@ -23,7 +23,7 @@ class StubNSQDConnection extends EventEmitter
     @maxRdyCount = 2500
     @msgTimeout = 60 * 1000
     @maxMsgTimeout = 15 * 60 * 1000
- 
+
   connect: ->
     # Empty
   setRdy: (rdyCount) ->
@@ -172,7 +172,7 @@ describe 'ConnectionRdy', ->
 ###
 Helper functions for dealing with StateChangeLogger entries.
 ###
- 
+
 ###
 Returns log entries for the ConnectionRdy state that reflect the updated
 RDY count. The RDY count is parsed out and added as an object property.
@@ -602,7 +602,7 @@ describe 'ReaderRdy', ->
         expect(ones).to.have.length 1
         expect(backoffs).to.have.length 4
         done()
-        
+
       delay = readerRdy.backoffTimer.getInterval() + 100
       setTimeout afterBackoff, delay * 1000
 
@@ -653,6 +653,6 @@ describe 'ReaderRdy', ->
           done()
 
         setTimeout verifyMax, 0
-        
+
       delay = readerRdy.backoffTimer.getInterval() + 100
       setTimeout afterBackoff, delay * 1000

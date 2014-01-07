@@ -11,6 +11,7 @@ Message = require './message'
 wire = require './wire'
 StateChangeLogger = require './logging'
 
+
 ###
 NSQDConnection is a reader connection to a nsqd instance. It manages all
 aspects of the nsqd connection with the exception of the RDY count which
@@ -61,9 +62,9 @@ class NSQDConnection extends EventEmitter
   @READY: 'ready'
 
   constructor: (@nsqdHost, @nsqdPort, @topic, @channel, @requeueDelay,
-    @heartbeatInterval, @isReader=true) ->
+    @heartbeatInterval) ->
     @frameBuffer = new FrameBuffer()
-    @statemachine = new ConnectionState this
+    @statemachine = @connectionState()
 
     @maxRdyCount = 0               # Max RDY value for a conn to this NSQD
     @msgTimeout = 0                # Timeout time in milliseconds for a Message
@@ -72,6 +73,9 @@ class NSQDConnection extends EventEmitter
     @lastReceivedTimestamp = null  # Timestamp of last data received
     @conn = null                   # Socket connection to NSQD
     @id = null                     # Id that comes from connection local port
+
+  connectionState: ->
+    @statemachine or new ConnectionState this
 
   log: (message) ->
     StateChangeLogger.log 'NSQDConnection', @statemachine.current_state_name,
@@ -140,32 +144,6 @@ class NSQDConnection extends EventEmitter
     @conn.destroy()
 
 
-###
-c = new NSQDConnectionWriter '127.0.0.1', 4150, 30
-c.connect()
-
-c.on NSQDConnectionWriter.CLOSED, ->
-  console.log "Callback [closed]: Lost connection to nsqd"
-
-c.on NSQDConnectionWriter.ERROR, (err) ->
-  console.log "Callback [error]: #{err}"
-
-c.on NSQDConnectionWriter.READY, ->
-  c.produceMessages 'sample_topic', ['first message']
-  c.produceMessages 'sample_topic', ['second message', 'third message']
-  c.destroy()
-###
-class NSQDConnectionWriter extends NSQDConnection
-
-  constructor: (@nsqdHost, @nsqdPort, @heartbeatInterval) ->
-    super @nsqdHost, @nsqdPort, null, null, 0, @heartbeatInterval, false
-
-  produceMessages: (topic, msgs) ->
-    err = 'Can\'t send messages when the connection is for a Reader'
-    assert not @isReader, err
-    @statemachine.raise 'produceMessages', [topic, msgs]
-
-
 class ConnectionState extends NodeState
   constructor: (@conn) ->
     super
@@ -175,6 +153,9 @@ class ConnectionState extends NodeState
 
   log: (message) ->
     @conn.log message
+
+  afterIdentify: ->
+    'SUBSCRIBE'
 
   states:
     CONNECTED:
@@ -206,10 +187,7 @@ class ConnectionState extends NodeState
         @conn.maxMsgTimeout = identifyResponse.max_msg_timeout
         @conn.msgTimeout = identifyResponse.msg_timeout
 
-        if @conn.isReader
-          @goto 'SUBSCRIBE'
-        else
-          @goto 'READY_SEND'
+        @goto @afterIdentify()
 
     SUBSCRIBE:
       Enter: ->
@@ -248,7 +226,10 @@ class ConnectionState extends NodeState
         # Notify listener that this nsqd connection is ready to send.
         @conn.emit NSQDConnection.READY
 
-      produceMessages: ([topic, msgs]) ->
+      produceMessages: (data) ->
+        [topic, msgs] = data
+        assert _.isArray msgs, 'Expect an array of messages to produceMessages'
+
         if msgs.length is 1
           @conn.write wire.pub topic, msgs[0]
         else
@@ -293,8 +274,42 @@ class ConnectionState extends NodeState
         @log "#{err}"
         callback err
 
+###
+c = new NSQDConnectionWriter '127.0.0.1', 4150, 30
+c.connect()
+
+c.on NSQDConnectionWriter.CLOSED, ->
+  console.log "Callback [closed]: Lost connection to nsqd"
+
+c.on NSQDConnectionWriter.ERROR, (err) ->
+  console.log "Callback [error]: #{err}"
+
+c.on NSQDConnectionWriter.READY, ->
+  c.produceMessages 'sample_topic', ['first message']
+  c.produceMessages 'sample_topic', ['second message', 'third message']
+  c.destroy()
+###
+class WriterNSQDConnection extends NSQDConnection
+
+  constructor: (@nsqdHost, @nsqdPort, @heartbeatInterval) ->
+    super @nsqdHost, @nsqdPort, null, null, 0, @heartbeatInterval, false
+
+  connectionState: ->
+    @statemachine or new WriterConnectionState this
+
+  produceMessages: (topic, msgs) ->
+    err = 'Can\'t send messages when the connection is for a Reader'
+    @statemachine.raise 'produceMessages', [topic, msgs]
+
+
+class WriterConnectionState extends ConnectionState
+
+  afterIdentify: ->
+    'READY_SEND'
+
 
 module.exports =
   NSQDConnection: NSQDConnection
-  NSQDConnectionWriter: NSQDConnectionWriter
   ConnectionState: ConnectionState
+  WriterNSQDConnection: WriterNSQDConnection
+  WriterConnectionState: WriterConnectionState

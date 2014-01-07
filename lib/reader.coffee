@@ -105,7 +105,7 @@ class Reader extends EventEmitter
     # Trigger a query of the configured ``lookupdHTTPAddresses``
     endpoint = @roundrobinLookupd.next()
     lookup endpoint, @topic, (err, nodes) =>
-      if not err
+      unless err
         for node in nodes
           @connectToNSQD node.broadcast_address, node.tcp_port
 
