@@ -6,7 +6,7 @@ request = require 'request'
 {NSQDConnection} = require './nsqdconnection'
 {ReaderRdy} = require './readerrdy'
 RoundRobinList = require './roundrobinlist'
-{lookup} = require './lookupd'
+lookup = require './lookupd'
 
 
 class Reader extends EventEmitter

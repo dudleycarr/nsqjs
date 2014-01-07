@@ -68,20 +68,6 @@ dedupedRequests = (lookupdEndpoints, urlFn, callback) ->
       callback null, dedupeOnHostPort results
 
 ###
-Queries lookupds for known nsqd nodes and returns a deduped list.
-
-Arguments:
-  lookupdEndpoints: a string or a list of strings of lookupd HTTP endpoints. eg.
-    ['127.0.0.1:4161']
-  callback: with signature `(err, nodes) ->`. `nodes` is a list of objects
-    return by lookupds and deduped.
-###
-nodes = (lookupdEndpoints, callback) ->
-  endpointURL = (endpoint) ->
-    "http://#{endpoint}/nodes"
-  dedupedRequests lookupdEndpoints, endpointURL, callback
-
-###
 Queries lookupds for known nsqd nodes given a topic and returns a deduped list.
 
 Arguments:
@@ -96,6 +82,4 @@ lookup = (lookupdEndpoints, topic, callback) ->
     "http://#{endpoint}/lookup?topic=#{topic}"
   dedupedRequests lookupdEndpoints, endpointURL, callback
 
-module.exports =
-  nodes: nodes
-  lookup: lookup
+module.exports = lookup
