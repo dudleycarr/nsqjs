@@ -48,6 +48,7 @@
     "underscore": "~1.5.2",
     "bignumber.js": "~1.2.1",
     "moment": "~2.4.0",
-    "async": "~0.2.9"
+    "async": "~0.2.9",
+    "request": "~2.30.0"
   }
 }
