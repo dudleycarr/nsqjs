@@ -11,8 +11,6 @@ lookupdRequest = (url, callback) ->
     timeout: 2000
 
   request options, (err, response, data) ->
-    errPrefix = "Lookupd: #{options.url}"
-
     if err
       callback null, []
       return
@@ -50,21 +48,12 @@ dedupeOnHostPort = (results) ->
     .map(_.first)
     .value()
 
-###
-Queries lookupds for known nsqd nodes and returns a deduped list.
-
-Arguments:
-  lookupdEndpoints: a string or a list of strings of lookupd HTTP endpoints. eg.
-    ['127.0.0.1:4161']
-  callback: with signature `(err, nodes) ->`. `nodes` is a list of objects
-    return by lookupds and deduped.
-###
-nodes = (lookupdEndpoints, callback) ->
+dedupedRequests = (lookupdEndpoints, urlFn, callback) ->
   # Ensure we have a list of endpoints for lookupds.
   lookupdEndpoints = [lookupdEndpoints] if _.isString lookupdEndpoints
 
   # URLs for querying `nodes` on each of the lookupds.
-  urls = ("http://#{endpoint}/nodes" for endpoint in lookupdEndpoints)
+  urls = (urlFn endpoint for endpoint in lookupdEndpoints)
 
   # List of functions for querying lookupds for nodes.
   requestFns = for url in urls
@@ -79,6 +68,20 @@ nodes = (lookupdEndpoints, callback) ->
       callback null, dedupeOnHostPort results
 
 ###
+Queries lookupds for known nsqd nodes and returns a deduped list.
+
+Arguments:
+  lookupdEndpoints: a string or a list of strings of lookupd HTTP endpoints. eg.
+    ['127.0.0.1:4161']
+  callback: with signature `(err, nodes) ->`. `nodes` is a list of objects
+    return by lookupds and deduped.
+###
+nodes = (lookupdEndpoints, callback) ->
+  endpointURL = (endpoint) ->
+    "http://#{endpoint}/nodes"
+  dedupedRequests lookupdEndpoints, endpointURL, callback
+
+###
 Queries lookupds for known nsqd nodes given a topic and returns a deduped list.
 
 Arguments:
@@ -89,23 +92,9 @@ Arguments:
     return by lookupds and deduped.
 ###
 lookup = (lookupdEndpoints, topic, callback) ->
-  # Ensure we have a list of endpoints for lookupds.
-  lookupdEndpoints = [lookupdEndpoints] if _.isString lookupdEndpoints
-
-  # URLs for querying `nodes` on each of the lookupds.
-  urls = for endpoint in lookupdEndpoints
+  endpointURL = (endpoint) ->
     "http://#{endpoint}/lookup?topic=#{topic}"
-
-  # List of functions for querying lookupds for nodes.
-  requestFns = for url in urls
-    (cb) ->
-      lookupdRequest url, cb
-
-  async.parallel requestFns, (err, results) ->
-    if err
-      callback err, null
-    else
-      callback null, dedupeOnHostPort results
+  dedupedRequests lookupdEndpoints, endpointURL, callback
 
 module.exports =
   nodes: nodes
