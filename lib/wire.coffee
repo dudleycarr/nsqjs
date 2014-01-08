@@ -71,7 +71,7 @@ exports.identify = (data) ->
   unexpectedKeys = _.filter _.keys(data), (k) ->
     k not in validIdentifyKeys
 
-  unless unexpectedKeys.length is 0
+  if unexpectedKeys.length
     throw new Error "Unexpected IDENTIFY keys: #{unexpectedKeys}"
 
   command 'IDENTIFY', JSON_stringify data

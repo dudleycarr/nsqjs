@@ -46,7 +46,7 @@ class Writer extends EventEmitter
     msgs: A string, a buffer, or a list of string/buffers.
   ###
   publish: (topic, msgs) ->
-    if _.isNull @conn
+    unless @conn?
       throw new Error "No active Writer connection to send messages."
     msgs = [msgs] unless _.isArray msgs
     @conn.produceMessages topic, msgs
