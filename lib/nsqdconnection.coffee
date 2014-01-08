@@ -1,4 +1,3 @@
-assert = require 'assert'
 net = require 'net'
 os = require 'os'
 {EventEmitter} = require 'events'
@@ -228,7 +227,8 @@ class ConnectionState extends NodeState
 
       produceMessages: (data) ->
         [topic, msgs] = data
-        assert _.isArray msgs, 'Expect an array of messages to produceMessages'
+        unless _.isArray msgs
+          throw new Error 'Expect an array of messages to produceMessages'
 
         if msgs.length is 1
           @conn.write wire.pub topic, msgs[0]
@@ -236,8 +236,7 @@ class ConnectionState extends NodeState
           @conn.write wire.mpub topic, msgs
 
       response: (data) ->
-        if data.toString() is '_heartbeat_'
-          @conn.write wire.nop()
+        @conn.write wire.nop() if data.toString() is '_heartbeat_'
 
       close: ->
         @goto 'CLOSED'

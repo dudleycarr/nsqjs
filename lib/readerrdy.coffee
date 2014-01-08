@@ -1,5 +1,4 @@
 _ = require 'underscore'
-assert = require 'assert'
 {EventEmitter} = require 'events'
 
 BackoffTimer = require './backofftimer'
@@ -74,7 +73,7 @@ class ConnectionRdy extends EventEmitter
     @statemachine.raise 'backoff'
 
   isStarved: ->
-    assert @inFlight <= @maxConnRdy, 'isStarved check is failing'
+    throw new Error 'isStarved check is failing' unless @inFlight <= @maxConnRdy
     @inFlight is @lastRdySent
 
   setRdy: (rdyCount) ->

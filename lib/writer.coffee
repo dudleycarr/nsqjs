@@ -1,4 +1,3 @@
-assert = require 'assert'
 {EventEmitter} = require 'events'
 
 _ = require 'underscore'
@@ -47,7 +46,8 @@ class Writer extends EventEmitter
     msgs: A string, a buffer, or a list of string/buffers.
   ###
   publish: (topic, msgs) ->
-    assert not _.isNull @conn, "No active Writer connection to send messages."
+    if _.isNull @conn
+      throw new Error "No active Writer connection to send messages."
     msgs = [msgs] unless _.isArray msgs
     @conn.produceMessages topic, msgs
 

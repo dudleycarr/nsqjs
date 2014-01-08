@@ -2,6 +2,13 @@ _ = require 'underscore'
 async = require 'async'
 request = require 'request'
 
+###
+lookupdRequest returns the list of producers from a lookupd given a URL to
+query.
+
+The callback will not return an error since it's assumed that there might
+be transient issues with lookupds.
+###
 lookupdRequest = (url, callback) ->
   # All responses are JSON
   options =
@@ -40,12 +47,9 @@ dedupeOnHostPort = (results) ->
     # Flatten list of lists of objects
     .flatten()
     # De-dupe nodes by hostname / port
-    .groupBy (item) ->
+    .indexBy (item) ->
       "#{item.hostname}:#{item.tcp_port}"
-    # Get a list of lists
     .values()
-    # Take the first item from each of the grouped list of nodes
-    .map(_.first)
     .value()
 
 dedupedRequests = (lookupdEndpoints, urlFn, callback) ->
@@ -61,7 +65,7 @@ dedupedRequests = (lookupdEndpoints, urlFn, callback) ->
       (cb) ->
         lookupdRequest url, cb
 
-  async.parallel requestFns, (err, results) ->
+  async.map urls, lookupdRequest, (err, results) ->
     if err
       callback err, null
     else

@@ -1,5 +1,4 @@
 _ = require 'underscore'
-assert = require 'assert'
 request = require 'request'
 {EventEmitter} = require 'events'
 
@@ -38,26 +37,26 @@ class Reader extends EventEmitter
 
     params = _.extend {}, defaults, options
 
-    assert _.isString(topic) and topic.length > 0, 'Invalid topic'
-    assert _.isString(channel) and channel.length > 0, 'Invalid channel'
-    assert _.isNumber(params.maxInFlight) and params.maxInFlight > 0,
-      'maxInFlight needs to be an integer greater than 0'
-    assert _.isNumber(params.heartbeatInterval) and
-      params.heartbeatInterval >= 1,
-      'heartbeatInterval needs to be an integer greater than 1'
-    assert _.isNumber(params.maxBackoffDuration) and
-      params.maxBackoffDuration > 0,
-      'maxBackoffDuration needs to be a number greater than 1'
-    assert params.name is null or _.isString params.name,
-      'name needs to be unspecified or a string'
-    assert _.isNumber params.lookupdPollInterval,
-      'lookupdPollInterval needs to be a number'
-    assert 0 <= params.lookupdPollInterval,
-      'lookupdPollInterval needs to be greater than 0'
-    assert _.isNumber params.lookupdPollJitter,
-      'lookupdPollJitter needs to be a number'
-    assert 0 <= params.lookupdPollJitter <= 1,
-      'lookupdPollJitter needs to be between 0 and 1'
+    unless _.isString(topic) and topic.length > 0
+      throw new Error 'Invalid topic'
+    unless _.isNumber(params.maxInFlight) and params.maxInFlight > 0
+      throw new Error 'maxInFlight needs to be an integer greater than 0'
+    unless _.isNumber(params.heartbeatInterval) and params.heartbeatInterval > 0
+      throw new Error 'heartbeatInterval needs to be an integer greater than 1'
+    unless _.isNumber params.maxBackoffDuration
+      throw new Error 'maxBackoffDuration needs to be a number'
+    unless params.maxBackoffDuration > 0
+      throw new Error 'maxBackoffDuration needs to be a number greater than 1'
+    unless params.name is null or _.isString params.name
+      throw new Error 'name needs to be unspecified or a string'
+    unless _.isNumber params.lookupdPollInterval
+      throw new Error 'lookupdPollInterval needs to be a number'
+    unless 0 <= params.lookupdPollInterval
+      throw new Error 'lookupdPollInterval needs to be greater than 0'
+    unless _.isNumber params.lookupdPollJitter
+      throw new Error 'lookupdPollJitter needs to be a number'
+    unless 0 <= params.lookupdPollJitter <= 1
+      throw new Error 'lookupdPollJitter needs to be between 0 and 1'
 
     # Returns a compacted list given a list, string, integer, or object.
     makeList = (list) ->
@@ -68,8 +67,9 @@ class Reader extends EventEmitter
     params.lookupdHTTPAddresses = makeList params.lookupdHTTPAddresses
 
     anyNotEmpty = (lst...) -> _.some (e for e in lst when not _.isEmpty e)
-    assert anyNotEmpty(params.nsqdTCPAddresses, params.lookupdHTTPAddresses),
-      'Need to specify either nsqdTCPAddresses or lookupdHTTPAddresses option.'
+    unless anyNotEmpty(params.nsqdTCPAddresses, params.lookupdHTTPAddresses)
+      throw new Error 'Need to specify either nsqdTCPAddresses or ' +
+        'lookupdHTTPAddresses option.'
 
     params.name = params.name or "#{topic}:#{channel}"
     params.requeueDelay = params.requeueDelay
@@ -105,14 +105,9 @@ class Reader extends EventEmitter
     # Trigger a query of the configured ``lookupdHTTPAddresses``
     endpoint = @roundrobinLookupd.next()
     lookup endpoint, @topic, (err, nodes) =>
-      unless err
-        for node in nodes
-          @connectToNSQD node.broadcast_address, node.tcp_port
+      @connectToNSQD n.broadcast_address, n.tcp_port for n in nodes unless err
 
   connectToNSQD: (host, port) ->
-    assert _.isString host
-    assert _.isNumber port
-
     connectionId = "#{host}:#{port}"
     return if @connectionIds.indexOf(connectionId) isnt -1
     @connectionIds.push connectionId
