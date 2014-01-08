@@ -1,12 +1,16 @@
 {
   "name": "nsqjs",
   "description": "NodeJS client for NSQ",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "homepage": "https://github.com/dudleycarr/nsqjs",
   "author": {
     "name": "Dudley Carr",
     "email": "dudley.carr@gmail.com"
   },
+  "keywords": [
+    "nsq", "nsq client", "nsqjs", "distributed messaging", "messaging",
+    "task", "task management"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/dudleycarr/nsqjs.git"
@@ -20,12 +24,15 @@
       "url": "https://github.com/dudleycarr/nsqjs/blob/master/LICENSE-MIT"
     }
   ],
-  "main": "lib/nsqjs",
+  "main": "lib/nsq",
+  "scripts": {
+    "build": "coffee --bare --compile --output lib src/*.coffee",
+    "prepublish": "coffee --bare --compile --output lib src/*.coffee",
+    "postpublish": "rm -rf lib",
+    "test": "grunt test"
+  },
   "engines": {
     "node": ">= 0.10.0"
-  },
-  "scripts": {
-    "test": "grunt test"
   },
   "devDependencies": {
     "grunt-contrib-coffee": "~0.7",

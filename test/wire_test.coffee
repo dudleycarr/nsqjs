@@ -6,7 +6,7 @@ sinonChai = require('sinon-chai')
 
 chai.use(sinonChai)
 
-wire = require '../lib/wire.coffee'
+wire = require '../src/wire.coffee'
 
 matchCommand = (commandFn, args, expected) ->
   commandOut = commandFn.apply null, args

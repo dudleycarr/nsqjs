@@ -6,8 +6,8 @@ sinonChai = require 'sinon-chai'
 
 chai.use sinonChai
 
-FrameBuffer = require '../lib/framebuffer.coffee'
-wire = require '../lib/wire'
+FrameBuffer = require '../src/framebuffer.coffee'
+wire = require '../src/wire'
 
 createFrame = (frameId, payload) ->
   frame = new Buffer(4 + 4 + payload.length)

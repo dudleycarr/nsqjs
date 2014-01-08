@@ -9,7 +9,7 @@ sinonChai = require 'sinon-chai'
 
 chai.use sinonChai
 
-lookup = require '../lib/lookupd'
+lookup = require '../src/lookupd'
 
 NSQD_1 =
   address: 'localhost'

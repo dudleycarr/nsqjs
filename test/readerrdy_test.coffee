@@ -9,10 +9,10 @@ sinonChai = require 'sinon-chai'
 chai.use sinonChai
 
 {EventEmitter} = require 'events'
-{NSQDConnection} = require '../lib/nsqdconnection'
-Message = require '../lib/message'
-{ReaderRdy, ConnectionRdy} = require '../lib/readerrdy'
-StateChangeLogger = require '../lib/logging'
+{NSQDConnection} = require '../src/nsqdconnection'
+Message = require '../src/message'
+{ReaderRdy, ConnectionRdy} = require '../src/readerrdy'
+StateChangeLogger = require '../src/logging'
 
 
 class StubNSQDConnection extends EventEmitter
