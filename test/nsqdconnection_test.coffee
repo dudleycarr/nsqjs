@@ -8,9 +8,10 @@ sinonChai = require 'sinon-chai'
 
 chai.use sinonChai
 
-{ConnectionState, NSQDConnection} = require '../src/nsqdconnection.coffee'
+{ConnectionState, NSQDConnection, WriterNSQDConnection, WriterConnectionState} =
+  require '../src/nsqdconnection.coffee'
 
-describe 'ConnectionState', ->
+describe 'Reader ConnectionState', ->
   state =
     sent: []
     connection: null
@@ -62,7 +63,7 @@ describe 'ConnectionState', ->
 
   it 'create a subscription', (done) ->
     {sent, statemachine, connection} = state
-    connection.on NSQDConnection.SUBSCRIBED,  ->
+    connection.on NSQDConnection.READY,  ->
       # Subscribe notification
       done()
 
@@ -82,7 +83,60 @@ describe 'ConnectionState', ->
     statemachine.raise 'response', 'OK' # Identify response
     statemachine.raise 'response', 'OK' # Subscribe response
 
-    statemachine.current_state_name.should.eq 'WAIT_FOR_DATA'
+    statemachine.current_state_name.should.eq 'READY_RECV'
 
-    statemachine.raise 'message', {}
-    statemachine.current_state_name.should.eq 'WAIT_FOR_DATA'
+    statemachine.raise 'consumeMessage', {}
+    statemachine.current_state_name.should.eq 'READY_RECV'
+
+describe 'WriterConnectionState', ->
+  state =
+    sent: []
+    connection: null
+    statemachine: null
+
+  beforeEach ->
+    sent = []
+    connection = new WriterNSQDConnection '127.0.0.1', 4150, 30
+
+    write = sinon.stub connection, 'write', (data) ->
+      sent.push data.toString()
+
+    statemachine = new WriterConnectionState connection
+    connection.statemachine = statemachine
+
+    _.extend state,
+      sent: sent
+      connection: connection
+      statemachine: statemachine
+
+  it 'should generate a READY event after IDENTIFY', (done) ->
+    {statemachine, connection} = state
+
+    connection.on WriterNSQDConnection.READY, ->
+      statemachine.current_state_name.should.eq 'READY_SEND'
+      done()
+
+    statemachine.start()
+    statemachine.raise 'response', 'OK' # Identify response
+
+  it 'should use PUB when sending a single message', (done) ->
+    {statemachine, connection, sent} = state
+
+    connection.on WriterNSQDConnection.READY, ->
+      connection.produceMessages 'test', ['one']
+      sent[sent.length-1].should.match /^PUB/
+      done()
+
+    statemachine.start()
+    statemachine.raise 'response', 'OK' # Identify response
+
+  it 'should use MPUB when sending multiplie messages', (done) ->
+    {statemachine, connection, sent} = state
+
+    connection.on WriterNSQDConnection.READY, ->
+      connection.produceMessages 'test', ['one', 'two']
+      sent[sent.length-1].should.match /^MPUB/
+      done()
+
+    statemachine.start()
+    statemachine.raise 'response', 'OK' # Identify response

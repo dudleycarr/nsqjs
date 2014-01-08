@@ -1,5 +1,4 @@
 _ = require 'underscore'
-assert = require 'assert'
 {EventEmitter} = require 'events'
 
 BackoffTimer = require './backofftimer'
@@ -50,7 +49,7 @@ class ConnectionRdy extends EventEmitter
       @inFlight -= 1
     @conn.on NSQDConnection.REQUEUED, =>
       @inFlight -= 1
-    @conn.on NSQDConnection.SUBSCRIBED, =>
+    @conn.on NSQDConnection.READY, =>
       @start()
 
   name: ->
@@ -74,7 +73,7 @@ class ConnectionRdy extends EventEmitter
     @statemachine.raise 'backoff'
 
   isStarved: ->
-    assert @inFlight <= @maxConnRdy, 'isStarved check is failing'
+    throw new Error 'isStarved check is failing' unless @inFlight <= @maxConnRdy
     @inFlight is @lastRdySent
 
   setRdy: (rdyCount) ->

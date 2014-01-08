@@ -1,5 +1,4 @@
 _ = require 'underscore'
-assert = require 'assert'
 wire = require './wire'
 {EventEmitter} = require 'events'
 
@@ -62,7 +61,8 @@ class Message extends EventEmitter
 
   respond: (responseType, wireData) ->
     process.nextTick =>
-      assert not @hasResponded, "Already responded to message (#{@id})"
+      if @hasResponded
+        throw new Error "Already responded to message (#{@id})"
 
       if responseType isnt Message.TOUCH
         @hasResponded = true

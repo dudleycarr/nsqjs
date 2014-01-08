@@ -1,11 +1,11 @@
 _ = require 'underscore'
-assert = require 'assert'
 request = require 'request'
 {EventEmitter} = require 'events'
 
 {NSQDConnection} = require './nsqdconnection'
 {ReaderRdy} = require './readerrdy'
 RoundRobinList = require './roundrobinlist'
+lookup = require './lookupd'
 
 
 class Reader extends EventEmitter
@@ -37,24 +37,26 @@ class Reader extends EventEmitter
 
     params = _.extend {}, defaults, options
 
-    assert _.isString(topic) and topic.length > 0, 'Invalid topic'
-    assert _.isString(channel) and channel.length > 0, 'Invalid channel'
-    assert _.isNumber(params.maxInFlight) and params.maxInFlight > 0,
-      'maxInFlight needs to be an integer greater than 0'
-    assert _.isNumber(params.heartbeatInterval) and
-      params.heartbeatInterval >= 1,
-      'heartbeatInterval needs to be an integer greater than 1'
-    assert _.isNumber(params.maxBackoffDuration) and
-      params.maxBackoffDuration > 0,
-      'maxBackoffDuration needs to be a number greater than 1'
-    assert params.name is null or _.isString params.name,
-      'name needs to be unspecified or a string'
-    assert _.isNumber params.lookupdPollInterval,
-      'lookupdPollInterval needs to be a number'
-    assert _.isNumber params.lookupdPollJitter,
-      'lookupdPollInterval needs to be a number'
-    assert 0 <= params.lookupdPollJitter <= 1,
-      'lookupdPollJitter needs to be between 0 and 1'
+    unless _.isString(topic) and topic.length > 0
+      throw new Error 'Invalid topic'
+    unless _.isNumber(params.maxInFlight) and params.maxInFlight > 0
+      throw new Error 'maxInFlight needs to be an integer greater than 0'
+    unless _.isNumber(params.heartbeatInterval) and params.heartbeatInterval > 0
+      throw new Error 'heartbeatInterval needs to be an integer greater than 1'
+    unless _.isNumber params.maxBackoffDuration
+      throw new Error 'maxBackoffDuration needs to be a number'
+    unless params.maxBackoffDuration > 0
+      throw new Error 'maxBackoffDuration needs to be a number greater than 1'
+    unless params.name is null or _.isString params.name
+      throw new Error 'name needs to be unspecified or a string'
+    unless _.isNumber params.lookupdPollInterval
+      throw new Error 'lookupdPollInterval needs to be a number'
+    unless 0 <= params.lookupdPollInterval
+      throw new Error 'lookupdPollInterval needs to be greater than 0'
+    unless _.isNumber params.lookupdPollJitter
+      throw new Error 'lookupdPollJitter needs to be a number'
+    unless 0 <= params.lookupdPollJitter <= 1
+      throw new Error 'lookupdPollJitter needs to be between 0 and 1'
 
     # Returns a compacted list given a list, string, integer, or object.
     makeList = (list) ->
@@ -65,8 +67,9 @@ class Reader extends EventEmitter
     params.lookupdHTTPAddresses = makeList params.lookupdHTTPAddresses
 
     anyNotEmpty = (lst...) -> _.some (e for e in lst when not _.isEmpty e)
-    assert anyNotEmpty(params.nsqdTCPAddresses, params.lookupdHTTPAddresses),
-      'Need to specify either nsqdTCPAddresses or lookupdHTTPAddresses option.'
+    unless anyNotEmpty(params.nsqdTCPAddresses, params.lookupdHTTPAddresses)
+      throw new Error 'Need to specify either nsqdTCPAddresses or ' +
+        'lookupdHTTPAddresses option.'
 
     params.name = params.name or "#{topic}:#{channel}"
     params.requeueDelay = params.requeueDelay
@@ -101,39 +104,10 @@ class Reader extends EventEmitter
   queryLookupd: ->
     # Trigger a query of the configured ``lookupdHTTPAddresses``
     endpoint = @roundrobinLookupd.next()
-
-    options =
-      url: "http://#{endpoint}/lookup?topic=#{@topic}"
-      method: 'GET'
-      timeout: 2000
-
-    request options, (err, response, body) =>
-      errPrefix = =>
-        "[#{@name}] Reader: lookupd #{options.url}"
-
-      if err
-        console.error "#{errPrefix()} query error: #{error}"
-        return
-
-      try
-        lookupData = JSON.parse body
-      catch error
-        console.error "#{errPrefix()} failed to parse JSON: #{body}"
-        return
-
-      if lookupData.status_code isnt 200
-        console.error "#{errPrefix()} responded with #{lookupData.status_code}"
-        return
-
-      for producer in lookupData.data.producers
-        address = producer.broadcast_address
-        assert address?
-        @connectToNSQD address, producer.tcp_port
+    lookup endpoint, @topic, (err, nodes) =>
+      @connectToNSQD n.broadcast_address, n.tcp_port for n in nodes unless err
 
   connectToNSQD: (host, port) ->
-    assert _.isString host
-    assert _.isNumber port
-
     connectionId = "#{host}:#{port}"
     return if @connectionIds.indexOf(connectionId) isnt -1
     @connectionIds.push connectionId

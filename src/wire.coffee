@@ -1,5 +1,4 @@
 _ = require 'underscore'
-assert = require 'assert'
 Int64 = require 'node-int64'
 BigNumber = require 'bignumber.js'
 
@@ -53,8 +52,8 @@ command = (cmd, body) ->
   Buffer.concat buffers
 
 exports.subscribe = (topic, channel) ->
-  assert validTopicName topic, 'Invalid topic name'
-  assert validChannelName channel, 'Invalid channel name'
+  throw new Error 'Invalid topic name' unless validTopicName topic
+  throw new Error 'Invalid channel name' unless validChannelName channel
   command 'SUB', null, topic, channel
 
 exports.identify = (data) ->
@@ -71,23 +70,26 @@ exports.identify = (data) ->
   # Make sure there are no unexpected keys
   unexpectedKeys = _.filter _.keys(data), (k) ->
     k not in validIdentifyKeys
-  console.log unexpectedKeys if unexpectedKeys.length > 0
-  assert unexpectedKeys.length is 0, 'Unexpected IDENTIFY keys'
+
+  if unexpectedKeys.length
+    throw new Error "Unexpected IDENTIFY keys: #{unexpectedKeys}"
 
   command 'IDENTIFY', JSON_stringify data
 
 exports.ready = (count) ->
-  assert _.isNumber count, "RDY count (#{count}) is not a number"
-  assert count >= 0, "RDY count (#{count}) is not positive"
+  throw new Error "RDY count (#{count}) is not a number" unless _.isNumber count
+  throw new Error "RDY count (#{count}) is not positive" unless count >= 0
   command 'RDY', null, count.toString()
 
 exports.finish = (id) ->
-  assert Buffer.byteLength(id) <= 16, "FINISH invalid id (#{id})"
+  throw new Error "FINISH invalid id (#{id})" unless Buffer.byteLength(id) <= 16
   command 'FIN', null, id
 
 exports.requeue = (id, timeMs=0) ->
-  assert Buffer.byteLength(id) <= 16, "REQUEUE invalid id (#{id})"
-  assert _.isNumber timeMs, "REQUEUE delay time is invalid (#{timeMs})"
+  unless Buffer.byteLength(id) <= 16
+    throw new Error "REQUEUE invalid id (#{id})"
+  unless _.isNumber timeMs
+    throw new Error "REQUEUE delay time is invalid (#{timeMs})"
 
   parameters = ['REQ', null, id, timeMs]
   command.apply null, parameters
@@ -102,7 +104,7 @@ exports.pub = (topic, data) ->
   command 'PUB', data, topic
 
 exports.mpub = (topic, data) ->
-  assert _.isArray data, "MPUB requires an array of message"
+  throw new Error "MPUB requires an array of message" unless _.isArray data
   messages = _.map data, (message) ->
     buffer = new Buffer(4 + message.length)
     buffer.writeInt32BE message.length, 0
