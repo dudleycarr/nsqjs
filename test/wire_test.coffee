@@ -55,11 +55,21 @@ describe "nsq wire", ->
     matchCommand wire.pub, ['test_topic', 'abcd'],
       'PUB test_topic\n\u0000\u0000\u0000\u0004abcd'
 
-  it 'should publish multiple messages', ->
+  it 'should publish a multi-byte string message', ->
+    matchCommand wire.pub, ['test_topic', 'こんにちは'],
+      'PUB test_topic\n\u0000\u0000\u0000\u000fこんにちは'
+
+  it 'should publish multiple string messages', ->
     matchCommand wire.mpub, ['test_topic', ['abcd', 'efgh', 'ijkl']],
       ['MPUB test_topic\n\u0000\u0000\u0000\u001c\u0000\u0000\u0000\u0003'
        '\u0000\u0000\u0000\u0004abcd', '\u0000\u0000\u0000\u0004efgh',
        '\u0000\u0000\u0000\u0004ijkl'].join ''
+
+  it 'should publish multiple buffer messages', ->
+    matchCommand wire.mpub,
+      ['test_topic', [new Buffer('abcd'), new Buffer('efgh')]],
+      ['MPUB test_topic\n\u0000\u0000\u0000\u0014\u0000\u0000\u0000\u0002'
+       '\u0000\u0000\u0000\u0004abcd', '\u0000\u0000\u0000\u0004efgh'].join ''
 
   it 'should unpack a received message', ->
     msgPayload = [
