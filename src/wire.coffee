@@ -15,6 +15,10 @@ JSON_stringify = (obj, emit_unicode) ->
     json.replace /[\u007f-\uffff]/g, (c) ->
       '\\u' + ('0000' + c.charCodeAt(0).toString 16).slice -4
 
+# Calculates the byte length for either a string or a Buffer.
+byteLength = (msg) ->
+  if _.isString msg then Buffer.byteLength msg else msg.length
+
 exports.unpackMessage = (data) ->
   # Int64 to read the 64bit Int from the buffer
   timestamp = (new Int64 data, 0).toOctetString()
@@ -35,19 +39,13 @@ command = (cmd, body) ->
   parametersStr = parameters.join ' '
   header = cmd + parametersStr + '\n'
 
-  buffers.push new Buffer(header)
+  buffers.push new Buffer header
 
   # Body into output buffer it is not empty
   if body?
-    length = if _.isString body
-      Buffer.byteLength body
-    else
-      # Buffer length is byte length
-      body.length
-
     # Write the size of the payload
     lengthBuffer = new Buffer 4
-    lengthBuffer.writeInt32BE length, 0
+    lengthBuffer.writeInt32BE byteLength(body), 0
     buffers.push lengthBuffer
 
     if _.isString body
@@ -112,14 +110,8 @@ exports.pub = (topic, data) ->
 exports.mpub = (topic, data) ->
   throw new Error "MPUB requires an array of message" unless _.isArray data
   messages = _.map data, (message) ->
-    # Calculate the message length
-    length = if _.isString message
-      Buffer.byteLength message
-    else
-      message.length
-
-    buffer = new Buffer(4 + length)
-    buffer.writeInt32BE length, 0
+    buffer = new Buffer 4 + byteLength message
+    buffer.writeInt32BE byteLength(message), 0
 
     if _.isString message
       buffer.write message, 4
