@@ -6,6 +6,8 @@ fully compliant and maintain feature parity with the official Go ([go-nsq](https
 [![Build Status](https://travis-ci.org/dudleycarr/nsqjs.png?branch=master)](https://travis-ci.org/dudleycarr/nsqjs)
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/dudleycarr/nsqjs/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
+[![NPM](https://nodei.co/npm/nsqjs.png)](https://nodei.co/npm/nsqjs/)
+
 Usage
 -----
 
