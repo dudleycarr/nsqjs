@@ -571,9 +571,9 @@ describe 'ReaderRdy', ->
       # Set to true to see the debug the test.
       StateChangeLogger.debug = false
 
-      # Shortening the periodica `balance` calls to every 10ms. Changing the
-      # max backoff duration to 1 sec.
-      readerRdy = new ReaderRdy 100, 1, 0.01
+      # Shortening the periodic `balance` calls to every 10ms. Changing the
+      # max backoff duration to 10 sec.
+      readerRdy = new ReaderRdy 100, 10, 0.01
 
       connections = for i in [1..5]
         createNSQDConnection i
@@ -603,8 +603,9 @@ describe 'ReaderRdy', ->
         expect(backoffs).to.have.length 4
         done()
 
-      delay = readerRdy.backoffTimer.getInterval() + 100
-      setTimeout afterBackoff, delay * 1000
+      # Add 50ms to the delay so that we're confident that the event fired.
+      delay = readerRdy.backoffTimer.getInterval().plus 0.05
+      setTimeout afterBackoff, new Number(delay.valueOf()) * 1000
 
     it 'should after backoff with a successful message go to MAX', (done) ->
       ###

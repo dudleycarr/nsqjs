@@ -286,7 +286,9 @@ class ReaderRdy extends NodeState
     onTimeout = =>
       @raise 'try'
 
-    @backoffId = setTimeout onTimeout, @backoffTimer.getInterval() * 1000
+    # Convert from the BigNumber representation to Number.
+    delay = new Number(@backoffTimer.getInterval().valueOf()) * 1000
+    @backoffId = setTimeout onTimeout, delay
 
   inFlight: ->
     add = (previous, conn) ->
