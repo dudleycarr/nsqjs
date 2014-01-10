@@ -191,6 +191,9 @@ w.on Writer.CLOSED, ->
 
 Changes
 -------
+* **0.3.1**
+  * Fixed sending an array of Buffers
+  * Fixed sending a message with multi-byte characters
 * **0.3.0**
   * Added Writer implementation
 * **0.2.1**
