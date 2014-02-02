@@ -240,9 +240,8 @@ class ConnectionState extends NodeState
       response: (data) ->
         switch data.toString()
           when 'OK'
-            if @conn.messageCallbacks.length
-              cb = @conn.messageCallbacks.shift()
-              cb null if cb?
+            cb = @conn.messageCallbacks.shift()
+            cb null if cb?
           when '_heartbeat_'
             @conn.write wire.nop()
 
@@ -252,9 +251,8 @@ class ConnectionState extends NodeState
     ERROR:
       Enter: (err) ->
         # If there's a callback, pass it the error.
-        if @conn.messageCallbacks.length
-          cb = @conn.messageCallbacks.unshift()
-          cb err if cb?
+        cb = @conn.messageCallbacks.shift()
+        cb err if cb?
 
         @conn.emit NSQDConnection.ERROR, err
         @goto 'CLOSED'
