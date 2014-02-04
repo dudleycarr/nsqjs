@@ -93,7 +93,7 @@ describe 'Reader ConnectionState', ->
   it 'handle a message finish after a disconnect', (done) ->
     {statemachine, connection} = state
     sinon.stub wire, 'unpackMessage', ->
-      ['1', 0, 0, new Buffer '', 60, 60, 120]
+      ['1', 0, 0, new Buffer(''), 60, 60, 120]
 
     connection.on NSQDConnection.MESSAGE, (msg) ->
       fin = ->
@@ -113,6 +113,9 @@ describe 'Reader ConnectionState', ->
     # Close the connection before the message has been processed.
     connection.destroy()
     statemachine.goto 'CLOSED'
+
+    # Undo stub
+    wire.unpackMessage.restore()
 
 describe 'WriterConnectionState', ->
   state =
