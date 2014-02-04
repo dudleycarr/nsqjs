@@ -19,8 +19,11 @@ class Reader extends EventEmitter
   # 6. Stores Reader configurations
 
   # Reader events
-  @MESSAGE: 'message'
-  @DISCARD: 'discard'
+  @ERROR:          'error'
+  @MESSAGE:        'message'
+  @DISCARD:        'discard'
+  @NSQD_CONNECTED: 'nsqd_connect'
+  @NSQD_CLOSED:    'nsqd_close'
 
   constructor: (@topic, @channel, options) ->
     defaults =
@@ -100,7 +103,6 @@ class Reader extends EventEmitter
     delay = Math.random() * @lookupdPollJitter * interval
     setTimeout delayedStart, delay
 
-
   queryLookupd: ->
     # Trigger a query of the configured ``lookupdHTTPAddresses``
     endpoint = @roundrobinLookupd.next()
@@ -115,12 +117,24 @@ class Reader extends EventEmitter
     conn = new NSQDConnection host, port, @topic, @channel, @requeueDelay,
       @heartbeatInterval
 
+    conn.on NSQDConnection.CONNECTED, =>
+      @emit Reader.NSQD_CONNECTED, conn
+
+    conn.on NSQDConnection.ERROR, (err) =>
+      # Emit internal errors with the exception of connection refused when
+      # using a lookupd.
+      unless @lookupdHTTPAddresses.length and err.code is 'ECONNREFUSED'
+        @emit Reader.ERROR, err
+
     # On close, remove the connection id from this reader.
     conn.on NSQDConnection.CLOSED, =>
       # TODO(dudley): Update when switched to lo-dash
       index = @connectionIds.indexOf connectionId
       return if index is -1
       @connectionIds.splice index, 1
+
+      # Notify Reader clients about nsqd connection.
+      @emit Reader.NSQD_CONNECTED, conn
 
     # On message, send either a message or discard event depending on the
     # number of attempts.

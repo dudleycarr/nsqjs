@@ -53,6 +53,7 @@ class NSQDConnection extends EventEmitter
 
   # Events emitted by NSQDConnection
   @BACKOFF: 'backoff'
+  @CONNECTED: 'connected'
   @CLOSED: 'closed'
   @ERROR: 'error'
   @FINISHED: 'finished'
@@ -72,6 +73,7 @@ class NSQDConnection extends EventEmitter
     @lastReceivedTimestamp = null  # Timestamp of last data received
     @conn = null                   # Socket connection to NSQD
     @id = null                     # Id that comes from connection local port
+    @identifyTimeoutId = null         # Timeout ID for triggering identifyFail
 
   connectionState: ->
     @statemachine or new ConnectionState this
@@ -87,11 +89,15 @@ class NSQDConnection extends EventEmitter
       @conn = net.connect @nsqdPort, @nsqdHost, =>
         @id = @conn.localPort
         @statemachine.start()
+        @emit NSQDConnection.CONNECTED
+        # Once there's a socket connection, give it 5 seconds to receive an
+        # identify response.
+        @identifyTimeoutId = setTimeout @identifyTimeout.bind(this), 5000
       @conn.on 'data', (data) =>
         @receiveData data
       @conn.on 'error', (err) =>
         @statemachine.goto 'ERROR', err
-      @conn.on 'close', =>
+      @conn.on 'close', (err) =>
         @statemachine.raise 'close'
 
   setRdy: (rdyCount) ->
@@ -116,6 +122,13 @@ class NSQDConnection extends EventEmitter
     long_id: os.hostname()
     feature_negotiation: true,
     heartbeat_interval: @heartbeatInterval * 1000
+
+  identifyTimeout: ->
+    @statemachine.goto 'ERROR', new Error 'Timed out identifying with nsqd'
+
+  clearIdentifyTimeout: ->
+    clearTimeout @identifyTimeoutId
+    @identifyTimeoutId = null
 
   # Create a Message object from the message payload received from nsqd.
   createMessage: (msgPayload) ->
@@ -185,6 +198,7 @@ class ConnectionState extends NodeState
         @conn.maxRdyCount = identifyResponse.max_rdy_count
         @conn.maxMsgTimeout = identifyResponse.max_msg_timeout
         @conn.msgTimeout = identifyResponse.msg_timeout
+        @conn.clearIdentifyTimeout()
 
         @goto @afterIdentify()
 

@@ -9,7 +9,8 @@ sinonChai = require 'sinon-chai'
 chai.use sinonChai
 
 {ConnectionState, NSQDConnection, WriterNSQDConnection, WriterConnectionState} =
-  require '../src/nsqdconnection.coffee'
+  require '../src/nsqdconnection'
+wire = require '../src/wire'
 
 describe 'Reader ConnectionState', ->
   state =
@@ -22,8 +23,9 @@ describe 'Reader ConnectionState', ->
 
     connection = new NSQDConnection '127.0.0.1', 4150, 'topic_test',
       'channel_test'
-    write = sinon.stub connection, 'write', (data) ->
+    sinon.stub connection, 'write', (data) ->
       sent.push data.toString()
+    sinon.stub connection, 'destroy', ->
 
     statemachine = new ConnectionState connection
 
@@ -87,6 +89,30 @@ describe 'Reader ConnectionState', ->
 
     statemachine.raise 'consumeMessage', {}
     statemachine.current_state_name.should.eq 'READY_RECV'
+
+  it 'handle a message finish after a disconnect', (done) ->
+    {statemachine, connection} = state
+    sinon.stub wire, 'unpackMessage', ->
+      ['1', 0, 0, new Buffer '', 60, 60, 120]
+
+    connection.on NSQDConnection.MESSAGE, (msg) ->
+      fin = ->
+        msg.finish()
+        done()
+      setTimeout fin, 10
+
+    # Advance the connection to the READY state.
+    statemachine.start()
+    statemachine.raise 'response', 'OK' # Identify response
+    statemachine.raise 'response', 'OK' # Subscribe response
+
+    # Receive message
+    msg = connection.createMessage('')
+    statemachine.raise 'consumeMessage', msg
+
+    # Close the connection before the message has been processed.
+    connection.destroy()
+    statemachine.goto 'CLOSED'
 
 describe 'WriterConnectionState', ->
   state =
