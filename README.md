@@ -197,6 +197,11 @@ w.on Writer.CLOSED, ->
 
 Changes
 -------
+* **0.4.0**
+  * Expose error events on Reader/Writer
+  * Expose nsqd connect / disconnect events
+  * Fix crash when Message `finish`, `requeue`, etc after nsqd disconnect.
+  * Fix lookupd only queried on startup.
 * **0.3.1**
   * Fixed sending an array of Buffers
   * Fixed sending a message with multi-byte characters
