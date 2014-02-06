@@ -55,6 +55,7 @@ class NSQDConnection extends EventEmitter
   @BACKOFF: 'backoff'
   @CONNECTED: 'connected'
   @CLOSED: 'closed'
+  @CONNECTION_ERROR: 'connection_error'
   @ERROR: 'error'
   @FINISHED: 'finished'
   @MESSAGE: 'message'
@@ -96,7 +97,8 @@ class NSQDConnection extends EventEmitter
       @conn.on 'data', (data) =>
         @receiveData data
       @conn.on 'error', (err) =>
-        @statemachine.goto 'ERROR', err
+        @statemachine.goto 'CLOSED'
+        @emit 'connection_error', err
       @conn.on 'close', (err) =>
         @statemachine.raise 'close'
 

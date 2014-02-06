@@ -24,6 +24,7 @@ class Writer extends EventEmitter
   # Writer events
   @READY: 'ready'
   @CLOSED: 'closed'
+  @ERROR: 'error'
 
   constructor: (@nsqdHost, @nsqdPort) ->
 
@@ -36,6 +37,12 @@ class Writer extends EventEmitter
 
     @conn.on WriterNSQDConnection.CLOSED, =>
       @emit Writer.CLOSED
+      
+    @conn.on WriterNSQDConnection.ERROR, (err) =>
+      @emit Writer.ERROR, err
+
+    @conn.on WriterNSQDConnection.CONNECTION_ERROR, (err) =>
+      @emit Writer.ERROR, err
 
   ###
   Publish a message or a list of messages to the connected nsqd. The contents

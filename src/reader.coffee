@@ -98,7 +98,7 @@ class Reader extends EventEmitter
 
     interval = @lookupdPollInterval * 1000
     delayedStart = =>
-      @lookupdId = setTimeout @queryLookupd.bind(this), interval
+      @lookupdId = setInterval @queryLookupd.bind(this), interval
 
     delay = Math.random() * @lookupdPollJitter * interval
     setTimeout delayedStart, delay
@@ -121,9 +121,11 @@ class Reader extends EventEmitter
       @emit Reader.NSQD_CONNECTED, conn
 
     conn.on NSQDConnection.ERROR, (err) =>
-      # Emit internal errors with the exception of connection refused when
-      # using a lookupd.
-      unless @lookupdHTTPAddresses.length and err.code is 'ECONNREFUSED'
+      @emit Reader.ERROR, err
+
+    # When specifying nsqd hosts explicitly, pass along connection errors.
+    if not @lookupdHTTPAddresses.length
+      conn.on NSQDConnection.CONNECTION_ERROR, (err) =>
         @emit Reader.ERROR, err
 
     # On close, remove the connection id from this reader.
@@ -134,7 +136,7 @@ class Reader extends EventEmitter
       @connectionIds.splice index, 1
 
       # Notify Reader clients about nsqd connection.
-      @emit Reader.NSQD_CONNECTED, conn
+      @emit Reader.NSQD_DISCONNECTED, conn
 
     # On message, send either a message or discard event depending on the
     # number of attempts.

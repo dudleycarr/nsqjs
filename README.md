@@ -42,6 +42,9 @@ Reader events are:
 
 * `Reader.MESSAGE`
 * `Reader.DISCARD`
+* `Reader.ERROR`
+* `Reader.NSQD_CONNECTED`
+* `Reader.NSQD_DISCONNECTED`
 
 Both events produce a Message object.
 
@@ -83,6 +86,7 @@ Writer events are:
 
 * `Writer.READY`
 * `Writer.CLOSED`
+* `Writer.ERROR`
 
 These methods are available on a Writer object:
 * `connect()` <br/>
