@@ -241,7 +241,7 @@ class ConnectionState extends NodeState
         switch data.toString()
           when 'OK'
             cb = @conn.messageCallbacks.shift()
-            cb null if cb?
+            cb? null
           when '_heartbeat_'
             @conn.write wire.nop()
 
@@ -252,7 +252,7 @@ class ConnectionState extends NodeState
       Enter: (err) ->
         # If there's a callback, pass it the error.
         cb = @conn.messageCallbacks.shift()
-        cb err if cb?
+        cb? err
 
         @conn.emit NSQDConnection.ERROR, err
         @goto 'CLOSED'
@@ -263,8 +263,9 @@ class ConnectionState extends NodeState
     CLOSED:
       Enter: ->
         # If there are callbacks, then let them error on the closed connection.
+        err = new Error 'nsqd connection closed'
         for cb in @conn.messageCallbacks
-          cb new Error 'nsqd connection closed.' if cb?
+          cb? err
         @conn.messageCallbacks = []
 
         @stop()
