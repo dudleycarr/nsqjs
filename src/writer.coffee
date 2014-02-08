@@ -45,11 +45,11 @@ class Writer extends EventEmitter
     topic: A valid nsqd topic.
     msgs: A string, a buffer, or a list of string/buffers.
   ###
-  publish: (topic, msgs) ->
+  publish: (topic, msgs, callback) ->
     unless @conn?
       throw new Error "No active Writer connection to send messages."
     msgs = [msgs] unless _.isArray msgs
-    @conn.produceMessages topic, msgs
+    @conn.produceMessages topic, msgs, callback
 
   close: ->
     @conn.destroy()

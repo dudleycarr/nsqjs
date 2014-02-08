@@ -72,6 +72,7 @@ class NSQDConnection extends EventEmitter
     @lastReceivedTimestamp = null  # Timestamp of last data received
     @conn = null                   # Socket connection to NSQD
     @id = null                     # Id that comes from connection local port
+    @messageCallbacks = []         # Callbacks on message sent responses
 
   connectionState: ->
     @statemachine or new ConnectionState this
@@ -208,8 +209,7 @@ class ConnectionState extends NodeState
         @conn.emit NSQDConnection.MESSAGE, msg
 
       response: (data) ->
-        if data.toString() is '_heartbeat_'
-          @conn.write wire.nop()
+        @conn.write wire.nop() if data.toString() is '_heartbeat_'
 
       ready: (rdyCount) ->
         # RDY count for this nsqd cannot exceed the nsqd configured
@@ -226,7 +226,9 @@ class ConnectionState extends NodeState
         @conn.emit NSQDConnection.READY
 
       produceMessages: (data) ->
-        [topic, msgs] = data
+        [topic, msgs, callback] = data
+        @conn.messageCallbacks.push callback
+
         unless _.isArray msgs
           throw new Error 'Expect an array of messages to produceMessages'
 
@@ -236,13 +238,22 @@ class ConnectionState extends NodeState
           @conn.write wire.mpub topic, msgs
 
       response: (data) ->
-        @conn.write wire.nop() if data.toString() is '_heartbeat_'
+        switch data.toString()
+          when 'OK'
+            cb = @conn.messageCallbacks.shift()
+            cb? null
+          when '_heartbeat_'
+            @conn.write wire.nop()
 
       close: ->
         @goto 'CLOSED'
 
     ERROR:
       Enter: (err) ->
+        # If there's a callback, pass it the error.
+        cb = @conn.messageCallbacks.shift()
+        cb? err
+
         @conn.emit NSQDConnection.ERROR, err
         @goto 'CLOSED'
 
@@ -251,6 +262,12 @@ class ConnectionState extends NodeState
 
     CLOSED:
       Enter: ->
+        # If there are callbacks, then let them error on the closed connection.
+        err = new Error 'nsqd connection closed'
+        for cb in @conn.messageCallbacks
+          cb? err
+        @conn.messageCallbacks = []
+
         @stop()
         @conn.destroy()
         @conn.emit NSQDConnection.CLOSED
@@ -296,8 +313,8 @@ class WriterNSQDConnection extends NSQDConnection
   connectionState: ->
     @statemachine or new WriterConnectionState this
 
-  produceMessages: (topic, msgs) ->
-    @statemachine.raise 'produceMessages', [topic, msgs]
+  produceMessages: (topic, msgs, callback) ->
+    @statemachine.raise 'produceMessages', [topic, msgs, callback]
 
 
 class WriterConnectionState extends ConnectionState
