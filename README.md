@@ -94,9 +94,9 @@ These methods are available on a Writer object:
   lookupd.
 * `close()` <br/>
   Disconnect from the nsqd.
-* `publish(topic, msgs)` <br/>
+* `publish(topic, msgs, [callback])` <br/>
   `topic` is a string. `msgs` is either a string, a `Buffer`, or a list of
-  strings / `Buffers`.
+  strings / `Buffers`. `callback` takes a single `error` argument.
 
 ### Simple example
 
@@ -191,6 +191,9 @@ w.on Writer.READY, ->
   w.publish 'sample_topic', 'it really tied the room together'
   w.publish 'sample_topic', ['Uh, excuse me. Mark it zero. Next frame.', 
     'Smokey, this is not \'Nam. This is bowling. There are rules.']
+  w.publish 'sample_topic', 'Wu?', (err) ->
+    console.log 'Message sent successfully' unless err?
+  w.close()
 w.on Writer.CLOSED, ->
   console.log 'Writer closed'
 ```
@@ -198,6 +201,7 @@ w.on Writer.CLOSED, ->
 Changes
 -------
 * **0.4.0**
+	* Added callback for Writer publish
   * Expose error events on Reader/Writer
   * Expose nsqd connect / disconnect events
   * Fix crash when Message `finish`, `requeue`, etc after nsqd disconnect.

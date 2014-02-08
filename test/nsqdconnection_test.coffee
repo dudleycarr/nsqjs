@@ -126,6 +126,7 @@ describe 'WriterConnectionState', ->
   beforeEach ->
     sent = []
     connection = new WriterNSQDConnection '127.0.0.1', 4150, 30
+    sinon.stub connection, 'destroy'
 
     write = sinon.stub connection, 'write', (data) ->
       sent.push data.toString()
@@ -165,6 +166,56 @@ describe 'WriterConnectionState', ->
     connection.on WriterNSQDConnection.READY, ->
       connection.produceMessages 'test', ['one', 'two']
       sent[sent.length-1].should.match /^MPUB/
+      done()
+
+    statemachine.start()
+    statemachine.raise 'response', 'OK' # Identify response
+
+  it 'should call the callback when supplied on publishing a message', (done) ->
+    {statemachine, connection, sent} = state
+
+    connection.on WriterNSQDConnection.READY, ->
+      connection.produceMessages 'test', ['one'], ->
+        done()
+
+      statemachine.raise 'response', 'OK' # Message response
+
+    statemachine.start()
+    statemachine.raise 'response', 'OK' # Identify response
+
+  it 'should call the the right callback on several messages', (done) ->
+    {statemachine, connection, sent} = state
+
+    connection.on WriterNSQDConnection.READY, ->
+      connection.produceMessages 'test', ['one']
+      connection.produceMessages 'test', ['two'], ->
+        # There should be no more callbacks
+        connection.messageCallbacks.length.should.be.eq 0
+        done()
+
+      statemachine.raise 'response', 'OK' # Message response
+      statemachine.raise 'response', 'OK' # Message response
+
+    statemachine.start()
+    statemachine.raise 'response', 'OK' # Identify response
+
+  it 'should call all callbacks on nsqd disconnect', (done) ->
+    {statemachine, connection, sent} = state
+
+    firstCb = sinon.spy()
+    secondCb = sinon.spy()
+
+    connection.on WriterNSQDConnection.ERROR, ->
+      # Nothing to do on error.
+
+    connection.on WriterNSQDConnection.READY, ->
+      connection.produceMessages 'test', ['one'], firstCb
+      connection.produceMessages 'test', ['two'], secondCb
+      statemachine.goto 'ERROR', 'lost connection'
+      
+    connection.on WriterNSQDConnection.CLOSED, ->
+      expect(firstCb.calledOnce).is.ok
+      expect(secondCb.calledOnce).is.ok
       done()
 
     statemachine.start()
