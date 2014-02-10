@@ -22,8 +22,7 @@ class Reader extends EventEmitter
   @ERROR:          'error'
   @MESSAGE:        'message'
   @DISCARD:        'discard'
-  @NSQD_CONNECTED: 'nsqd_connect'
-  @NSQD_CLOSED:    'nsqd_close'
+  @NSQD:           'nsqd'
 
   constructor: (@topic, @channel, options) ->
     defaults =
@@ -82,26 +81,38 @@ class Reader extends EventEmitter
 
     @roundrobinLookupd = new RoundRobinList @lookupdHTTPAddresses
     @readerRdy = new ReaderRdy @maxInFlight, @maxBackoffDuration
-    @lookupdId = null
+    @connectIntervalId = null
     @connectionIds = []
 
   connect: ->
-    unless _.isEmpty @nsqdTCPAddresses
-      for addr in @nsqdTCPAddresses
-        [address, port] = addr.split ':'
-        @connectToNSQD address, Number(port)
-
-    return unless @lookupdHTTPAddresses
-
-    # Force the first lookup now.
-    @queryLookupd()
-
     interval = @lookupdPollInterval * 1000
-    delayedStart = =>
-      @lookupdId = setInterval @queryLookupd.bind(this), interval
-
     delay = Math.random() * @lookupdPollJitter * interval
-    setTimeout delayedStart, delay
+
+    # Connect to provided nsqds.
+    if @nsqdTCPAddresses.length
+      directConnect = =>
+        if @connectionIds.length < @nsqdTCPAddresses.length
+          for addr in @nsqdTCPAddresses
+            [address, port] = addr.split ':'
+            @connectToNSQD address, Number(port)
+
+      delayedStart = =>
+        @connectIntervalId = setInterval directConnect.bind(this), interval
+
+      # Connect immediately.
+      directConnect()
+      # Start interval for connecting after delay.
+      setTimeout delayedStart, delay
+
+    # Connect to nsqds discovered via lookupd
+    else
+      delayedStart = =>
+        @connectIntervalId = setInterval @queryLookupd.bind(this), interval
+
+      # Connect immediately.
+      @queryLookupd()
+      # Start interval for querying lookupd after delay.
+      setTimeout delayedStart, delay
 
   queryLookupd: ->
     # Trigger a query of the configured ``lookupdHTTPAddresses``
@@ -117,16 +128,8 @@ class Reader extends EventEmitter
     conn = new NSQDConnection host, port, @topic, @channel, @requeueDelay,
       @heartbeatInterval
 
-    conn.on NSQDConnection.CONNECTED, =>
-      @emit Reader.NSQD_CONNECTED, conn
-
     conn.on NSQDConnection.ERROR, (err) =>
       @emit Reader.ERROR, err
-
-    # When specifying nsqd hosts explicitly, pass along connection errors.
-    if not @lookupdHTTPAddresses.length
-      conn.on NSQDConnection.CONNECTION_ERROR, (err) =>
-        @emit Reader.ERROR, err
 
     # On close, remove the connection id from this reader.
     conn.on NSQDConnection.CLOSED, =>
@@ -134,9 +137,6 @@ class Reader extends EventEmitter
       index = @connectionIds.indexOf connectionId
       return if index is -1
       @connectionIds.splice index, 1
-
-      # Notify Reader clients about nsqd connection.
-      @emit Reader.NSQD_DISCONNECTED, conn
 
     # On message, send either a message or discard event depending on the
     # number of attempts.
@@ -150,6 +150,9 @@ class Reader extends EventEmitter
           @emit Reader.DISCARD, message
 
     @readerRdy.addConnection conn
+    process.nextTick =>
+      @emit Reader.NSQD, conn
+
     conn.connect()
 
 

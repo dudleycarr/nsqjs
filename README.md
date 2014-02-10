@@ -40,13 +40,23 @@ options object.
 
 Reader events are:
 
-* `Reader.MESSAGE`
-* `Reader.DISCARD`
-* `Reader.ERROR`
-* `Reader.NSQD_CONNECTED`
-* `Reader.NSQD_DISCONNECTED`
+* `Reader.MESSAGE` or `message`
+* `Reader.DISCARD` or `discard`
+* `Reader.ERROR` or `error`
+* `Reader.NSQD` or `nsqd`
 
-Both events produce a Message object.
+`Reader.MESSAGE` and `Reader.DISCARD` both produce `Message` objects.
+`Reader.NSQD` produces a `NSQDConnection` instance.
+
+The `NSQDConnection` objects represent a connection to a particular nsqd
+instance as specified to the `Reader` or discovered via a lookupd. The 
+following events might be of interest:
+
+* `NSQDConnection.CONNECTED` or `connected`
+* `NSQDConnection.CLOSED` or `closed`
+* `NSQDConnection.CONNECTION_ERROR` or `connection_error`
+* `NSQDConnection.ERROR` or `error`
+
 
 ### Message
 The following properties and methods are available on Message objects produced by a Reader
@@ -84,9 +94,9 @@ can be discovered via lookupds.
 
 Writer events are:
 
-* `Writer.READY`
-* `Writer.CLOSED`
-* `Writer.ERROR`
+* `Writer.READY` or `ready`
+* `Writer.CLOSED` or `closed`
+* `Writer.ERROR` or `error`
 
 These methods are available on a Writer object:
 * `connect()` <br/>
