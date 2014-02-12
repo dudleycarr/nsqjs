@@ -43,19 +43,12 @@ Reader events are:
 * `Reader.MESSAGE` or `message`
 * `Reader.DISCARD` or `discard`
 * `Reader.ERROR` or `error`
-* `Reader.NSQD` or `nsqd`
+* `Reader.NSQD_CONNECTED` or `nsqd_connected`
+* `Reader.NSQD_CLOSED` or `nsqd_closed`
 
 `Reader.MESSAGE` and `Reader.DISCARD` both produce `Message` objects.
-`Reader.NSQD` produces a `NSQDConnection` instance.
-
-The `NSQDConnection` objects represent a connection to a particular nsqd
-instance as specified to the `Reader` or discovered via a lookupd. The 
-following events might be of interest:
-
-* `NSQDConnection.CONNECTED` or `connected`
-* `NSQDConnection.CLOSED` or `closed`
-* `NSQDConnection.CONNECTION_ERROR` or `connection_error`
-* `NSQDConnection.ERROR` or `error`
+`Reader.NSQD_CONNECTED` and `Reader.NSQD_CLOSED` events both provide the host
+and port of the nsqd to which the event pertains.
 
 
 ### Message
