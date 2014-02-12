@@ -74,7 +74,7 @@ class NSQDConnection extends EventEmitter
     @lastReceivedTimestamp = null  # Timestamp of last data received
     @conn = null                   # Socket connection to NSQD
     @id = null                     # Id that comes from connection local port
-    @identifyTimeoutId = null         # Timeout ID for triggering identifyFail
+    @identifyTimeoutId = null      # Timeout ID for triggering identifyFail
     @messageCallbacks = []         # Callbacks on message sent responses
 
   connectionState: ->
