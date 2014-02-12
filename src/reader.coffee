@@ -19,10 +19,10 @@ class Reader extends EventEmitter
   # 6. Stores Reader configurations
 
   # Reader events
-  @ERROR:          'error'
-  @MESSAGE:        'message'
-  @DISCARD:        'discard'
-  @NSQD:           'nsqd'
+  @ERROR: 'error'
+  @MESSAGE: 'message'
+  @DISCARD: 'discard'
+  @NSQD: 'nsqd'
 
   constructor: (@topic, @channel, options) ->
     defaults =
