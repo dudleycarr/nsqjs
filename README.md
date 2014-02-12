@@ -57,6 +57,20 @@ following events might be of interest:
 * `NSQDConnection.CONNECTION_ERROR` or `connection_error`
 * `NSQDConnection.ERROR` or `error`
 
+These methods are available on a Reader object:
+* `connect()` <br/>
+  Connect to the nsqds specified or connect to a random nsqd discovered via
+  lookupd.
+* `close()` <br/>
+  Disconnect from all nsqds. Does not wait for in-flight messages to complete.
+* `pause()` <br/>
+  Pause the Reader by stopping message flow. Does not affect in-flight
+  messages.
+* `unpause()` <br/>
+  Unpauses the Reader by resuming normal message flow.
+* `isPaused()` <br/>
+  `true` if paused, `false` otherwise.
+
 
 ### Message
 The following properties and methods are available on Message objects produced by a Reader
@@ -100,8 +114,7 @@ Writer events are:
 
 These methods are available on a Writer object:
 * `connect()` <br/>
-  Connect to the nsqd specified or connect to a random nsqd discovered via
-  lookupd.
+  Connect to the nsqd specified.
 * `close()` <br/>
   Disconnect from the nsqd.
 * `publish(topic, msgs, [callback])` <br/>
@@ -211,10 +224,11 @@ w.on Writer.CLOSED, ->
 Changes
 -------
 * **0.4.0**
+	* Added `close`, `pause`, and `unpause` to Reader
 	* Added callback for Writer publish
   * Expose error events on Reader/Writer
   * Expose nsqd connect / disconnect events
-  * Fix crash when Message `finish`, `requeue`, etc after nsqd disconnect.
+  * Fix crash when Message `finish`, `requeue`, etc after nsqd disconnect
   * Fix lookupd only queried on startup.
 * **0.3.1**
   * Fixed sending an array of Buffers

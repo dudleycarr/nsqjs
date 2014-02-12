@@ -52,6 +52,9 @@ class ConnectionRdy extends EventEmitter
     @conn.on NSQDConnection.READY, =>
       @start()
 
+  close: ->
+    @conn.destroy()
+
   name: ->
     String @conn.conn.localPort
 
@@ -205,11 +208,19 @@ class ReaderRdy extends NodeState
     @backoffId = null
     @balanceId = null
     @connections = []
+    @paused = false
     @roundRobinConnections = new RoundRobinList []
 
   close: ->
     clearTimeout @backoffId
     clearTimeout @balanceId
+    conn.close() for conn in @connections
+
+  pause: ->
+    @raise 'pause'
+
+  unpause: ->
+    @raise 'unpause'
 
   log: (message) ->
     StateChangeLogger.log 'ReaderRdy', @current_state_name, @id, message
@@ -362,9 +373,21 @@ class ReaderRdy extends NodeState
     ZERO:
       Enter: ->
         clearTimeout @backoffId if @backoffId
-      backoff: -> # No-op
-      success: -> # No-op
-      try: ->     # No-op
+      backoff: ->        # No-op
+      success: ->        # No-op
+      try: ->            # No-op
+      pause: ->          # No-op
+      unpause: ->        # No-op
+
+    PAUSE:
+      Enter: ->
+        conn.backoff() for conn in @connections
+      backoff: ->        # No-op
+      success: ->        # No-op
+      try: ->            # No-op
+      pause: ->          # No-op
+      unpause: ->
+        @goto 'TRY_ONE'
 
     TRY_ONE:
       Enter: ->
@@ -373,24 +396,34 @@ class ReaderRdy extends NodeState
         @goto 'BACKOFF'
       success: ->
         @goto 'MAX'
-      try: -> # No-op
+      try: ->            # No-op
+      pause: ->
+        @goto 'PAUSE'
+      unpause: ->        # No-op
 
     MAX:
       Enter: ->
         @bump()
       backoff: ->
         @goto 'BACKOFF'
-      success: -> # No-op
-      try: -> # No-op
+      success: ->       # No-op
+      try: ->           # No-op
+      pause: ->
+        @goto 'PAUSE'
+      unpause: ->       # No-op
+
 
     BACKOFF:
       Enter: ->
         @backoff()
       backoff: ->
         @backoff()
-      success: -> # No-op
+      success: ->       # No-op
       try: ->
         @goto 'TRY_ONE'
+      pause: ->
+        @goto 'PAUSE'
+      unpause: ->       # No-op
 
   transitions:
     '*':

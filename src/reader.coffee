@@ -91,6 +91,9 @@ class Reader extends EventEmitter
     # Connect to provided nsqds.
     if @nsqdTCPAddresses.length
       directConnect = =>
+        # Don't establish new connections while the Reader is paused.
+        return if @readerRdy.paused
+
         if @connectionIds.length < @nsqdTCPAddresses.length
           for addr in @nsqdTCPAddresses
             [address, port] = addr.split ':'
@@ -114,7 +117,24 @@ class Reader extends EventEmitter
       # Start interval for querying lookupd after delay.
       setTimeout delayedStart, delay
 
+  # Caution: in-flight messages will not get a chance to finish.
+  close: ->
+    clearInterval @connectIntervalId
+    @readerRdy.close()
+
+  pause: ->
+    @readerRdy.pause()
+
+  unpause: ->
+    @readerRdy.unpause()
+
+  isPaused: ->
+    @readyReady.paused
+
   queryLookupd: ->
+    # Don't establish new connections while the Reader is paused.
+    return if @readerRdy.paused
+
     # Trigger a query of the configured ``lookupdHTTPAddresses``
     endpoint = @roundrobinLookupd.next()
     lookup endpoint, @topic, (err, nodes) =>
