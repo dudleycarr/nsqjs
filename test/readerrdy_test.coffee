@@ -26,6 +26,8 @@ class StubNSQDConnection extends EventEmitter
 
   connect: ->
     # Empty
+  destroy: ->
+    # Empty
   setRdy: (rdyCount) ->
     # Empty
   createMessage: (msgId, msgTimestamp, attempts, msgBody) ->
@@ -657,3 +659,35 @@ describe 'ReaderRdy', ->
 
       delay = readerRdy.backoffTimer.getInterval() + 100
       setTimeout afterBackoff, delay * 1000
+
+  describe 'pause / unpause', ->
+    beforeEach ->
+      # Shortening the periodic `balance` calls to every 10ms. Changing the
+      # max backoff duration to 1 sec.
+      readerRdy = new ReaderRdy 100, 1, 0.01
+
+      connections = for i in [1..5]
+        createNSQDConnection i
+
+      for conn in connections
+        readerRdy.addConnection conn
+        conn.emit NSQDConnection.READY
+
+    it 'should drop ready count to zero on all connections when paused', ->
+      # Set to true to see the debug the test.
+      StateChangeLogger.debug = false
+
+      readerRdy.pause()
+      expect(readerRdy.current_state_name).to.eql 'PAUSE'
+
+      for conn in readerRdy.connections
+        expect(conn.lastRdySent).to.eql 0
+
+    it 'should unpause by trying one', ->
+      # Set to true to see the debug the test.
+      StateChangeLogger.debug = false
+
+      readerRdy.pause()
+      readerRdy.unpause()
+
+      expect(readerRdy.current_state_name).to.eql 'TRY_ONE'
