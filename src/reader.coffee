@@ -22,7 +22,8 @@ class Reader extends EventEmitter
   @ERROR: 'error'
   @MESSAGE: 'message'
   @DISCARD: 'discard'
-  @NSQD: 'nsqd'
+  @NSQD_CONNECTED: 'nsqd_connected'
+  @NSQD_CLOSED: 'nsqd_closed'
 
   constructor: (@topic, @channel, options) ->
     defaults =
@@ -148,6 +149,9 @@ class Reader extends EventEmitter
     conn = new NSQDConnection host, port, @topic, @channel, @requeueDelay,
       @heartbeatInterval
 
+    conn.on NSQDConnection.CONNECTED, =>
+      @emit Reader.NSQD_CONNECTED, host, port
+
     conn.on NSQDConnection.ERROR, (err) =>
       @emit Reader.ERROR, err
 
@@ -157,6 +161,8 @@ class Reader extends EventEmitter
       index = @connectionIds.indexOf connectionId
       return if index is -1
       @connectionIds.splice index, 1
+
+      @emit Reader.NSQD_CLOSED, host, port
 
     # On message, send either a message or discard event depending on the
     # number of attempts.
@@ -170,8 +176,6 @@ class Reader extends EventEmitter
           @emit Reader.DISCARD, message
 
     @readerRdy.addConnection conn
-    process.nextTick =>
-      @emit Reader.NSQD, conn
 
     conn.connect()
 
