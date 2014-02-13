@@ -662,7 +662,7 @@ describe 'ReaderRdy', ->
 
   describe 'pause / unpause', ->
     beforeEach ->
-      # Shortening the periodica `balance` calls to every 10ms. Changing the
+      # Shortening the periodic `balance` calls to every 10ms. Changing the
       # max backoff duration to 1 sec.
       readerRdy = new ReaderRdy 100, 1, 0.01
 
@@ -678,10 +678,10 @@ describe 'ReaderRdy', ->
       StateChangeLogger.debug = false
 
       readerRdy.pause()
-      expect(readerRdy.current_state_name).is.eql 'PAUSE'
+      expect(readerRdy.current_state_name).to.eql 'PAUSE'
 
       for conn in readerRdy.connections
-        expect(conn.lastRdySent).is.eql 0
+        expect(conn.lastRdySent).to.eql 0
 
     it 'should unpause by trying one', ->
       # Set to true to see the debug the test.
@@ -690,4 +690,4 @@ describe 'ReaderRdy', ->
       readerRdy.pause()
       readerRdy.unpause()
 
-      expect(readerRdy.current_state_name).is.eql 'TRY_ONE'
+      expect(readerRdy.current_state_name).to.eql 'TRY_ONE'

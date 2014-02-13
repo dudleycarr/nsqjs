@@ -93,7 +93,7 @@ class Reader extends EventEmitter
     if @nsqdTCPAddresses.length
       directConnect = =>
         # Don't establish new connections while the Reader is paused.
-        return if @readerRdy.paused
+        return if @isPaused()
 
         if @connectionIds.length < @nsqdTCPAddresses.length
           for addr in @nsqdTCPAddresses
@@ -134,7 +134,7 @@ class Reader extends EventEmitter
 
   queryLookupd: ->
     # Don't establish new connections while the Reader is paused.
-    return if @readerRdy.paused
+    return if @isPaused()
 
     # Trigger a query of the configured ``lookupdHTTPAddresses``
     endpoint = @roundrobinLookupd.next()
