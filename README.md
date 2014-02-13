@@ -52,7 +52,7 @@ and port of the nsqd to which the event pertains.
 
 These methods are available on a Reader object:
 * `connect()` <br/>
-  Connect to the nsqds specified or connect to a random nsqd discovered via
+  Connect to the nsqds specified or connect to a nsqds discovered via
   lookupd.
 * `close()` <br/>
   Disconnect from all nsqds. Does not wait for in-flight messages to complete.
