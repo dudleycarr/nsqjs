@@ -30,10 +30,7 @@ class FrameBuffer
       offset = @frameOffset offset
 
     # Get all but the last frame out of the buffer.
-    frames = _.chain(frameOffsets)
-      .initial()
-      .map(_.bind @pluckFrame, this)
-      .value()
+    frames = (@pluckFrame offset for offset in frameOffsets[0...-1])
 
     # Get the last frame if it's not a partial frame.
     consumedOffset = lastOffset = frameOffsets.pop()
