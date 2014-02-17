@@ -86,6 +86,6 @@ describe 'FrameBuffer', ->
   it 'empty internal buffer when all frames are consumed', ->
     frameBuffer = new FrameBuffer()
     data = createFrame wire.FRAME_TYPE_RESPONSE, 'OK'
-    
+
     frame = frameBuffer.consume data
-    expect(frameBuffer.buffer).to.be.null
+    should.not.exist frameBuffer.buffer
