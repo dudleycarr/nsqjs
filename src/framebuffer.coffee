@@ -27,7 +27,7 @@ class FrameBuffer
     offset = 0
     while offset < @buffer.length
       frameOffsets.push offset
-      offset = @frameOffset offset
+      offset = @nextOffset offset
 
     # Get all but the last frame out of the buffer.
     frames = (@pluckFrame offset for offset in frameOffsets[0...-1])
@@ -38,7 +38,7 @@ class FrameBuffer
       # Parse out the last frame since it's a whole frame
       frames.push @pluckFrame lastOffset
       # Advance the consumed pointer to the end of the last frame
-      consumedOffset = @frameOffset lastOffset
+      consumedOffset = @nextOffset lastOffset
 
     # Remove the parsed out frames from the received buffer.
     @buffer = @buffer[consumedOffset...]
@@ -59,7 +59,7 @@ class FrameBuffer
 
   # Given the offset of the current frame in the buffer, find the offset
   # of the next buffer.
-  frameOffset: (offset) ->
+  nextOffset: (offset) ->
     offset + @frameSize offset
 
   # Given the frame offset, return the frame size.
