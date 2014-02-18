@@ -34,11 +34,12 @@ class FrameBuffer
 
     # Get the last frame if it's not a partial frame.
     consumedOffset = lastOffset = frameOffsets.pop()
-    if lastOffset + @frameSize(lastOffset) <= @buffer.length
+    nextOffset = @nextOffset lastOffset
+    if nextOffset <= @buffer.length
       # Parse out the last frame since it's a whole frame
       frames.push @pluckFrame lastOffset
       # Advance the consumed pointer to the end of the last frame
-      consumedOffset = @nextOffset lastOffset
+      consumedOffset = nextOffset
 
     # Remove the parsed out frames from the received buffer.
     @buffer = @buffer[consumedOffset...]
