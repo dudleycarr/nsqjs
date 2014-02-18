@@ -21,8 +21,8 @@ class FrameBuffer
     # We'll be returning this at the end.
     frames = []
 
-    # Initialize offsets to the beginning of the buffer.
-    start = end = 0
+    # Initialize the offset to the beginning of the buffer.
+    start = 0
 
     # Initialize the distance from the end offset to the end of the buffer
     # to the buffer length and save off the buffer length.
@@ -31,9 +31,8 @@ class FrameBuffer
     # Chunk through the buffer frame-by-frame. Push frames as we find
     # them. Stop once we've gotten to or past the end of the buffer.
     while distance > 0
-      start = end
-      frameSize = (if end + 4 <= length then buffer.readInt32BE end else 0) + 4
-      end += frameSize
+      frameSize = (if start + 4 <= length then buffer.readInt32BE start else 0) + 4
+      end = start + frameSize
       distance -= frameSize
 
       # We found a whole frame. Save off its [id, data] tuple.
@@ -41,6 +40,9 @@ class FrameBuffer
         frame = buffer[start...end]
         frameId = frame.readInt32BE 4
         frames.push [frameId, frame[8..]]
+
+        # If distance is a positive number, move the frame start.
+        start = end if distance
 
     # If we recieved a partial frame (i.e. we didn't exactly end up exactly at
     # the end of the buffer) then slice the buffer down so it starts at the
