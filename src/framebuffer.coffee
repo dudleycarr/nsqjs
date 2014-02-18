@@ -22,49 +22,40 @@ class FrameBuffer
     @parseFrames()
 
   parseFrames: ->
-    # Find all frame offsets within the buffer.
-    frameOffsets = []
-    offset = 0
-    while offset < @buffer.length
-      frameOffsets.push offset
-      offset = @nextOffset offset
+    frames = []
 
-    # Get all but the last frame out of the buffer.
-    frames = (@pluckFrame offset for offset in frameOffsets[0...-1])
+    # Initialize the offset, next offset, and distance from buffer end to zero.
+    offset = nextOffset = distance = 0
 
-    # Get the last frame if it's not a partial frame.
-    consumedOffset = lastOffset = frameOffsets.pop()
-    nextOffset = @nextOffset lastOffset
-    if nextOffset <= @buffer.length
-      # Parse out the last frame since it's a whole frame
-      frames.push @pluckFrame lastOffset
-      # Advance the consumed pointer to the end of the last frame
-      consumedOffset = nextOffset
+    loop
+      offset = nextOffset
+      nextOffset = offset + @frameSize offset
 
-    # Remove the parsed out frames from the received buffer.
-    @buffer = @buffer[consumedOffset...]
+      # Calculate the current distance from the end of the buffer.
+      distance = @buffer.length - nextOffset
 
-    # Slicing doesn't free up the underlying memory in a Buffer object. The
-    # actual underlying memory is larger than the slice due to the concat
-    # earlier. Drop the reference to the Buffer object when we've consumed
-    # all frames.
-    delete @buffer unless @buffer.length
+      # We found at least a whole frame. Push it.
+      frames.push @pluckFrame offset, nextOffset if distance >= 0
+
+      # We are are the end of the buffer. Stop looping.
+      break if distance <= 0
+
+    # If we recieved a partial frame (i.e. we didn't exactly end up exactly at
+    # the end of the buffer) then slice the buffer down so it starts at the
+    # beginning of the partial frame. Otherwise, intentionally lose the
+    # reference to the buffer so its memory gets freed.
+    @buffer = if distance then @buffer[offset...]
 
     frames
 
   # Given an offset into a buffer, get the frame ID and data tuple.
-  pluckFrame: (offset) ->
-    frame = @buffer[offset...offset + @frameSize offset]
+  pluckFrame: (offset, nextOffset) ->
+    frame = @buffer[offset...nextOffset]
     frameId = frame.readInt32BE 4
     [frameId, frame[8..]]
 
-  # Given the offset of the current frame in the buffer, find the offset
-  # of the next buffer.
-  nextOffset: (offset) ->
-    offset + @frameSize offset
-
   # Given the frame offset, return the frame size.
   frameSize: (offset) ->
-    4 + (@buffer.readInt32BE offset if offset + 4 <= @buffer.length)
+    4 + (if offset + 4 <= @buffer.length then @buffer.readInt32BE offset else 0)
 
 module.exports = FrameBuffer
