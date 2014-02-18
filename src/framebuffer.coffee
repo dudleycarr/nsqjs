@@ -1,5 +1,3 @@
-_ = require 'underscore'
-
 # From the NSQ protocol documentation:
 # http://bitly.github.io/nsq/clients/tcp_protocol_spec.html
 #
@@ -13,49 +11,43 @@ _ = require 'underscore'
 
 class FrameBuffer
 
-  # Consume the raw data (Buffers) received from an NSQD connection. It returns
+  # Consume the raw data (Buffers) received from an NSQD connection. Returns
   # a list of frames.
   consume: (raw) ->
-    @buffer = Buffer.concat _.compact [@buffer, raw]
+    buffer = if @buffer? then Buffer.concat [@buffer, raw] else raw
+    @parseFrames buffer
 
-    # Return parsed frames
-    @parseFrames()
-
-  parseFrames: ->
+  parseFrames: (buffer) ->
+    # We'll be returning this at the end.
     frames = []
 
-    # Initialize the offset, next offset, and distance from buffer end to zero.
-    offset = nextOffset = distance = 0
+    # Initialize offsets to the beginning of the buffer.
+    start = end = 0
 
-    loop
-      offset = nextOffset
-      nextOffset = offset + @frameSize offset
+    # Initialize the distance from the end offset to the end of the buffer
+    # to the buffer length and save off the buffer length.
+    distance = length = buffer.length
 
-      # Calculate the current distance from the end of the buffer.
-      distance = @buffer.length - nextOffset
+    # Chunk through the buffer frame-by-frame. Push frames as we find
+    # them. Stop once we've gotten to or past the end of the buffer.
+    while distance > 0
+      start = end
+      frameSize = (if end + 4 <= length then buffer.readInt32BE end else 0) + 4
+      end += frameSize
+      distance -= frameSize
 
-      # We found at least a whole frame. Push it.
-      frames.push @pluckFrame offset, nextOffset if distance >= 0
-
-      # We are are the end of the buffer. Stop looping.
-      break if distance <= 0
+      # We found a whole frame. Save off its [id, data] tuple.
+      if distance >= 0
+        frame = buffer[start...end]
+        frameId = frame.readInt32BE 4
+        frames.push [frameId, frame[8..]]
 
     # If we recieved a partial frame (i.e. we didn't exactly end up exactly at
     # the end of the buffer) then slice the buffer down so it starts at the
     # beginning of the partial frame. Otherwise, intentionally lose the
     # reference to the buffer so its memory gets freed.
-    @buffer = if distance then @buffer[offset...]
+    @buffer = if distance then buffer[start...]
 
     frames
-
-  # Given an offset into a buffer, get the frame ID and data tuple.
-  pluckFrame: (offset, nextOffset) ->
-    frame = @buffer[offset...nextOffset]
-    frameId = frame.readInt32BE 4
-    [frameId, frame[8..]]
-
-  # Given the frame offset, return the frame size.
-  frameSize: (offset) ->
-    4 + (if offset + 4 <= @buffer.length then @buffer.readInt32BE offset else 0)
 
 module.exports = FrameBuffer
