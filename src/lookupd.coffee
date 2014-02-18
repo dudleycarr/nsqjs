@@ -59,12 +59,6 @@ dedupedRequests = (lookupdEndpoints, urlFn, callback) ->
   # URLs for querying `nodes` on each of the lookupds.
   urls = (urlFn endpoint for endpoint in lookupdEndpoints)
 
-  # List of functions for querying lookupds for nodes.
-  requestFns = for url in urls
-    do (url) ->
-      (cb) ->
-        lookupdRequest url, cb
-
   async.map urls, lookupdRequest, (err, results) ->
     if err
       callback err, null
