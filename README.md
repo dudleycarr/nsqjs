@@ -216,6 +216,8 @@ w.on Writer.CLOSED, ->
 
 Changes
 -------
+* **0.4.1**
+	* Fixed a logging issue on NSQConnection disconnected
 * **0.4.0**
 	* Added `close`, `pause`, and `unpause` to Reader
 	* Added callback for Writer publish

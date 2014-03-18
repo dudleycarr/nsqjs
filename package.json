@@ -1,7 +1,7 @@
 {
   "name": "nsqjs",
   "description": "NodeJS client for NSQ",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "homepage": "https://github.com/dudleycarr/nsqjs",
   "author": {
     "name": "Dudley Carr",
@@ -48,7 +48,6 @@
     "coffee-script": "~1.6.3",
     "nock": "~0.27.1"
   },
-  "keywords": [],
   "dependencies": {
     "node-state": "~1.4.1",
     "node-int64": "~0.3.0",
