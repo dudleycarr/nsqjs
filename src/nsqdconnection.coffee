@@ -80,10 +80,6 @@ class NSQDConnection extends EventEmitter
   connectionState: ->
     @statemachine or new ConnectionState this
 
-  log: (message) ->
-    StateChangeLogger.log 'NSQDConnection', @statemachine.current_state_name,
-      @id, message
-
   connect: ->
     # Using nextTick so that clients of Reader can register event listeners
     # right after calling connect.
@@ -167,7 +163,8 @@ class ConnectionState extends NodeState
       sync_goto: true
 
   log: (message) ->
-    @conn.log message
+    StateChangeLogger.log 'NSQDConnection', @current_state_name, @conn?.id,
+      message
 
   afterIdentify: ->
     'SUBSCRIBE'
@@ -287,7 +284,7 @@ class ConnectionState extends NodeState
         @stop()
         @conn.destroy()
         @conn.emit NSQDConnection.CLOSED
-        @conn = null
+        delete @conn
 
       close: ->
         # No-op. Once closed, subsequent calls should do nothing.
