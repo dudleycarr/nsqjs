@@ -119,9 +119,9 @@ These methods are available on a Writer object:
 Start [nsqd](http://bitly.github.io/nsq/components/nsqd.html) and
 [nsqdlookupd](http://bitly.github.io/nsq/components/nsqlookupd.html)
 ```bash
-# nsqdLookupd Listens on 4161 for HTTP requests
+# nsqdLookupd Listens on 4161 for HTTP requests and 4160 for TCP requests
 $ nsqlookupd &
-$ nsqd &
+$ nsqd --lookupd-tcp-address=127.0.0.1:4160 &
 ```
 
 Sample CoffeeScript client:
