@@ -1,5 +1,6 @@
 net = require 'net'
 os = require 'os'
+tls = require 'tls'
 {EventEmitter} = require 'events'
 
 _ = require 'underscore'
@@ -9,6 +10,7 @@ FrameBuffer = require './framebuffer'
 Message = require './message'
 wire = require './wire'
 StateChangeLogger = require './logging'
+version = require './version'
 
 
 ###
@@ -63,7 +65,7 @@ class NSQDConnection extends EventEmitter
   @READY: 'ready'
 
   constructor: (@nsqdHost, @nsqdPort, @topic, @channel, @requeueDelay,
-    @heartbeatInterval) ->
+    @heartbeatInterval, @tls=false, @tlsVerification=true) ->
     @frameBuffer = new FrameBuffer()
     @statemachine = @connectionState()
 
@@ -91,13 +93,30 @@ class NSQDConnection extends EventEmitter
         # Once there's a socket connection, give it 5 seconds to receive an
         # identify response.
         @identifyTimeoutId = setTimeout @identifyTimeout.bind(this), 5000
-      @conn.on 'data', (data) =>
-        @receiveData data
-      @conn.on 'error', (err) =>
-        @statemachine.goto 'CLOSED'
-        @emit 'connection_error', err
-      @conn.on 'close', (err) =>
-        @statemachine.raise 'close'
+        @registerStreamListeners @conn
+
+  registerStreamListeners: (conn) ->
+    conn.on 'data', (data) =>
+      @receiveData data
+    conn.on 'error', (err) =>
+      @statemachine.goto 'CLOSED'
+      @emit 'connection_error', err
+    conn.on 'close', (err) =>
+      @statemachine.raise 'close'
+
+  startTLS: (callback) ->
+    conn = @conn
+    conn.removeAllListeners event for event in ['data', 'error', 'close']
+
+    options =
+      socket: conn
+      rejectUnauthorized: @tlsVerification
+    tlsConn = tls.connect options, =>
+      @conn = tlsConn
+      callback()
+
+    @registerStreamListeners tlsConn
+
 
   setRdy: (rdyCount) ->
     @statemachine.raise 'ready', rdyCount
@@ -107,7 +126,7 @@ class NSQDConnection extends EventEmitter
     @frameBuffer.consume data
 
     while frame = @frameBuffer.nextFrame()
-      [frameId. payload] = frame
+      [frameId, payload] = frame
       switch frameId
         when wire.FRAME_TYPE_RESPONSE
           @statemachine.raise 'response', payload
@@ -122,6 +141,8 @@ class NSQDConnection extends EventEmitter
     long_id: os.hostname()
     feature_negotiation: true,
     heartbeat_interval: @heartbeatInterval * 1000
+    tls_v1: @tls
+    user_agent: "nsqjs/#{version}"
 
   identifyTimeout: ->
     @statemachine.goto 'ERROR', new Error 'Timed out identifying with nsqd'
@@ -201,7 +222,14 @@ class ConnectionState extends NodeState
         @conn.msgTimeout = identifyResponse.msg_timeout
         @conn.clearIdentifyTimeout()
 
+        return @goto 'TLS_START' if identifyResponse.tls_v1
+
         @goto @afterIdentify()
+
+    TLS_START:
+      Enter: ->
+        @conn.startTLS (callback) =>
+          @goto @afterIdentify()
 
     SUBSCRIBE:
       Enter: ->
@@ -321,8 +349,10 @@ c.on NSQDConnectionWriter.READY, ->
 ###
 class WriterNSQDConnection extends NSQDConnection
 
-  constructor: (@nsqdHost, @nsqdPort, @heartbeatInterval) ->
-    super @nsqdHost, @nsqdPort, null, null, 0, @heartbeatInterval, false
+  constructor: (nsqdHost, nsqdPort, heartbeatInterval, tls,
+    tlsVerification) ->
+    super nsqdHost, nsqdPort, null, null, 0, heartbeatInterval, tls,
+      tlsVerification
 
   connectionState: ->
     @statemachine or new WriterConnectionState this

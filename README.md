@@ -37,6 +37,11 @@ options object.
   The frequency in seconds for querying lookupd instances.
 * ```lookupdPollJitter: 0.3``` <br/>
   The jitter applied to the start of querying lookupd instances periodically.
+* ```tls: false``` <br/>
+  Use TLS if nsqd has TLS support enabled.
+* ```tlsVerification: true``` <br/>
+  Require verification of the TLS cert. This needs to be false if you're using
+  a self signed cert.
 
 Reader events are:
 
@@ -95,9 +100,15 @@ instance.
   Tell nsqd that you want extra time to process the message. It extends the
   soft timeout by the normal timeout amount.
 
-### new Writer(nsqdHost, nsqdPort)
-Allows messages to be sent to an nsqd. The nsqd can be directly specified or it
-can be discovered via lookupds.
+### new Writer(nsqdHost, nsqdPort, options)
+Allows messages to be sent to an nsqd. 
+
+Available Writer options:
+* ```tls: false``` <br/>
+  Use TLS if nsqd has TLS support enabled.
+* ```tlsVerification: true``` <br/>
+  Require verification of the TLS cert. This needs to be false if you're using
+  a self signed cert.
 
 Writer events are:
 
@@ -216,6 +227,9 @@ w.on Writer.CLOSED, ->
 
 Changes
 -------
+* **0.5.0**
+  * Reworked FrameBuffer
+  * Added TLS support for Reader and Writer
 * **0.4.1**
 	* Fixed a logging issue on NSQConnection disconnected
 * **0.4.0**
