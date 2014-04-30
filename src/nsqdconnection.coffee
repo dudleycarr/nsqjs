@@ -104,9 +104,10 @@ class NSQDConnection extends EventEmitter
 
   receiveData: (data) ->
     @lastReceivedTimestamp = Date.now()
-    frames = @frameBuffer.consume data
+    @frameBuffer.consume data
 
-    for [frameId, payload] in frames
+    while frame = @frameBuffer.nextFrame()
+      [frameId. payload] = frame
       switch frameId
         when wire.FRAME_TYPE_RESPONSE
           @statemachine.raise 'response', payload

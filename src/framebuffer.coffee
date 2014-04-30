@@ -18,53 +18,31 @@ class FrameBuffer
   consume: (raw) ->
     @buffer = Buffer.concat _.compact [@buffer, raw]
 
-    # Return parsed frames
-    @parseFrames()
+  nextFrame: ->
+    nextOffset = @nextOffset()
+    return null unless nextOffset and nextOffset <= @buffer.length
 
-  parseFrames: ->
-    # Find all frame offsets within the buffer.
-    frameOffsets = []
-    offset = 0
-    while offset < @buffer.length
-      frameOffsets.push offset
-      offset = @nextOffset offset
-
-    # Get all but the last frame out of the buffer.
-    frames = (@pluckFrame offset for offset in frameOffsets[0...-1])
-
-    # Get the last frame if it's not a partial frame.
-    consumedOffset = lastOffset = frameOffsets.pop()
-    nextOffset = @nextOffset lastOffset
-    if nextOffset <= @buffer.length
-      # Parse out the last frame since it's a whole frame
-      frames.push @pluckFrame lastOffset
-      # Advance the consumed pointer to the end of the last frame
-      consumedOffset = nextOffset
-
-    # Remove the parsed out frames from the received buffer.
-    @buffer = @buffer[consumedOffset...]
-
-    # Slicing doesn't free up the underlying memory in a Buffer object. The
-    # actual underlying memory is larger than the slice due to the concat
-    # earlier. Drop the reference to the Buffer object when we've consumed
-    # all frames.
+    frame = @pluckFrame()
+    @buffer = @buffer[nextOffset..]
     delete @buffer unless @buffer.length
 
-    frames
+    frame
 
   # Given an offset into a buffer, get the frame ID and data tuple.
-  pluckFrame: (offset) ->
+  pluckFrame: (offset=0) ->
     frame = @buffer[offset...offset + @frameSize offset]
     frameId = frame.readInt32BE 4
     [frameId, frame[8..]]
 
   # Given the offset of the current frame in the buffer, find the offset
   # of the next buffer.
-  nextOffset: (offset) ->
-    offset + @frameSize offset
+  nextOffset: (offset=0) ->
+    size = @frameSize offset
+    offset + size if size
 
   # Given the frame offset, return the frame size.
   frameSize: (offset) ->
-    4 + (@buffer.readInt32BE offset if offset + 4 <= @buffer.length)
+    return unless @buffer
+    4 + @buffer.readInt32BE offset if offset + 4 <= @buffer.length
 
 module.exports = FrameBuffer

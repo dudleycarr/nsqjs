@@ -21,9 +21,9 @@ describe 'FrameBuffer', ->
   it 'should parse a single, full frame', ->
     frameBuffer = new FrameBuffer()
     data = createFrame wire.FRAME_TYPE_RESPONSE, 'OK'
-    frames = frameBuffer.consume data
+    frameBuffer.consume data
 
-    [frameId, payload] = frames.pop()
+    [frameId, payload] = frameBuffer.nextFrame()
     frameId.should.eq wire.FRAME_TYPE_RESPONSE
     payload.toString().should.eq 'OK'
 
@@ -34,7 +34,8 @@ describe 'FrameBuffer', ->
     secondFrame = createFrame wire.FRAME_TYPE_ERROR,
       JSON.stringify {shortname: 'localhost'}
 
-    frames = frameBuffer.consume Buffer.concat [firstFrame, secondFrame]
+    frameBuffer.consume Buffer.concat [firstFrame, secondFrame]
+    frames = [frameBuffer.nextFrame(), frameBuffer.nextFrame()]
     frames.length.should.eq 2
 
     [frameId, data] = frames.shift()
@@ -50,16 +51,16 @@ describe 'FrameBuffer', ->
     data = createFrame wire.FRAME_TYPE_RESPONSE, 'OK'
 
     # First frame is 10 bytes long. Don't expect to get anything back.
-    frames = frameBuffer.consume data[0...3]
-    frames.length.should.eq 0
+    frameBuffer.consume data[0...3]
+    should.not.exist frameBuffer.nextFrame()
 
     # Yup, still haven't received the whole frame.
-    frames = frameBuffer.consume data[3...8]
-    frames.length.should.eq 0
+    frameBuffer.consume data[3...8]
+    should.not.exist frameBuffer.nextFrame()
 
     # Got the whole first frame.
-    frames = frameBuffer.consume data[8..]
-    frames.length.should.eq 1
+    frameBuffer.consume data[8..]
+    should.exist frameBuffer.nextFrame()
 
   it 'should parse multiple frames delivered in partials', ->
     frameBuffer = new FrameBuffer()
@@ -68,24 +69,26 @@ describe 'FrameBuffer', ->
     data = Buffer.concat [first, second]
 
     # First frame is 10 bytes long. Don't expect to get anything back.
-    frames = frameBuffer.consume data[0...3]
-    frames.length.should.eq 0
+    frameBuffer.consume data[0...3]
+    should.not.exist frameBuffer.nextFrame()
 
     # Yup, still haven't received the whole frame.
-    frames = frameBuffer.consume data[3...8]
-    frames.length.should.eq 0
+    frameBuffer.consume data[3...8]
+    should.not.exist frameBuffer.nextFrame()
 
     # Got the whole first frame and part of the 2nd frame.
-    frames = frameBuffer.consume data[8...12]
-    frames.length.should.eq 1
+    frameBuffer.consume data[8...12]
+    should.exist frameBuffer.nextFrame()
 
     # Got the 2nd frame.
-    frames = frameBuffer.consume data[12..]
-    frames.length.should.eq 1
+    frameBuffer.consume data[12..]
+    should.exist frameBuffer.nextFrame()
 
   it 'empty internal buffer when all frames are consumed', ->
     frameBuffer = new FrameBuffer()
     data = createFrame wire.FRAME_TYPE_RESPONSE, 'OK'
 
-    frame = frameBuffer.consume data
+    frameBuffer.consume data
+    'foo' while frameBuffer.nextFrame()
+
     should.not.exist frameBuffer.buffer
