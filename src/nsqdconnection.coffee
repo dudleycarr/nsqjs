@@ -281,7 +281,7 @@ class ConnectionState extends NodeState
           cb? err
         @conn.messageCallbacks = []
 
-        @stop()
+        @disable()
         @conn.destroy()
         @conn.emit NSQDConnection.CLOSED
         delete @conn
