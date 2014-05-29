@@ -4,6 +4,7 @@ tls = require 'tls'
 zlib = require 'zlib'
 fs = require 'fs'
 {EventEmitter} = require 'events'
+{SnappyStream, UnsnappyStream} = require 'snappystream'
 
 _ = require 'underscore'
 NodeState = require 'node-state'
@@ -68,7 +69,7 @@ class NSQDConnection extends EventEmitter
 
   constructor: (@nsqdHost, @nsqdPort, @topic, @channel, @requeueDelay,
     @heartbeatInterval, @tls=false, @tlsVerification=true, @deflate=false, 
-    @deflateLevel=6) ->
+    @deflateLevel=6, @snappy=false) ->
 
     @frameBuffer = new FrameBuffer()
     @statemachine = @connectionState()
@@ -121,7 +122,7 @@ class NSQDConnection extends EventEmitter
 
     @registerStreamListeners tlsConn
 
-  startDeflate: (level, callback) ->
+  startDeflate: (level) ->
     @inflater = zlib.createInflateRaw flush: zlib.Z_SYNC_FLUSH
     @deflater = zlib.createDeflateRaw level: level, flush: zlib.Z_SYNC_FLUSH
 
@@ -131,7 +132,17 @@ class NSQDConnection extends EventEmitter
       delete @frameBuffer.buffer
       @receiveRawData data
 
-    callback()
+  startSnappy: ->
+    @inflater = new UnsnappyStream()
+    @deflater = new SnappyStream()
+    @reconsumeFrameBuffer()
+
+
+  reconsumeFrameBuffer: ->
+    if @frameBuffer.buffer and @frameBuffer.buffer.length
+      data = @frameBuffer.buffer
+      delete @frameBuffer.buffer
+      @receiveRawData data
 
   setRdy: (rdyCount) ->
     @statemachine.raise 'ready', rdyCount
@@ -166,6 +177,7 @@ class NSQDConnection extends EventEmitter
     heartbeat_interval: @heartbeatInterval * 1000
     deflate: @deflate
     deflate_level: @deflateLevel
+    snappy: @snappy
     tls_v1: @tls
     user_agent: "nsqjs/#{version}"
 
@@ -254,6 +266,8 @@ class ConnectionState extends NodeState
         return @goto 'TLS_START' if identifyResponse.tls_v1
         if identifyResponse.deflate
           return @goto 'DEFLATE_START', identifyResponse.deflate_level
+        if identifyResponse.snappy
+          return @goto 'SNAPPY_START'
 
         @goto @afterIdentify()
 
@@ -264,13 +278,20 @@ class ConnectionState extends NodeState
 
     DEFLATE_START:
       Enter: (level) ->
-        @conn.startDeflate level, (callback) =>
-          @goto 'DEFLATE_RESPONSE'
+        @conn.startDeflate level
+        @goto 'COMPRESSION_RESPONSE'
 
-    DEFLATE_RESPONSE:
+    SNAPPY_START:
+      Enter: ->
+        @conn.startSnappy()
+        @goto 'COMPRESSION_RESPONSE'
+
+    COMPRESSION_RESPONSE:
       response: (data) ->
         if data.toString() is 'OK'
           @goto @afterIdentify()
+        else
+          @goto 'ERROR', new Error 'Bad response when enabling compression'
 
     SUBSCRIBE:
       Enter: ->
