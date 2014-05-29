@@ -39,6 +39,8 @@ class Reader extends EventEmitter
       lookupdPollJitter: 0.3
       tls: false
       tlsVerification: true
+      deflate: false
+      deflateLevel: 6
 
     params = _.extend {}, defaults, options
 
@@ -66,6 +68,10 @@ class Reader extends EventEmitter
       throw new Error 'tls needs to be true or false'
     unless _.isBoolean params.tlsVerification
       throw new Error 'tlsVerification needs to be true or false'
+    unless _.isBoolean params.deflate
+      throw new Error 'deflate needs to be true or false'
+    unless _.isNumber params.deflateLevel
+      throw new Error 'deflateLevel needs to be a number'
 
     # Returns a compacted list given a list, string, integer, or object.
     makeList = (list) ->
@@ -153,7 +159,7 @@ class Reader extends EventEmitter
     @connectionIds.push connectionId
 
     conn = new NSQDConnection host, port, @topic, @channel, @requeueDelay,
-      @heartbeatInterval, @tls, @tlsVerification
+      @heartbeatInterval, @tls, @tlsVerification, @deflate, @deflateLevel
 
     conn.on NSQDConnection.CONNECTED, =>
       @emit Reader.NSQD_CONNECTED, host, port

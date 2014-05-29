@@ -1,6 +1,8 @@
 net = require 'net'
 os = require 'os'
 tls = require 'tls'
+zlib = require 'zlib'
+fs = require 'fs'
 {EventEmitter} = require 'events'
 
 _ = require 'underscore'
@@ -65,7 +67,9 @@ class NSQDConnection extends EventEmitter
   @READY: 'ready'
 
   constructor: (@nsqdHost, @nsqdPort, @topic, @channel, @requeueDelay,
-    @heartbeatInterval, @tls=false, @tlsVerification=true) ->
+    @heartbeatInterval, @tls=false, @tlsVerification=true, @deflate=false, 
+    @deflateLevel=6) ->
+
     @frameBuffer = new FrameBuffer()
     @statemachine = @connectionState()
 
@@ -97,7 +101,7 @@ class NSQDConnection extends EventEmitter
 
   registerStreamListeners: (conn) ->
     conn.on 'data', (data) =>
-      @receiveData data
+      @receiveRawData data
     conn.on 'error', (err) =>
       @statemachine.goto 'CLOSED'
       @emit 'connection_error', err
@@ -117,9 +121,28 @@ class NSQDConnection extends EventEmitter
 
     @registerStreamListeners tlsConn
 
+  startDeflate: (level, callback) ->
+    @inflater = zlib.createInflateRaw flush: zlib.Z_SYNC_FLUSH
+    @deflater = zlib.createDeflateRaw level: level, flush: zlib.Z_SYNC_FLUSH
+
+    # Pass buffered data to deflate
+    if @frameBuffer.buffer and @frameBuffer.buffer.length
+      data = @frameBuffer.buffer
+      delete @frameBuffer.buffer
+      @receiveRawData data
+
+    callback()
 
   setRdy: (rdyCount) ->
     @statemachine.raise 'ready', rdyCount
+
+  receiveRawData: (data) ->
+    unless @inflater
+      @receiveData data
+    else
+      @inflater.write data, =>
+        uncompressedData = @inflater.read()
+        @receiveData uncompressedData if uncompressedData
 
   receiveData: (data) ->
     @lastReceivedTimestamp = Date.now()
@@ -141,6 +164,8 @@ class NSQDConnection extends EventEmitter
     long_id: os.hostname()
     feature_negotiation: true,
     heartbeat_interval: @heartbeatInterval * 1000
+    deflate: @deflate
+    deflate_level: @deflateLevel
     tls_v1: @tls
     user_agent: "nsqjs/#{version}"
 
@@ -171,7 +196,11 @@ class NSQDConnection extends EventEmitter
     msg
 
   write: (data) ->
-    @conn.write data
+    if @deflater
+      @deflater.write data, =>
+        @conn.write @deflater.read()
+    else
+      @conn.write data
 
   destroy: ->
     @conn.destroy()
@@ -223,12 +252,24 @@ class ConnectionState extends NodeState
         @conn.clearIdentifyTimeout()
 
         return @goto 'TLS_START' if identifyResponse.tls_v1
+        if identifyResponse.deflate
+          return @goto 'DEFLATE_START', identifyResponse.deflate_level
 
         @goto @afterIdentify()
 
     TLS_START:
       Enter: ->
         @conn.startTLS (callback) =>
+          @goto @afterIdentify()
+
+    DEFLATE_START:
+      Enter: (level) ->
+        @conn.startDeflate level, (callback) =>
+          @goto 'DEFLATE_RESPONSE'
+
+    DEFLATE_RESPONSE:
+      response: (data) ->
+        if data.toString() is 'OK'
           @goto @afterIdentify()
 
     SUBSCRIBE:

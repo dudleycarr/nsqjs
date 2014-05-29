@@ -13,16 +13,15 @@ _ = require 'underscore'
 
 class FrameBuffer
 
-  # Consume the raw data (Buffers) received from an NSQD connection. It returns
-  # a list of frames.
   consume: (raw) ->
     @buffer = Buffer.concat _.compact [@buffer, raw]
 
   nextFrame: ->
-    nextOffset = @nextOffset()
-    return null unless nextOffset and nextOffset <= @buffer.length
-
+    return null unless @buffer
+    return null unless @frameSize(0) and @frameSize(0) <= @buffer.length
     frame = @pluckFrame()
+
+    nextOffset = @nextOffset()
     @buffer = @buffer[nextOffset..]
     delete @buffer unless @buffer.length
 
@@ -42,7 +41,7 @@ class FrameBuffer
 
   # Given the frame offset, return the frame size.
   frameSize: (offset) ->
-    return unless @buffer
+    return unless @buffer and @buffer.length > 4
     4 + @buffer.readInt32BE offset if offset + 4 <= @buffer.length
 
 module.exports = FrameBuffer
