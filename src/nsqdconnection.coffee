@@ -125,18 +125,12 @@ class NSQDConnection extends EventEmitter
   startDeflate: (level) ->
     @inflater = zlib.createInflateRaw flush: zlib.Z_SYNC_FLUSH
     @deflater = zlib.createDeflateRaw level: level, flush: zlib.Z_SYNC_FLUSH
-
-    # Pass buffered data to deflate
-    if @frameBuffer.buffer and @frameBuffer.buffer.length
-      data = @frameBuffer.buffer
-      delete @frameBuffer.buffer
-      @receiveRawData data
+    @reconsumeFrameBuffer()
 
   startSnappy: ->
     @inflater = new UnsnappyStream()
     @deflater = new SnappyStream()
     @reconsumeFrameBuffer()
-
 
   reconsumeFrameBuffer: ->
     if @frameBuffer.buffer and @frameBuffer.buffer.length
@@ -412,9 +406,9 @@ c.on NSQDConnectionWriter.READY, ->
 class WriterNSQDConnection extends NSQDConnection
 
   constructor: (nsqdHost, nsqdPort, heartbeatInterval, tls,
-    tlsVerification) ->
+    tlsVerification, deflate, deflateLevel, snappy) ->
     super nsqdHost, nsqdPort, null, null, 0, heartbeatInterval, tls,
-      tlsVerification
+      tlsVerification, deflate, deflateLevel, snappy
 
   connectionState: ->
     @statemachine or new WriterConnectionState this
