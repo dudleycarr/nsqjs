@@ -173,6 +173,9 @@ class Reader extends EventEmitter
     conn.on NSQDConnection.ERROR, (err) =>
       @emit Reader.ERROR, err
 
+    conn.on NSQDConnection.CONNECTION_ERROR, (err) =>
+      @emit Reader.ERROR, err
+
     # On close, remove the connection id from this reader.
     conn.on NSQDConnection.CLOSED, =>
       # TODO(dudley): Update when switched to lo-dash

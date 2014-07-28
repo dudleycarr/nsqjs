@@ -360,6 +360,8 @@ class ConnectionState extends NodeState
 
     CLOSED:
       Enter: ->
+        return unless @conn
+
         # If there are callbacks, then let them error on the closed connection.
         err = new Error 'nsqd connection closed'
         for cb in @conn.messageCallbacks
