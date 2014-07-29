@@ -72,11 +72,29 @@ class Writer extends EventEmitter
 
   Arguments:
     topic: A valid nsqd topic.
-    msgs: A string, a buffer, or a list of string/buffers.
+    msgs: A string, a buffer, a JSON serializable object, or 
+      a list of string / buffers / JSON serializable objects.
   ###
   publish: (topic, msgs, callback) ->
-    return callback(new Error('No active Writer connection to send messages')) unless @conn
+    unless @conn
+      err = new Error 'No active Writer connection to send messages'
+
+    if not msgs or _.isEmpty msgs
+      err = new Error 'Attempting to publish an empty message'
+
+    if err
+      return callback err if callback
+      throw err
+
     msgs = [msgs] unless _.isArray msgs
+
+    # Automatically serialize as JSON if the message isn't a String or a Buffer
+    msgs = for msg in msgs
+      if _.isString msg or Buffer.isBuffer msg
+        msg
+      else
+        JSON.stringify msg
+
     @conn.produceMessages topic, msgs, callback
 
   close: ->
