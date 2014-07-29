@@ -1,6 +1,10 @@
 net = require 'net'
 os = require 'os'
+tls = require 'tls'
+zlib = require 'zlib'
+fs = require 'fs'
 {EventEmitter} = require 'events'
+{SnappyStream, UnsnappyStream} = require 'snappystream'
 
 _ = require 'underscore'
 NodeState = require 'node-state'
@@ -9,6 +13,7 @@ FrameBuffer = require './framebuffer'
 Message = require './message'
 wire = require './wire'
 StateChangeLogger = require './logging'
+version = require './version'
 
 
 ###
@@ -63,7 +68,9 @@ class NSQDConnection extends EventEmitter
   @READY: 'ready'
 
   constructor: (@nsqdHost, @nsqdPort, @topic, @channel, @requeueDelay,
-    @heartbeatInterval) ->
+    @heartbeatInterval, @tls=false, @tlsVerification=true, @deflate=false,
+    @deflateLevel=6, @snappy=false) ->
+
     @frameBuffer = new FrameBuffer()
     @statemachine = @connectionState()
 
@@ -91,22 +98,62 @@ class NSQDConnection extends EventEmitter
         # Once there's a socket connection, give it 5 seconds to receive an
         # identify response.
         @identifyTimeoutId = setTimeout @identifyTimeout.bind(this), 5000
-      @conn.on 'data', (data) =>
-        @receiveData data
-      @conn.on 'error', (err) =>
-        @statemachine.goto 'CLOSED'
-        @emit 'connection_error', err
-      @conn.on 'close', (err) =>
-        @statemachine.raise 'close'
+        @registerStreamListeners @conn
+
+  registerStreamListeners: (conn) ->
+    conn.on 'data', (data) =>
+      @receiveRawData data
+    conn.on 'error', (err) =>
+      @statemachine.goto 'CLOSED'
+      @emit 'connection_error', err
+    conn.on 'close', (err) =>
+      @statemachine.raise 'close'
+
+  startTLS: (callback) ->
+    @conn.removeAllListeners event for event in ['data', 'error', 'close']
+
+    options =
+      socket: @conn
+      rejectUnauthorized: @tlsVerification
+    tlsConn = tls.connect options, =>
+      @conn = tlsConn
+      callback?()
+
+    @registerStreamListeners tlsConn
+
+  startDeflate: (level) ->
+    @inflater = zlib.createInflateRaw flush: zlib.Z_SYNC_FLUSH
+    @deflater = zlib.createDeflateRaw level: level, flush: zlib.Z_SYNC_FLUSH
+    @reconsumeFrameBuffer()
+
+  startSnappy: ->
+    @inflater = new UnsnappyStream()
+    @deflater = new SnappyStream()
+    @reconsumeFrameBuffer()
+
+  reconsumeFrameBuffer: ->
+    if @frameBuffer.buffer and @frameBuffer.buffer.length
+      data = @frameBuffer.buffer
+      delete @frameBuffer.buffer
+      @receiveRawData data
 
   setRdy: (rdyCount) ->
     @statemachine.raise 'ready', rdyCount
 
+  receiveRawData: (data) ->
+    unless @inflater
+      @receiveData data
+    else
+      @inflater.write data, =>
+        uncompressedData = @inflater.read()
+        @receiveData uncompressedData if uncompressedData
+
   receiveData: (data) ->
     @lastReceivedTimestamp = Date.now()
-    frames = @frameBuffer.consume data
+    @frameBuffer.consume data
 
-    for [frameId, payload] in frames
+    while frame = @frameBuffer.nextFrame()
+      [frameId, payload] = frame
       switch frameId
         when wire.FRAME_TYPE_RESPONSE
           @statemachine.raise 'response', payload
@@ -121,6 +168,11 @@ class NSQDConnection extends EventEmitter
     long_id: os.hostname()
     feature_negotiation: true,
     heartbeat_interval: @heartbeatInterval * 1000
+    deflate: @deflate
+    deflate_level: @deflateLevel
+    snappy: @snappy
+    tls_v1: @tls
+    user_agent: "nsqjs/#{version}"
 
   identifyTimeout: ->
     @statemachine.goto 'ERROR', new Error 'Timed out identifying with nsqd'
@@ -149,7 +201,11 @@ class NSQDConnection extends EventEmitter
     msg
 
   write: (data) ->
-    @conn.write data
+    if @deflater
+      @deflater.write data, =>
+        @conn.write @deflater.read()
+    else
+      @conn.write data
 
   destroy: ->
     @conn.destroy()
@@ -161,6 +217,8 @@ class ConnectionState extends NodeState
       autostart: false,
       initial_state: 'CONNECTED'
       sync_goto: true
+
+    @identifyResponse = null
 
   log: (message) ->
     StateChangeLogger.log 'NSQDConnection', @current_state_name, @conn?.id,
@@ -194,13 +252,52 @@ class ConnectionState extends NodeState
             max_msg_timeout: 15 * 60 * 1000    # 15 minutes
             msg_timeout: 60 * 1000             #  1 minute
 
-        identifyResponse = JSON.parse data
-        @conn.maxRdyCount = identifyResponse.max_rdy_count
-        @conn.maxMsgTimeout = identifyResponse.max_msg_timeout
-        @conn.msgTimeout = identifyResponse.msg_timeout
+        @identifyResponse = JSON.parse data
+        @conn.maxRdyCount = @identifyResponse.max_rdy_count
+        @conn.maxMsgTimeout = @identifyResponse.max_msg_timeout
+        @conn.msgTimeout = @identifyResponse.msg_timeout
         @conn.clearIdentifyTimeout()
 
+        return @goto 'TLS_START' if @identifyResponse.tls_v1
+        @goto 'IDENTIFY_COMPRESSION_CHECK'
+
+    IDENTIFY_COMPRESSION_CHECK:
+      Enter: ->
+        if @identifyResponse.deflate
+          return @goto 'DEFLATE_START', @identifyResponse.deflate_level
+        if @identifyResponse.snappy
+          return @goto 'SNAPPY_START'
+
         @goto @afterIdentify()
+
+    TLS_START:
+      Enter: ->
+        @conn.startTLS()
+        @goto 'TLS_RESPONSE'
+
+    TLS_RESPONSE:
+      response: (data) ->
+        if data.toString() is 'OK'
+          @goto 'IDENTIFY_COMPRESSION_CHECK'
+        else
+          @goto 'ERROR', new Error 'TLS negotiate error with nsqd'
+
+    DEFLATE_START:
+      Enter: (level) ->
+        @conn.startDeflate level
+        @goto 'COMPRESSION_RESPONSE'
+
+    SNAPPY_START:
+      Enter: ->
+        @conn.startSnappy()
+        @goto 'COMPRESSION_RESPONSE'
+
+    COMPRESSION_RESPONSE:
+      response: (data) ->
+        if data.toString() is 'OK'
+          @goto @afterIdentify()
+        else
+          @goto 'ERROR', new Error 'Bad response when enabling compression'
 
     SUBSCRIBE:
       Enter: ->
@@ -275,6 +372,8 @@ class ConnectionState extends NodeState
 
     CLOSED:
       Enter: ->
+        return unless @conn
+
         # If there are callbacks, then let them error on the closed connection.
         err = new Error 'nsqd connection closed'
         for cb in @conn.messageCallbacks
@@ -320,8 +419,10 @@ c.on NSQDConnectionWriter.READY, ->
 ###
 class WriterNSQDConnection extends NSQDConnection
 
-  constructor: (@nsqdHost, @nsqdPort, @heartbeatInterval) ->
-    super @nsqdHost, @nsqdPort, null, null, 0, @heartbeatInterval, false
+  constructor: (nsqdHost, nsqdPort, heartbeatInterval, tls,
+    tlsVerification, deflate, deflateLevel, snappy) ->
+    super nsqdHost, nsqdPort, null, null, 0, heartbeatInterval, tls,
+      tlsVerification, deflate, deflateLevel, snappy
 
   connectionState: ->
     @statemachine or new WriterConnectionState this

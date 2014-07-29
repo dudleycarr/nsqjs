@@ -26,10 +26,32 @@ class Writer extends EventEmitter
   @CLOSED: 'closed'
   @ERROR: 'error'
 
-  constructor: (@nsqdHost, @nsqdPort) ->
+  constructor: (@nsqdHost, @nsqdPort, options) ->
+    defaults =
+      tls: false
+      tlsVerification: true
+      deflate: false
+      deflateLevel: 6
+      snappy: false
+
+    params = _.extend {}, defaults, options
+
+    unless _.isBoolean params.tls
+      throw new Error 'tls needs to be true or false'
+    unless _.isBoolean params.tlsVerification
+      throw new Error 'tlsVerification needs to be true or false'
+    unless _.isBoolean params.snappy
+      throw new Error 'snappy needs to be true or false'
+    unless _.isBoolean params.deflate
+      throw new Error 'deflate needs to be true or false'
+    unless _.isNumber params.deflateLevel
+      throw new Error 'deflateLevel needs to be a Number'
+
+    _.extend @, params
 
   connect: ->
-    @conn = new WriterNSQDConnection @nsqdHost, @nsqdPort, 30
+    @conn = new WriterNSQDConnection @nsqdHost, @nsqdPort, 30, @tls,
+      @tlsVerification, @deflate, @deflateLevel, @snappy
     @conn.connect()
 
     @conn.on WriterNSQDConnection.READY, =>
@@ -37,7 +59,7 @@ class Writer extends EventEmitter
 
     @conn.on WriterNSQDConnection.CLOSED, =>
       @emit Writer.CLOSED
-      
+
     @conn.on WriterNSQDConnection.ERROR, (err) =>
       @emit Writer.ERROR, err
 

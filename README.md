@@ -4,7 +4,6 @@ A NodeJS client for the [nsq](http://bitly.github.io/nsq/) client protocol. This
 fully compliant and maintain feature parity with the official Go ([go-nsq](https://github.com/bitly/go-nsq)) and Python ([pynsq](https://github.com/bitly/pynsq)) clients.
 
 [![Build Status](https://travis-ci.org/dudleycarr/nsqjs.png?branch=master)](https://travis-ci.org/dudleycarr/nsqjs)
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/dudleycarr/nsqjs/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
 [![NPM](https://nodei.co/npm/nsqjs.png?downloads=true)](https://nodei.co/npm/nsqjs/)
 
@@ -37,6 +36,17 @@ options object.
   The frequency in seconds for querying lookupd instances.
 * ```lookupdPollJitter: 0.3``` <br/>
   The jitter applied to the start of querying lookupd instances periodically.
+* ```tls: false``` <br/>
+  Use TLS if nsqd has TLS support enabled.
+* ```tlsVerification: true``` <br/>
+  Require verification of the TLS cert. This needs to be false if you're using
+  a self signed cert.
+* ```deflate: false``` <br/>
+  Use zlib Deflate compression.
+* ```deflateLevel: 6``` <br/>
+  Use zlib Deflate compression level.
+* ```snappy: false``` <br/>
+  Use Snappy compression.
 
 Reader events are:
 
@@ -95,9 +105,21 @@ instance.
   Tell nsqd that you want extra time to process the message. It extends the
   soft timeout by the normal timeout amount.
 
-### new Writer(nsqdHost, nsqdPort)
-Allows messages to be sent to an nsqd. The nsqd can be directly specified or it
-can be discovered via lookupds.
+### new Writer(nsqdHost, nsqdPort, options)
+Allows messages to be sent to an nsqd. 
+
+Available Writer options:
+* ```tls: false``` <br/>
+  Use TLS if nsqd has TLS support enabled.
+* ```tlsVerification: true``` <br/>
+  Require verification of the TLS cert. This needs to be false if you're using
+  a self signed cert.
+* ```deflate: false``` <br/>
+  Use zlib Deflate compression.
+* ```deflateLevel: 6``` <br/>
+  Use zlib Deflate compression level.
+* ```snappy: false``` <br/>
+  Use Snappy compression.
 
 Writer events are:
 
@@ -216,6 +238,11 @@ w.on Writer.CLOSED, ->
 
 Changes
 -------
+* **0.5.0**
+  * Reworked FrameBuffer
+  * Added TLS support for Reader and Writer
+  * Added Deflate support
+  * Added Snappy support
 * **0.4.1**
 	* Fixed a logging issue on NSQConnection disconnected
 * **0.4.0**

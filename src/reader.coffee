@@ -37,6 +37,11 @@ class Reader extends EventEmitter
       lookupdHTTPAddresses: []
       lookupdPollInterval: 60
       lookupdPollJitter: 0.3
+      tls: false
+      tlsVerification: true
+      deflate: false
+      deflateLevel: 6
+      snappy: false
 
     params = _.extend {}, defaults, options
 
@@ -60,6 +65,18 @@ class Reader extends EventEmitter
       throw new Error 'lookupdPollJitter needs to be a number'
     unless 0 <= params.lookupdPollJitter <= 1
       throw new Error 'lookupdPollJitter needs to be between 0 and 1'
+    unless _.isBoolean params.tls
+      throw new Error 'tls needs to be true or false'
+    unless _.isBoolean params.tlsVerification
+      throw new Error 'tlsVerification needs to be true or false'
+    unless _.isBoolean params.deflate
+      throw new Error 'deflate needs to be true or false'
+    unless _.isNumber params.deflateLevel
+      throw new Error 'deflateLevel needs to be a number'
+    unless _.isBoolean params.snappy
+      throw new Error 'snappy needs to be true or false'
+    if params.deflate and params.snappy
+      throw new Error 'Cannot use deflate and snappy at the same time'
 
     # Returns a compacted list given a list, string, integer, or object.
     makeList = (list) ->
@@ -147,12 +164,16 @@ class Reader extends EventEmitter
     @connectionIds.push connectionId
 
     conn = new NSQDConnection host, port, @topic, @channel, @requeueDelay,
-      @heartbeatInterval
+      @heartbeatInterval, @tls, @tlsVerification, @deflate, @deflateLevel,
+      @snappy
 
     conn.on NSQDConnection.CONNECTED, =>
       @emit Reader.NSQD_CONNECTED, host, port
 
     conn.on NSQDConnection.ERROR, (err) =>
+      @emit Reader.ERROR, err
+
+    conn.on NSQDConnection.CONNECTION_ERROR, (err) =>
       @emit Reader.ERROR, err
 
     # On close, remove the connection id from this reader.
