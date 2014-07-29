@@ -90,7 +90,7 @@ describe 'integration', ->
       compression = (key for key in ['deflate', 'snappy'] when key of options)
       compression.push 'none'
 
-      description = 
+      description =
         "reader with compression (#{compression[0]}) and tls (#{options.tls?})"
 
       describe description, ->

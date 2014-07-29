@@ -68,7 +68,7 @@ class NSQDConnection extends EventEmitter
   @READY: 'ready'
 
   constructor: (@nsqdHost, @nsqdPort, @topic, @channel, @requeueDelay,
-    @heartbeatInterval, @tls=false, @tlsVerification=true, @deflate=false, 
+    @heartbeatInterval, @tls=false, @tlsVerification=true, @deflate=false,
     @deflateLevel=6, @snappy=false) ->
 
     @frameBuffer = new FrameBuffer()
