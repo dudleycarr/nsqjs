@@ -110,15 +110,14 @@ class NSQDConnection extends EventEmitter
       @statemachine.raise 'close'
 
   startTLS: (callback) ->
-    conn = @conn
-    conn.removeAllListeners event for event in ['data', 'error', 'close']
+    @conn.removeAllListeners event for event in ['data', 'error', 'close']
 
     options =
-      socket: conn
+      socket: @conn
       rejectUnauthorized: @tlsVerification
     tlsConn = tls.connect options, =>
       @conn = tlsConn
-      callback()
+      callback?()
 
     @registerStreamListeners tlsConn
 
@@ -219,6 +218,8 @@ class ConnectionState extends NodeState
       initial_state: 'CONNECTED'
       sync_goto: true
 
+    @identifyResponse = null
+
   log: (message) ->
     StateChangeLogger.log 'NSQDConnection', @current_state_name, @conn?.id,
       message
@@ -251,24 +252,35 @@ class ConnectionState extends NodeState
             max_msg_timeout: 15 * 60 * 1000    # 15 minutes
             msg_timeout: 60 * 1000             #  1 minute
 
-        identifyResponse = JSON.parse data
-        @conn.maxRdyCount = identifyResponse.max_rdy_count
-        @conn.maxMsgTimeout = identifyResponse.max_msg_timeout
-        @conn.msgTimeout = identifyResponse.msg_timeout
+        @identifyResponse = JSON.parse data
+        @conn.maxRdyCount = @identifyResponse.max_rdy_count
+        @conn.maxMsgTimeout = @identifyResponse.max_msg_timeout
+        @conn.msgTimeout = @identifyResponse.msg_timeout
         @conn.clearIdentifyTimeout()
 
-        return @goto 'TLS_START' if identifyResponse.tls_v1
-        if identifyResponse.deflate
-          return @goto 'DEFLATE_START', identifyResponse.deflate_level
-        if identifyResponse.snappy
+        return @goto 'TLS_START' if @identifyResponse.tls_v1
+        @goto 'IDENTIFY_COMPRESSION_CHECK'
+
+    IDENTIFY_COMPRESSION_CHECK:
+      Enter: ->
+        if @identifyResponse.deflate
+          return @goto 'DEFLATE_START', @identifyResponse.deflate_level
+        if @identifyResponse.snappy
           return @goto 'SNAPPY_START'
 
         @goto @afterIdentify()
 
     TLS_START:
       Enter: ->
-        @conn.startTLS (callback) =>
-          @goto @afterIdentify()
+        @conn.startTLS()
+        @goto 'TLS_RESPONSE'
+
+    TLS_RESPONSE:
+      response: (data) ->
+        if data.toString() is 'OK'
+          @goto 'IDENTIFY_COMPRESSION_CHECK'
+        else
+          @goto 'ERROR', new Error 'TLS negotiate error with nsqd'
 
     DEFLATE_START:
       Enter: (level) ->

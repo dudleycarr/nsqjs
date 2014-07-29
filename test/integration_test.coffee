@@ -77,20 +77,33 @@ describe 'integration', ->
     deleteTopic 'test', (err) ->
       done err
 
-  describe 'stream compression', ->
-    for compression in ['deflate', 'snappy']
-      describe "#{compression} reader", ->
+  describe 'stream compression and encryption', ->
+    optionPermutations = [
+      {deflate: true}
+      {snappy: true}
+      {tls: true, tlsVerification: false}
+      {tls: true, tlsVerification: false, snappy: true}
+      {tls: true, tlsVerification: false, deflate: true}
+    ]
+    for options in optionPermutations
+      # Figure out what compression is enabled
+      compression = (key for key in ['deflate', 'snappy'] when key of options)
+      compression.push 'none'
+
+      description = 
+        "reader with compression (#{compression[0]}) and tls (#{options.tls?})"
+
+      describe description, ->
         it 'should send and receive a message', (done) ->
 
           topic = 'test'
           channel = 'default'
-          message = "a #{compression} encoded stream"
+          message = "a message for our reader"
 
           publish topic, message
 
           reader = new nsq.Reader topic, channel,
-            nsqdTCPAddresses: ["127.0.0.1:#{TCP_PORT}"]
-            deflate: true
+            _.extend {nsqdTCPAddresses: ["127.0.0.1:#{TCP_PORT}"]}, options
 
           reader.on 'message', (msg) ->
             msg.body.toString().should.eql message
@@ -107,8 +120,7 @@ describe 'integration', ->
           publish topic, message
 
           reader = new nsq.Reader topic, channel,
-            nsqdTCPAddresses: ["127.0.0.1:#{TCP_PORT}"]
-            deflate: true
+            _.extend {nsqdTCPAddresses: ["127.0.0.1:#{TCP_PORT}"]}, options
 
           reader.on 'message', (msg) ->
             msg.body.toString().should.eql message
@@ -116,23 +128,3 @@ describe 'integration', ->
             done()
 
           reader.connect()
-
-  describe 'tls', ->
-    it 'reader with tls enabled', (done) ->
-      topic = 'test'
-      channel = 'default'
-      message = 'TLS woot!'
-
-      publish topic, message
-
-      reader = new nsq.Reader topic, channel,
-        nsqdTCPAddresses: ["127.0.0.1:#{TCP_PORT}"]
-        tls: true
-        tlsVerification: false
-
-      reader.on 'message', (msg) ->
-        msg.body.toString().should.eql message
-        msg.finish()
-        done()
-
-      reader.connect()

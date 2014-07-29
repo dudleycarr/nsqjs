@@ -17,8 +17,8 @@ class FrameBuffer
     @buffer = Buffer.concat _.compact [@buffer, raw]
 
   nextFrame: ->
-    return null unless @buffer
-    return null unless @frameSize(0) and @frameSize(0) <= @buffer.length
+    return unless @buffer
+    return unless @frameSize(0) and @frameSize(0) <= @buffer.length
     frame = @pluckFrame()
 
     nextOffset = @nextOffset()
@@ -28,7 +28,7 @@ class FrameBuffer
     frame
 
   # Given an offset into a buffer, get the frame ID and data tuple.
-  pluckFrame: (offset=0) ->
+  pluckFrame: (offset = 0) ->
     frame = @buffer[offset...offset + @frameSize offset]
     frameId = frame.readInt32BE 4
     [frameId, frame[8..]]
