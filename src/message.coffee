@@ -18,11 +18,17 @@ class Message extends EventEmitter
     @receivedOn = Date.now()
     @lastTouched = @receivedOn
 
-    # The worker is not allowed to stall longer than this configured
-    # timeout.
-    noDelayRequeue = =>
-      @requeue 0, false
-    @maxMsgTimeoutId = setTimeout noDelayRequeue, @maxMsgTimeout
+    # Keep track of when this message actually times out.
+    @timedOut = false
+    do trackTimeout = =>
+      return if @hasResponded
+
+      soft = @timeUntilTimeout()
+      hard = @timeUntilTimeout true
+
+      # Both values have to be not null otherwise we've timedout.
+      @timedOut = not soft or not hard
+      setTimeout trackTimeout, Math.min soft, hard unless @timedOut
 
   json: ->
     unless @parsed?
@@ -49,24 +55,25 @@ class Message extends EventEmitter
     if delta > 0 then delta else null
 
   finish: ->
+    throw new Error 'Message timed out. Cannot finish message' if @timedOut
     @respond Message.FINISH, wire.finish @id
 
   requeue: (delay = @requeueDelay, backoff = true) ->
+    throw new Error 'Message timed out. Cannot requeue message.' if @timedOut
     @respond Message.REQUEUE, wire.requeue @id, delay
     @emit Message.BACKOFF if backoff
 
   touch: ->
+    throw new Error 'Message timed out. Cannot touch message.' if @timedOut
     @lastTouched = Date.now()
     @respond Message.TOUCH, wire.touch @id
 
   respond: (responseType, wireData) ->
-    process.nextTick =>
-      if @hasResponded
-        throw new Error "Already responded to message (#{@id})"
+    throw new Error "Already responded to message (#{@id})" if @hasResponded
 
+    process.nextTick =>
       if responseType isnt Message.TOUCH
         @hasResponded = true
-        clearTimeout @maxMsgTimeoutId
       else
         @lastTouched = Date.now()
 
