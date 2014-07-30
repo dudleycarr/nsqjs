@@ -75,6 +75,7 @@ exports.identify = (data) ->
     'deflate_level'
     'sample_rate'
     'user_agent'
+    'msg_timeout'
   ]
   # Make sure there are no unexpected keys
   unexpectedKeys = _.filter _.keys(data), (k) ->

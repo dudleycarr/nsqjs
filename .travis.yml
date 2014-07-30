@@ -3,6 +3,6 @@ node_js:
   - 0.10
 before_script:
   - npm install -g grunt-cli
-  - wget "https://s3.amazonaws.com/bitly-downloads/nsq/nsq-0.2.29.linux-amd64.go1.3.tar.gz"
-  - tar zvxf "nsq-0.2.29.linux-amd64.go1.3.tar.gz"
-  - export PATH="$PATH:./nsq-0.2.29.linux-amd64.go1.3/bin"
+  - wget "https://s3.amazonaws.com/bitly-downloads/nsq/nsq-0.2.27.linux-amd64.go1.2.tar.gz"
+  - tar zvxf "nsq-0.2.27.linux-amd64.go1.2.tar.gz"
+  - export PATH="$PATH:./nsq-0.2.27.linux-amd64.go1.2/bin"
