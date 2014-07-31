@@ -55,16 +55,13 @@ class Message extends EventEmitter
     if delta > 0 then delta else null
 
   finish: ->
-    throw new Error 'Message timed out. Cannot finish message' if @timedOut
     @respond Message.FINISH, wire.finish @id
 
   requeue: (delay = @requeueDelay, backoff = true) ->
-    throw new Error 'Message timed out. Cannot requeue message.' if @timedOut
     @respond Message.REQUEUE, wire.requeue @id, delay
     @emit Message.BACKOFF if backoff
 
   touch: ->
-    throw new Error 'Message timed out. Cannot touch message.' if @timedOut
     @lastTouched = Date.now()
     @respond Message.TOUCH, wire.touch @id
 
