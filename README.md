@@ -133,8 +133,8 @@ These methods are available on a Writer object:
 * `close()` <br/>
   Disconnect from the nsqd.
 * `publish(topic, msgs, [callback])` <br/>
-  `topic` is a string. `msgs` is either a string, a `Buffer`, or a list of
-  strings / `Buffers`. `callback` takes a single `error` argument.
+  `topic` is a string. `msgs` is either a string, a `Buffer`, JSON serializable
+  object, a list of strings / `Buffers` / JSON serializable objects. `callback` takes a single `error` argument.
 
 ### Simple example
 

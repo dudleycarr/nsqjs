@@ -33,14 +33,13 @@ module.exports = (grunt) ->
         ]
         tasks: ['coffee', 'test']
 
-    simplemocha:
-      all:
-        src: ['test/**/*.coffee']
-        options:
-          timeout: 3000
-          ignoreLeaks: false
-          ui: 'bdd'
-          compilers: 'coffee:coffee-script'
+    mochacli:
+      options:
+        require: ['coffee-errors']
+        reporter: 'spec'
+        colors: true
+        compilers: ['coffee:coffee-script']
+      all: ['./test/*.coffee']
 
     coffeelint:
       lib: ['*.coffee', 'src/*.coffee', 'test/*.coffee', 'examples/.*coffee']
@@ -49,9 +48,9 @@ module.exports = (grunt) ->
   # These plugins provide necessary tasks.
   grunt.loadNpmTasks 'grunt-contrib-coffee'
   grunt.loadNpmTasks 'grunt-contrib-watch'
-  grunt.loadNpmTasks 'grunt-simple-mocha'
+  grunt.loadNpmTasks 'grunt-mocha-cli'
   grunt.loadNpmTasks 'grunt-coffeelint'
 
   grunt.registerTask 'default', ['watch']
-  grunt.registerTask 'test', ['simplemocha']
+  grunt.registerTask 'test', ['mochacli']
   grunt.registerTask 'lint', ['coffeelint']

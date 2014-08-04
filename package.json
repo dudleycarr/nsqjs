@@ -48,9 +48,10 @@
     "grunt-coffeelint": "0.0.8",
     "grunt-contrib-coffee": "~0.7",
     "grunt-contrib-watch": "~0.5.1",
-    "grunt-simple-mocha": "~0.4.0",
+    "grunt-mocha-cli": "^1.9.0",
     "mocha": "~1.9.0",
     "nock": "~0.27.1",
+    "should": "^4.0.4",
     "sinon": "~1.7.3",
     "sinon-chai": "~2.4.0",
     "temp": "^0.8.0"

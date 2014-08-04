@@ -2,9 +2,7 @@ _ = require 'underscore'
 child_process = require 'child_process'
 request = require 'request'
 
-chai = require 'chai'
-should = chai.should
-sinon = require 'sinon'
+should = require 'should'
 temp = require('temp').track()
 
 nsq = require '../src/nsq'
