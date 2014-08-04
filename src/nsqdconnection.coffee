@@ -158,7 +158,7 @@ class NSQDConnection extends EventEmitter
         when wire.FRAME_TYPE_RESPONSE
           @statemachine.raise 'response', payload
         when wire.FRAME_TYPE_ERROR
-          @statemachine.goto 'ERROR', payload
+          @statemachine.goto 'ERROR', new Error payload.toString()
         when wire.FRAME_TYPE_MESSAGE
           @lastMessageTimestamp = @lastReceivedTimestamp
           @statemachine.raise 'consumeMessage', @createMessage payload
