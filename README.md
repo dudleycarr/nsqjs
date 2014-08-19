@@ -146,7 +146,23 @@ $ nsqlookupd &
 $ nsqd --lookupd-tcp-address=127.0.0.1:4160 &
 ```
 
-Sample CoffeeScript client:
+#### JavaScript
+```js
+var nsq = require('nsqjs');
+
+var reader = new nsq.Reader('sample_topic', 'test_channel', {
+  lookupdHTTPAddresses: '127.0.0.1:4161'
+});
+
+reader.connect();
+
+reader.on('message', function (msg) {
+  console.log('Received message [%s]: %s', msg.id, msg.body.toString());
+  msg.finish();
+});
+```
+
+#### CoffeeScript
 ```coffee-script
 nsq = require 'nsqjs'
 
@@ -174,6 +190,42 @@ This script simulates a message that takes a long time to process or at least
 longer than the default message timeout. To ensure that the message doesn't
 timeout while being processed, touch events are sent to keep it alive.
 
+#### JavaScript
+```js
+var nsq = require('nsqjs');
+
+var reader = new nsq.Reader('sample_topic', 'test_channel', {
+  lookupdHTTPAddresses: '127.0.0.1:4161'
+});
+
+reader.connect();
+
+reader.on('message', function (msg) {
+  console.log('Received message [%s]', msg.id);
+
+  function touch() {
+    if (!msg.hasResponded) {
+      console.log('Touch [%s]', msg.id);
+      msg.touch();
+      // Touch the message again a second before the next timeout.
+      setTimeout(touch, msg.timeUntilTimeout() - 1000);
+    }
+  }
+
+  function finish() {
+    console.log('Finished message [%s]: %s', msg.id, msg.body.toString());
+    msg.finish();
+  }
+
+  console.log('Message timeout is %f secs.', msg.timeUntilTimeout() / 1000);
+  setTimeout(touch, msg.timeUntilTimeout() - 1000);
+
+  // Finish the message after 2 timeout periods and 1 second.
+  setTimeout(finish, msg.timeUntilTimeout() * 2 + 1000);
+});
+```
+
+#### CoffeeScript
 ```coffee-script
 {Reader} = require 'nsqjs'
 
@@ -209,6 +261,14 @@ reader.on Reader.MESSAGE, (msg) ->
 ### Enable nsqjs debugging
 If you want to see the internal events of nsqjs, you can do so by doing the
 following:
+
+#### JavaScript
+```js
+var nsq = require('nsqjs');
+nsq.StateChangeLogger.debug = true;
+```
+
+#### CoffeeScript
 ```coffee-script
 nsq = require 'nsqjs'
 nsq.StateChangeLogger.debug = true
@@ -218,6 +278,33 @@ nsq.StateChangeLogger.debug = true
 
 The writer sends a single message and then a list of messages.
 
+#### JavaScript
+```js
+var nsq = require('nsqjs');
+
+var w = new nsq.Writer('127.0.0.1', 4150);
+
+w.connect();
+
+w.on('ready', function () {
+  w.publish('sample_topic', 'it really tied the room together');
+  w.publish('sample_topic', [
+    'Uh, excuse me. Mark it zero. Next frame.', 
+    'Smokey, this is not \'Nam. This is bowling. There are rules.'
+  ]);
+  w.publish('sample_topic', 'Wu?', function (err) {
+    if (err) { return console.error(err.message); }
+    console.log('Message sent successfully');
+    w.close();
+  });
+});
+
+w.on('closed', function () {
+  console.log('Writer closed');
+});
+```
+
+#### CoffeeScript
 ```coffee-script
 {Writer} = require 'nsqjs'
 
@@ -225,13 +312,13 @@ w = new Writer '127.0.0.1', 4150
 w.connect()
 
 w.on Writer.READY, ->
-  # Send a single message
   w.publish 'sample_topic', 'it really tied the room together'
   w.publish 'sample_topic', ['Uh, excuse me. Mark it zero. Next frame.', 
     'Smokey, this is not \'Nam. This is bowling. There are rules.']
   w.publish 'sample_topic', 'Wu?', (err) ->
     console.log 'Message sent successfully' unless err?
-  w.close()
+    w.close()
+
 w.on Writer.CLOSED, ->
   console.log 'Writer closed'
 ```
