@@ -166,7 +166,7 @@ reader.on('message', function (msg) {
 ```coffee-script
 nsq = require 'nsqjs'
 
-topic = 'sample'
+topic = 'sample_topic'
 channel = 'test_channel'
 options =
   lookupdHTTPAddresses: '127.0.0.1:4161'
@@ -181,7 +181,7 @@ reader.on nsq.Reader.MESSAGE, (msg) ->
 
 Publish a message to nsqd to be consumed by the sample client:
 ```bash
-$ curl -d "it really tied the room together" http://localhost:4151/pub?topic=sample
+$ curl -d "it really tied the room together" http://localhost:4151/pub?topic=sample_topic
 ```
 
 ### Example with message timeouts
@@ -229,7 +229,7 @@ reader.on('message', function (msg) {
 ```coffee-script
 {Reader} = require 'nsqjs'
 
-topic = 'sample'
+topic = 'sample_topic'
 channel = 'test_channel'
 options =
   lookupdHTTPAddresses: '127.0.0.1:4161'
