@@ -98,8 +98,9 @@ class NSQDConnection extends EventEmitter
         # Once there's a socket connection, give it 5 seconds to receive an
         # identify response.
         @identifyTimeoutId = setTimeout @identifyTimeout.bind(this), 5000
-        @registerStreamListeners @conn
 
+      @registerStreamListeners @conn
+  
   registerStreamListeners: (conn) ->
     conn.on 'data', (data) =>
       @receiveRawData data
