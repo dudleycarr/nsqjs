@@ -132,6 +132,9 @@ exports.mpub = (topic, data) ->
 
   command 'MPUB', Buffer.concat(messages), topic
 
+exports.auth = (token) ->
+  command 'AUTH', token
+
 validTopicName = (topic) ->
   (0 < topic.length < 33) and topic.match(/^[\.a-zA-Z0-9_-]+$/)?
 

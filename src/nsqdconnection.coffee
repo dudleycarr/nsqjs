@@ -69,7 +69,7 @@ class NSQDConnection extends EventEmitter
 
   constructor: (@nsqdHost, @nsqdPort, @topic, @channel, @requeueDelay,
     @heartbeatInterval, @tls=false, @tlsVerification=true, @deflate=false,
-    @deflateLevel=6, @snappy=false) ->
+    @deflateLevel=6, @snappy=false, @authSecret=null) ->
 
     @frameBuffer = new FrameBuffer()
     @statemachine = @connectionState()
@@ -264,12 +264,11 @@ class ConnectionState extends NodeState
 
     IDENTIFY_COMPRESSION_CHECK:
       Enter: ->
-        if @identifyResponse.deflate
-          return @goto 'DEFLATE_START', @identifyResponse.deflate_level
-        if @identifyResponse.snappy
-          return @goto 'SNAPPY_START'
+        {deflate, snappy} = @identifyResponse
 
-        @goto @afterIdentify()
+        return @goto 'DEFLATE_START', @identifyResponse.deflate_level if deflate
+        return @goto 'SNAPPY_START' if snappy
+        @goto 'AUTH'
 
     TLS_START:
       Enter: ->
@@ -296,9 +295,19 @@ class ConnectionState extends NodeState
     COMPRESSION_RESPONSE:
       response: (data) ->
         if data.toString() is 'OK'
-          @goto @afterIdentify()
+          @goto 'AUTH'
         else
           @goto 'ERROR', new Error 'Bad response when enabling compression'
+
+    AUTH:
+      Enter: ->
+        return @goto @afterIdentify() unless @conn.authSecret
+        @conn.write wire.auth @conn.authSecret
+
+    AUTH_RESPONSE:
+      response: (data) ->
+        @conn.auth = JSON.parse data
+        @goto @afterIdentify()
 
     SUBSCRIBE:
       Enter: ->

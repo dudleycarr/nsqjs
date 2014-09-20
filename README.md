@@ -47,6 +47,8 @@ options object.
   Use zlib Deflate compression level.
 * ```snappy: false``` <br/>
   Use Snappy compression.
+* ```authSecret: null```<br/>
+  Authenticate using the provided auth secret.
 
 Reader events are:
 
