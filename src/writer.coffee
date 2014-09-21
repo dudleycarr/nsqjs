@@ -33,6 +33,7 @@ class Writer extends EventEmitter
       deflate: false
       deflateLevel: 6
       snappy: false
+      authSecret: null
 
     params = _.extend {}, defaults, options
 
@@ -46,12 +47,22 @@ class Writer extends EventEmitter
       throw new Error 'deflate needs to be true or false'
     unless _.isNumber params.deflateLevel
       throw new Error 'deflateLevel needs to be a Number'
+    unless params.authSecret is null or _.isString params.authSecret
+      throw new Error 'authSecret needs to be a string'
 
     _.extend @, params
 
   connect: ->
-    @conn = new WriterNSQDConnection @nsqdHost, @nsqdPort, 30, @tls,
-      @tlsVerification, @deflate, @deflateLevel, @snappy
+    options =
+      heartbeatInterval: @heartbeatInterval
+      tls: @tls
+      tlsVerification: @tlsVerification
+      delate: @deflate
+      deflateLevel: @deflateLevel
+      snappy: @snappy
+      authSecret: @authSecret
+
+    @conn = new WriterNSQDConnection @nsqdHost, @nsqdPort, options
     @conn.connect()
 
     @conn.on WriterNSQDConnection.READY, =>

@@ -26,7 +26,7 @@ This shouldn't be used directly. Use a Reader instead.
 
 Usage:
 
-c = new NSQDConnection '127.0.0.1', 4150, 'test', 'default', 60, 30
+c = new NSQDConnection '127.0.0.1', 4150, 'test', 'default'
 
 c.on NSQDConnection.MESSAGE, (msg) ->
   console.log "Callback [message]: #{msg.attempts}, #{msg.body.toString()}"
@@ -67,9 +67,18 @@ class NSQDConnection extends EventEmitter
   @REQUEUED: 'requeued'
   @READY: 'ready'
 
-  constructor: (@nsqdHost, @nsqdPort, @topic, @channel, @requeueDelay,
-    @heartbeatInterval, @tls=false, @tlsVerification=true, @deflate=false,
-    @deflateLevel=6, @snappy=false, @authSecret=null) ->
+  constructor: (@nsqdHost, @nsqdPort, @topic, @channel, options={}) ->
+
+    # Make the options members of this class instance.
+    _.extend this, _.defaults options,
+      requeueDelay: 60
+      heartbeatInterval: 30
+      tls: false
+      tlsVerification: true
+      deflate: false
+      deflateLevel: 6
+      snappy: false
+      authSecret: null
 
     @frameBuffer = new FrameBuffer()
     @statemachine = @connectionState()
@@ -413,7 +422,7 @@ class ConnectionState extends NodeState
         callback err
 
 ###
-c = new NSQDConnectionWriter '127.0.0.1', 4150, 30
+c = new NSQDConnectionWriter '127.0.0.1', 4150
 c.connect()
 
 c.on NSQDConnectionWriter.CLOSED, ->
@@ -429,10 +438,8 @@ c.on NSQDConnectionWriter.READY, ->
 ###
 class WriterNSQDConnection extends NSQDConnection
 
-  constructor: (nsqdHost, nsqdPort, heartbeatInterval, tls,
-    tlsVerification, deflate, deflateLevel, snappy) ->
-    super nsqdHost, nsqdPort, null, null, 0, heartbeatInterval, tls,
-      tlsVerification, deflate, deflateLevel, snappy
+  constrcutor: (nsqdHost, nsqdPort, options={}) ->
+    super nsqdHost, nsqdPort, null, null, options
 
   connectionState: ->
     @statemachine or new WriterConnectionState this
