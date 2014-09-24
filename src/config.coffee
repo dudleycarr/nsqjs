@@ -19,8 +19,8 @@ class ConnectionConfig
 
   constructor: (options={}) ->
     @options = _.chain(options)
-      .pick(_.keys this.constructor.DEFAULTS)
-      .defaults(this.constructor.DEFAULTS)
+      .pick(_.keys @constructor.DEFAULTS)
+      .defaults(@constructor.DEFAULTS)
       .value()
     _.extend this, @options
 
@@ -86,7 +86,7 @@ class ConnectionConfig
     conditions = @conditions()
     for option, value of @options
       # Skip options that default to null
-      if _.isNull(value) and this.constructor.DEFAULTS[option] is null
+      if _.isNull(value) and @constructor.DEFAULTS[option] is null
         continue
 
       # Disabled via -1
