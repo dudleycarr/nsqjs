@@ -29,18 +29,18 @@ class ConnectionConfig
       throw new Error "#{option} must be a non-empty string"
 
   isNumber: (option, value, lower, upper=null) ->
-    if _.any (fn value for fn in [_.isNull, _.isNaN, _.isUndefined])
+    if _.isNaN(value) or not _.isNumber value
       throw new Error "#{option}(#{value}) is not a number"
 
     if upper
       unless lower <= value <= upper
         throw new Error "#{lower} <= #{option}(#{value}) <= #{upper}"
     else
-      unless not _.isNumber(value) or lower <= value
+      unless lower <= value
         throw new Error "#{lower} <= #{option}(#{value})"
 
   isNumberExclusive: (option, value, lower, upper=null) ->
-    if _.any (fn value for fn in [_.isNull, _.isNaN, _.isUndefined])
+    if _.isNaN(value) or not _.isNumber value
       throw new Error "#{option}(#{value}) is not a number"
 
     if upper
