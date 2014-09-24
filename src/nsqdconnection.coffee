@@ -449,7 +449,7 @@ c.on NSQDConnectionWriter.READY, ->
 ###
 class WriterNSQDConnection extends NSQDConnection
 
-  constrcutor: (nsqdHost, nsqdPort, options={}) ->
+  constructor: (nsqdHost, nsqdPort, options={}) ->
     super nsqdHost, nsqdPort, null, null, options
 
   connectionState: ->
