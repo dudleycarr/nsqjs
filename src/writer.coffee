@@ -53,16 +53,8 @@ class Writer extends EventEmitter
     _.extend @, params
 
   connect: ->
-    options =
-      heartbeatInterval: @heartbeatInterval
-      tls: @tls
-      tlsVerification: @tlsVerification
-      delate: @deflate
-      deflateLevel: @deflateLevel
-      snappy: @snappy
-      authSecret: @authSecret
-
-    @conn = new WriterNSQDConnection @nsqdHost, @nsqdPort, options
+    @conn = new WriterNSQDConnection @nsqdHost, @nsqdPort, 30, @tls,
+      @tlsVerification, @deflate, @deflateLevel, @snappy
     @conn.connect()
 
     @conn.on WriterNSQDConnection.READY, =>
