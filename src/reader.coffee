@@ -78,7 +78,7 @@ class Reader extends EventEmitter
       throw new Error 'snappy needs to be true or false'
     if params.deflate and params.snappy
       throw new Error 'Cannot use deflate and snappy at the same time'
-    unless _.isString params.authSecret
+    unless params.authSecret is null or _.isString params.authSecret
       throw new Error 'authSecret needs to be a string'
 
     # Returns a compacted list given a list, string, integer, or object.

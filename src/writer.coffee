@@ -47,7 +47,7 @@ class Writer extends EventEmitter
       throw new Error 'deflate needs to be true or false'
     unless _.isNumber params.deflateLevel
       throw new Error 'deflateLevel needs to be a Number'
-    unless _.isString params.authSecret
+    unless params.authSecret is null or _.isString params.authSecret
       throw new Error 'authSecret needs to be a string'
 
     _.extend @, params
