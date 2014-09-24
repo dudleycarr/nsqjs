@@ -83,7 +83,6 @@ class ConnectionConfig
     fn option, value, args...
 
   validate: ->
-    conditions = @conditions()
     for option, value of @options
       # Skip options that default to null
       if _.isNull(value) and @constructor.DEFAULTS[option] is null
