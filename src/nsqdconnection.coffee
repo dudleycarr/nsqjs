@@ -9,6 +9,7 @@ fs = require 'fs'
 _ = require 'underscore'
 NodeState = require 'node-state'
 
+{ConnectionConfig} = require './config'
 FrameBuffer = require './framebuffer'
 Message = require './message'
 wire = require './wire'
@@ -68,17 +69,8 @@ class NSQDConnection extends EventEmitter
   @READY: 'ready'
 
   constructor: (@nsqdHost, @nsqdPort, @topic, @channel, options={}) ->
-
-    # Make the options members of this class instance.
-    _.extend this, _.defaults options,
-      requeueDelay: 60
-      heartbeatInterval: 30
-      tls: false
-      tlsVerification: true
-      deflate: false
-      deflateLevel: 6
-      snappy: false
-      authSecret: null
+    @config = new ConnectionConfig options
+    @config.validate()
 
     @frameBuffer = new FrameBuffer()
     @statemachine = @connectionState()
@@ -124,7 +116,7 @@ class NSQDConnection extends EventEmitter
 
     options =
       socket: @conn
-      rejectUnauthorized: @tlsVerification
+      rejectUnauthorized: @config.tlsVerification
     tlsConn = tls.connect options, =>
       @conn = tlsConn
       callback?()
@@ -174,15 +166,34 @@ class NSQDConnection extends EventEmitter
           @statemachine.raise 'consumeMessage', @createMessage payload
 
   identify: ->
-    short_id: os.hostname().split('.')[0]
-    long_id: os.hostname()
-    feature_negotiation: true,
-    heartbeat_interval: @heartbeatInterval * 1000
-    deflate: @deflate
-    deflate_level: @deflateLevel
-    snappy: @snappy
-    tls_v1: @tls
-    user_agent: "nsqjs/#{version}"
+    longName = os.hostname()
+    shortName = longName.split('.')[0]
+
+    identify = 
+      client_id: @config.clientId or shortName
+      deflate: @config.deflate
+      deflate_level: @config.deflateLevel
+      feature_negotiation: true,
+      heartbeat_interval: @config.heartbeatInterval * 1000
+      long_id: longName
+      msg_timeout: @config.messageTimeout
+      output_buffer_size: @config.outputBufferSize
+      output_buffer_timeout: @config.outputBufferTimeout
+      sample_rate: @config.sampleRate
+      short_id: shortName
+      snappy: @config.snappy
+      tls_v1: @config.tls
+      user_agent: "nsqjs/#{version}"
+
+    # Remove some keys when they're effectively not provided.
+    removableKeys = [
+      'msg_timeout'
+      'output_buffer_size'
+      'output_buffer_timeout'
+      'sample_rate'
+    ]
+    delete identify[key] for key in removableKeys when identify[key] is null
+    identify
 
   identifyTimeout: ->
     @statemachine.goto 'ERROR', new Error 'Timed out identifying with nsqd'
@@ -194,7 +205,7 @@ class NSQDConnection extends EventEmitter
   # Create a Message object from the message payload received from nsqd.
   createMessage: (msgPayload) ->
     msgComponents = wire.unpackMessage msgPayload
-    msg = new Message msgComponents..., @requeueDelay, @msgTimeout,
+    msg = new Message msgComponents..., @config.requeueDelay, @msgTimeout,
       @maxMsgTimeout
 
     msg.on Message.RESPOND, (responseType, wireData) =>
@@ -310,8 +321,8 @@ class ConnectionState extends NodeState
 
     AUTH:
       Enter: ->
-        return @goto @afterIdentify() unless @conn.authSecret
-        @conn.write wire.auth @conn.authSecret
+        return @goto @afterIdentify() unless @conn.config.authSecret
+        @conn.write wire.auth @conn.config.authSecret
 
     AUTH_RESPONSE:
       response: (data) ->

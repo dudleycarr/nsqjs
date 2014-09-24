@@ -2,6 +2,7 @@ _ = require 'underscore'
 request = require 'request'
 {EventEmitter} = require 'events'
 
+{ReaderConfig} = require './config'
 {NSQDConnection} = require './nsqdconnection'
 {ReaderRdy} = require './readerrdy'
 RoundRobinList = require './roundrobinlist'
@@ -26,97 +27,26 @@ class Reader extends EventEmitter
   @NSQD_CLOSED: 'nsqd_closed'
 
   constructor: (@topic, @channel, options) ->
-    defaults =
-      name: null
-      maxInFlight: 1
-      heartbeatInterval: 30
-      maxBackoffDuration: 128
-      maxAttempts: 5
-      requeueDelay: 90
-      nsqdTCPAddresses: []
-      lookupdHTTPAddresses: []
-      lookupdPollInterval: 60
-      lookupdPollJitter: 0.3
-      tls: false
-      tlsVerification: true
-      deflate: false
-      deflateLevel: 6
-      snappy: false
-      authSecret: null
+    @config = new ReaderConfig options
+    @config.validate()
 
-    params = _.extend {}, defaults, options
-
-    unless _.isString(topic) and topic.length > 0
-      throw new Error 'Invalid topic'
-    unless _.isNumber(params.maxInFlight) and params.maxInFlight > 0
-      throw new Error 'maxInFlight needs to be an integer greater than 0'
-    unless _.isNumber(params.heartbeatInterval) and params.heartbeatInterval > 0
-      throw new Error 'heartbeatInterval needs to be an integer greater than 1'
-    unless _.isNumber params.maxBackoffDuration
-      throw new Error 'maxBackoffDuration needs to be a number'
-    unless params.maxBackoffDuration > 0
-      throw new Error 'maxBackoffDuration needs to be a number greater than 1'
-    unless params.name is null or _.isString params.name
-      throw new Error 'name needs to be unspecified or a string'
-    unless _.isNumber params.lookupdPollInterval
-      throw new Error 'lookupdPollInterval needs to be a number'
-    unless 0 <= params.lookupdPollInterval
-      throw new Error 'lookupdPollInterval needs to be greater than 0'
-    unless _.isNumber params.lookupdPollJitter
-      throw new Error 'lookupdPollJitter needs to be a number'
-    unless 0 <= params.lookupdPollJitter <= 1
-      throw new Error 'lookupdPollJitter needs to be between 0 and 1'
-    unless _.isBoolean params.tls
-      throw new Error 'tls needs to be true or false'
-    unless _.isBoolean params.tlsVerification
-      throw new Error 'tlsVerification needs to be true or false'
-    unless _.isBoolean params.deflate
-      throw new Error 'deflate needs to be true or false'
-    unless _.isNumber params.deflateLevel
-      throw new Error 'deflateLevel needs to be a number'
-    unless _.isBoolean params.snappy
-      throw new Error 'snappy needs to be true or false'
-    if params.deflate and params.snappy
-      throw new Error 'Cannot use deflate and snappy at the same time'
-    unless params.authSecret is null or _.isString params.authSecret
-      throw new Error 'authSecret needs to be a string'
-
-    # Returns a compacted list given a list, string, integer, or object.
-    makeList = (list) ->
-      list = [list] unless _.isArray list
-      (entry for entry in list when entry?)
-
-    params.nsqdTCPAddresses = makeList params.nsqdTCPAddresses
-    params.lookupdHTTPAddresses = makeList params.lookupdHTTPAddresses
-
-    anyNotEmpty = (lst...) -> _.some (e for e in lst when not _.isEmpty e)
-    unless anyNotEmpty(params.nsqdTCPAddresses, params.lookupdHTTPAddresses)
-      throw new Error 'Need to specify either nsqdTCPAddresses or ' +
-        'lookupdHTTPAddresses option.'
-
-    params.name = params.name or "#{topic}:#{channel}"
-    params.requeueDelay = params.requeueDelay
-    params.heartbeatInterval = params.heartbeatInterval
-
-    _.extend @, params
-
-    @roundrobinLookupd = new RoundRobinList @lookupdHTTPAddresses
-    @readerRdy = new ReaderRdy @maxInFlight, @maxBackoffDuration
+    @roundrobinLookupd = new RoundRobinList @config.lookupdHTTPAddresses
+    @readerRdy = new ReaderRdy @config.maxInFlight, @config.maxBackoffDuration
     @connectIntervalId = null
     @connectionIds = []
 
   connect: ->
-    interval = @lookupdPollInterval * 1000
-    delay = Math.random() * @lookupdPollJitter * interval
+    interval = @config.lookupdPollInterval * 1000
+    delay = Math.random() * @config.lookupdPollJitter * interval
 
     # Connect to provided nsqds.
-    if @nsqdTCPAddresses.length
+    if @config.nsqdTCPAddresses.length
       directConnect = =>
         # Don't establish new connections while the Reader is paused.
         return if @isPaused()
 
-        if @connectionIds.length < @nsqdTCPAddresses.length
-          for addr in @nsqdTCPAddresses
+        if @connectionIds.length < @config.nsqdTCPAddresses.length
+          for addr in @config.nsqdTCPAddresses
             [address, port] = addr.split ':'
             @connectToNSQD address, Number(port)
 
@@ -166,17 +96,7 @@ class Reader extends EventEmitter
     return if @connectionIds.indexOf(connectionId) isnt -1
     @connectionIds.push connectionId
 
-    options =
-      requeueDelay: @requeueDelay
-      heartbeatInterval: @heartbeatInterval
-      tls: @tls
-      tlsVerification: @tlsVerification
-      delate: @deflate
-      deflateLevel: @deflateLevel
-      snappy: @snappy
-      authSecret: @authSecret
-
-    conn = new NSQDConnection host, port, @topic, @channel, options
+    conn = new NSQDConnection host, port, @topic, @channel, @config.options
 
     conn.on NSQDConnection.CONNECTED, =>
       @emit Reader.NSQD_CONNECTED, host, port
@@ -202,7 +122,7 @@ class Reader extends EventEmitter
       # Give the internal event listeners a chance at the events before clients
       # of the Reader.
       process.nextTick =>
-        if message.attempts < @maxAttempts
+        if message.attempts < @config.maxAttempts
           @emit Reader.MESSAGE, message
         else
           @emit Reader.DISCARD, message

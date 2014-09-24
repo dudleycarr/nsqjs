@@ -49,6 +49,19 @@ options object.
   Use Snappy compression.
 * ```authSecret: null```<br/>
   Authenticate using the provided auth secret.
+* ```ouputBufferSize: null```<br/>
+  The size in bytes of the buffer nsqd will use when writing to this client. -1
+  disables buffering. ```outputBufferSize >= 64```
+* ```outputBufferTimeout: null```<br/>
+  The timeout after which any data that nsqd has buffered will be flushed to this client. Value is in milliseconds. ```1 <= outputBufferTimeout```. A value of ```-1``` disables timeouts.
+* ```messageTimeout: null```<br/>
+  Sets the server-side message timeout in milliseconds for messages delivered to this client.
+* ```sampleRate: null```<br/>
+  Deliver a percentage of all messages received to this connection. ```1 <=
+  sampleRate <= 99```
+* ```clientId: null```<br/>
+  An identifier used to disambiguate this client.
+  
 
 Reader events are:
 
@@ -122,6 +135,8 @@ Available Writer options:
   Use zlib Deflate compression level.
 * ```snappy: false``` <br/>
   Use Snappy compression.
+* ```clientId: null```<br/>
+  An identifier used to disambiguate this client.
 
 Writer events are:
 
@@ -327,6 +342,13 @@ w.on Writer.CLOSED, ->
 
 Changes
 -------
+* **0.6.0**
+  * Added support for authentication
+  * Added support for sample rate
+  * Added support for specify outputBufferSize and outputBufferTimeout
+  * Refactored configuration checks
+* **0.5.1**
+  * Fix for not failing when the nsqd isn't available on start.
 * **0.5.0**
   * Reworked FrameBuffer
   * Added TLS support for Reader and Writer

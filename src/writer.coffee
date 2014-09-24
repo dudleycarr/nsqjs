@@ -1,6 +1,7 @@
 {EventEmitter} = require 'events'
 
 _ = require 'underscore'
+{ConnectionConfig} = require './config'
 {WriterNSQDConnection} = require './nsqdconnection'
 
 ###
@@ -27,42 +28,11 @@ class Writer extends EventEmitter
   @ERROR: 'error'
 
   constructor: (@nsqdHost, @nsqdPort, options) ->
-    defaults =
-      tls: false
-      tlsVerification: true
-      deflate: false
-      deflateLevel: 6
-      snappy: false
-      authSecret: null
-
-    params = _.extend {}, defaults, options
-
-    unless _.isBoolean params.tls
-      throw new Error 'tls needs to be true or false'
-    unless _.isBoolean params.tlsVerification
-      throw new Error 'tlsVerification needs to be true or false'
-    unless _.isBoolean params.snappy
-      throw new Error 'snappy needs to be true or false'
-    unless _.isBoolean params.deflate
-      throw new Error 'deflate needs to be true or false'
-    unless _.isNumber params.deflateLevel
-      throw new Error 'deflateLevel needs to be a Number'
-    unless params.authSecret is null or _.isString params.authSecret
-      throw new Error 'authSecret needs to be a string'
-
-    _.extend @, params
+    @config = new ConnectionConfig options
+    @config.validate()
 
   connect: ->
-    options =
-      heartbeatInterval: @heartbeatInterval
-      tls: @tls
-      tlsVerification: @tlsVerification
-      delate: @deflate
-      deflateLevel: @deflateLevel
-      snappy: @snappy
-      authSecret: @authSecret
-
-    @conn = new WriterNSQDConnection @nsqdHost, @nsqdPort, options
+    @conn = new WriterNSQDConnection @nsqdHost, @nsqdPort, @config.options
     @conn.connect()
 
     @conn.on WriterNSQDConnection.READY, =>
