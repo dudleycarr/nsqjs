@@ -347,6 +347,8 @@ Changes
   * Added support for sample rate
   * Added support for specify outputBufferSize and outputBufferTimeout
   * Refactored configuration checks
+  * Breaking change for NSQDConnection constructor. NSQDConnection takes an
+    options argument instead of each option as a parameter.
 * **0.5.1**
   * Fix for not failing when the nsqd isn't available on start.
 * **0.5.0**
