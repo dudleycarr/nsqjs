@@ -166,17 +166,9 @@ class Reader extends EventEmitter
     return if @connectionIds.indexOf(connectionId) isnt -1
     @connectionIds.push connectionId
 
-    options =
-      requeueDelay: @requeueDelay
-      heartbeatInterval: @heartbeatInterval
-      tls: @tls
-      tlsVerification: @tlsVerification
-      delate: @deflate
-      deflateLevel: @deflateLevel
-      snappy: @snappy
-      authSecret: @authSecret
-
-    conn = new NSQDConnection host, port, @topic, @channel, options
+    conn = new NSQDConnection host, port, @topic, @channel, @requeueDelay,
+      @heartbeatInterval, @tls, @tlsVerification, @deflate, @deflateLevel,
+      @snappy, @authSecret
 
     conn.on NSQDConnection.CONNECTED, =>
       @emit Reader.NSQD_CONNECTED, host, port
