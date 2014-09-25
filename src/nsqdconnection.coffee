@@ -27,7 +27,7 @@ This shouldn't be used directly. Use a Reader instead.
 
 Usage:
 
-c = new NSQDConnection '127.0.0.1', 4150, 'test', 'default'
+c = new NSQDConnection '127.0.0.1', 4150, 'test', 'default', 60, 30
 
 c.on NSQDConnection.MESSAGE, (msg) ->
   console.log "Callback [message]: #{msg.attempts}, #{msg.body.toString()}"
@@ -433,7 +433,7 @@ class ConnectionState extends NodeState
         callback err
 
 ###
-c = new NSQDConnectionWriter '127.0.0.1', 4150
+c = new NSQDConnectionWriter '127.0.0.1', 4150, 30
 c.connect()
 
 c.on NSQDConnectionWriter.CLOSED, ->
