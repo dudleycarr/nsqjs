@@ -62,20 +62,20 @@ exports.subscribe = (topic, channel) ->
 
 exports.identify = (data) ->
   validIdentifyKeys = [
-    'short_id',
-    'long_id',
     'client_id'
-    'feature_negotiation',
-    'heartbeat_interval',
-    'output_buffer_size',
-    'output_buffer_timeout',
-    'tls_v1',
-    'snappy'
     'deflate'
     'deflate_level'
-    'sample_rate'
-    'user_agent'
+    'feature_negotiation',
+    'heartbeat_interval',
+    'long_id',
     'msg_timeout'
+    'output_buffer_size',
+    'output_buffer_timeout',
+    'sample_rate'
+    'short_id',
+    'snappy'
+    'tls_v1',
+    'user_agent'
   ]
   # Make sure there are no unexpected keys
   unexpectedKeys = _.filter _.keys(data), (k) ->

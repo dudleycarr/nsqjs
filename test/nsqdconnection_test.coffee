@@ -125,7 +125,7 @@ describe 'WriterConnectionState', ->
 
   beforeEach ->
     sent = []
-    connection = new WriterNSQDConnection '127.0.0.1', 4150, 30
+    connection = new WriterNSQDConnection '127.0.0.1', 4150
     sinon.stub connection, 'destroy'
 
     write = sinon.stub connection, 'write', (data) ->
