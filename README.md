@@ -345,7 +345,8 @@ Changes
 * **0.6.0**
   * Added support for authentication
   * Added support for sample rate
-  * Added support for specify outputBufferSize and outputBufferTimeout
+  * Added support for specifying outputBufferSize and outputBufferTimeout
+  * Added support for specifying msg_timeout
   * Refactored configuration checks
   * Breaking change for NSQDConnection constructor. NSQDConnection takes an
     options argument instead of each option as a parameter.
