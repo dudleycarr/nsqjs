@@ -33,6 +33,7 @@ class Writer extends EventEmitter
       deflate: false
       deflateLevel: 6
       snappy: false
+      authSecret: null
 
     params = _.extend {}, defaults, options
 
@@ -46,6 +47,8 @@ class Writer extends EventEmitter
       throw new Error 'deflate needs to be true or false'
     unless _.isNumber params.deflateLevel
       throw new Error 'deflateLevel needs to be a Number'
+    if params.authSecret? and not _.isString params.authSecret
+      throw new Error 'authSecret needs to be a string'
 
     _.extend @, params
 

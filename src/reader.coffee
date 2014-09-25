@@ -42,6 +42,7 @@ class Reader extends EventEmitter
       deflate: false
       deflateLevel: 6
       snappy: false
+      authSecret: null
 
     params = _.extend {}, defaults, options
 
@@ -77,6 +78,8 @@ class Reader extends EventEmitter
       throw new Error 'snappy needs to be true or false'
     if params.deflate and params.snappy
       throw new Error 'Cannot use deflate and snappy at the same time'
+    if params.authSecret? and not _.isString params.authSecret
+      throw new Error 'authSecret needs to be a string'
 
     # Returns a compacted list given a list, string, integer, or object.
     makeList = (list) ->
@@ -165,7 +168,7 @@ class Reader extends EventEmitter
 
     conn = new NSQDConnection host, port, @topic, @channel, @requeueDelay,
       @heartbeatInterval, @tls, @tlsVerification, @deflate, @deflateLevel,
-      @snappy
+      @snappy, @authSecret
 
     conn.on NSQDConnection.CONNECTED, =>
       @emit Reader.NSQD_CONNECTED, host, port
