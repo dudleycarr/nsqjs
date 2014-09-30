@@ -126,3 +126,36 @@ describe 'integration', ->
             done()
 
           reader.connect()
+
+  describe 'end to end', ->
+    topic = 'test'
+    channel = 'default'
+    tcpAddress = "127.0.0.1:#{TCP_PORT}"
+    writer = null
+    reader = null
+
+    beforeEach (done) ->
+      writer = new nsq.Writer '127.0.0.1', TCP_PORT
+      writer.on 'ready', ->
+        reader = new nsq.Reader topic, channel, nsqdTCPAddresses: tcpAddress
+        reader.connect()
+        done()
+
+      writer.connect()
+
+    it 'should send and receive a string', (done) ->
+      message = 'hello world'
+      writer.publish topic, message
+
+      reader.on 'message', (msg) ->
+        msg.body.toString().should.eql message
+        msg.finish()
+        done()
+
+    it 'should send and receive a Buffer', (done) ->
+      message = new Buffer [0x11, 0x22, 0x33]
+      writer.publish topic, message
+
+      reader.on 'message', (readMsg) ->
+        readByte.should.equal message[i] for readByte, i in readMsg.body
+        done()        

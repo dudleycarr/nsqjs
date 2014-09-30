@@ -7,7 +7,7 @@ describe 'ConnectionConfig', ->
     config = new ConnectionConfig()
 
   it 'should use all defaults if nothing is provided', ->
-    config.options.maxInFlight.should.eql 1
+    config.maxInFlight.should.eql 1
 
   it 'should validate with defaults', ->
     check = ->
@@ -126,7 +126,7 @@ describe 'ReaderConfig', ->
     config = new ReaderConfig()
 
   it 'should use all defaults if nothing is provided', ->
-    config.options.maxInFlight.should.eql 1
+    config.maxInFlight.should.eql 1
 
   it 'should validate with defaults', ->
     check = ->
@@ -134,3 +134,9 @@ describe 'ReaderConfig', ->
       config.validate()
 
     check.should.not.throw()
+
+  it 'should convert a string address to an array', ->
+    config = new ReaderConfig lookupdHTTPAddresses: '127.0.0.1:4161'
+    config.validate()
+
+    config.lookupdHTTPAddresses.length.should.equal 1

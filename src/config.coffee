@@ -18,11 +18,11 @@ class ConnectionConfig
     tlsVerification: true
 
   constructor: (options={}) ->
-    @options = _.chain(options)
+    options = _.chain(options)
       .pick(_.keys @constructor.DEFAULTS)
       .defaults(@constructor.DEFAULTS)
       .value()
-    _.extend this, @options
+    _.extend this, options
 
   isNonEmptyString: (option, value) ->
     unless _.isString(value) and value.length > 0
@@ -83,7 +83,10 @@ class ConnectionConfig
     fn option, value, args...
 
   validate: ->
-    for option, value of @options
+    for option, value of this
+      # dont validate our methods
+      continue if _.isFunction value
+
       # Skip options that default to null
       if _.isNull(value) and @constructor.DEFAULTS[option] is null
         continue
@@ -96,7 +99,7 @@ class ConnectionConfig
       @validateOption option, value
 
     # Mutually exclusive options
-    if @options.snappy and @options.deflate
+    if @snappy and @deflate
       throw new Error 'Cannot use both deflate and snappy'
 
 
@@ -126,13 +129,13 @@ class ReaderConfig extends ConnectionConfig
     # Either a string or list of strings can be provided. Ensure list of
     # strings going forward.
     for key in addresses
-      @options[key] = [@options[key]] if _.isString @options[key]
+      @[key] = [@[key]] if _.isString @[key]
 
     super
 
     pass = _.chain(addresses)
       .map (key) =>
-        @options[key].length
+        @[key].length
       .any(_.identity)
       .value()
 

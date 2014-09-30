@@ -71,7 +71,7 @@ class Writer extends EventEmitter
 
     # Automatically serialize as JSON if the message isn't a String or a Buffer
     msgs = for msg in msgs
-      if _.isString msg or Buffer.isBuffer msg
+      if _.isString(msg) or Buffer.isBuffer(msg)
         msg
       else
         JSON.stringify msg
