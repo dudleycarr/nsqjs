@@ -4,5 +4,5 @@ node_js:
 before_script:
   - npm install -g grunt-cli
   - wget "https://github.com/bitly/nsq/releases/download/v0.2.31/nsq-0.2.31.linux-amd64.go1.2.2.tar.gz"
-  - tar zvxf "nsq-0.2.31.linux-amd64.go1.2.2"
+  - tar zvxf "nsq-0.2.31.linux-amd64.go1.2.2.tar.gz"
   - export PATH="$PATH:./nsq-0.2.31.linux-amd64.go1.2.2/bin"
