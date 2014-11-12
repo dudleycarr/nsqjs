@@ -208,7 +208,6 @@ class ReaderRdy extends NodeState
     @backoffId = null
     @balanceId = null
     @connections = []
-    @paused = false
     @roundRobinConnections = new RoundRobinList []
 
   close: ->
@@ -221,6 +220,9 @@ class ReaderRdy extends NodeState
 
   unpause: ->
     @raise 'unpause'
+
+  isPaused: ->
+    @current_state_name is 'PAUSE'
 
   log: (message) ->
     StateChangeLogger.log 'ReaderRdy', @current_state_name, @id, message
@@ -245,20 +247,21 @@ class ReaderRdy extends NodeState
     conn.on NSQDConnection.FINISHED, =>
       @backoffTimer.success()
 
-      if @isLowRdy()
-        # Balance the RDY count amoung existing connections given the low RDY
-        # condition.
-        @balance()
-      else
-        # Restore RDY count for connection to the connection max.
-        connectionRdy.bump()
+      unless @isPaused()
+        if @isLowRdy()
+          # Balance the RDY count amoung existing connections given the low RDY
+          # condition.
+          @balance()
+        else
+          # Restore RDY count for connection to the connection max.
+          connectionRdy.bump()
 
       @raise 'success'
 
     conn.on NSQDConnection.REQUEUED, =>
       # Since there isn't a guaranteed order for the REQUEUED and BACKOFF
       # events, handle the case when we handle BACKOFF and then REQUEUED.
-      if @current_state_name isnt 'BACKOFF'
+      if @current_state_name isnt 'BACKOFF' and not @isPaused()
         connectionRdy.bump()
 
     conn.on NSQDConnection.BACKOFF, =>
@@ -328,7 +331,12 @@ class ReaderRdy extends NodeState
       clearTimeout @balanceId
       @balanceId = null
 
-    max = if @current_state_name is 'TRY_ONE' then 1 else @maxInFlight
+    # max = if @current_state_name is 'TRY_ONE' then 1 else @maxInFlight
+    max = switch @current_state_name 
+      when 'TRY_ONE' then 1 
+      when 'PAUSE' then 0
+      else @maxInFlight
+
     perConnectionMax = Math.floor max / @connections.length
 
     # Low RDY and try conditions
@@ -377,6 +385,7 @@ class ReaderRdy extends NodeState
       success: ->        # No-op
       try: ->            # No-op
       pause: ->          # No-op
+        @goto 'PAUSE'
       unpause: ->        # No-op
 
     PAUSE:

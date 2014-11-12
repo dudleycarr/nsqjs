@@ -691,3 +691,11 @@ describe 'ReaderRdy', ->
       readerRdy.unpause()
 
       expect(readerRdy.current_state_name).to.eql 'TRY_ONE'
+
+    it 'should update the value of @isPaused when pased', ->
+      readerRdy.pause()
+      expect(readerRdy.isPaused()).to.be.true
+      
+      readerRdy.unpause()
+      expect(readerRdy.isPaused()).to.be.false
+      
