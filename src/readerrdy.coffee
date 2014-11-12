@@ -331,7 +331,6 @@ class ReaderRdy extends NodeState
       clearTimeout @balanceId
       @balanceId = null
 
-    # max = if @current_state_name is 'TRY_ONE' then 1 else @maxInFlight
     max = switch @current_state_name 
       when 'TRY_ONE' then 1 
       when 'PAUSE' then 0
