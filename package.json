@@ -1,7 +1,7 @@
 {
   "name": "nsqjs",
   "description": "NodeJS client for NSQ",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "homepage": "https://github.com/dudleycarr/nsqjs",
   "author": {
     "name": "Dudley Carr",
