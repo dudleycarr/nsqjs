@@ -22,8 +22,8 @@ options object.
 * ```maxBackoffDuration: 128``` <br/>
   The maximum amount of time (seconds) the Reader will backoff for any single backoff
   event.
-* ```maxRetries: 5``` <br/>
-  The number of times to a message can be requeued before it will be handed to the DISCARD handler and then automatically finished.
+* ```maxAttempts: 0``` <br/>
+  The number of times to a message can be requeued before it will be handed to the DISCARD handler and then automatically finished. 0 means that there is no limit. If not DISCARD handler is specified, then the message will be delivered to the MESSAGE handler and still auto finished.
 * ```requeueDelay: 90``` <br/>
   The default amount of time (seconds) a message requeued should be delayed by before being dispatched by nsqd.
 * ```nsqdTCPAddresses``` <br/>

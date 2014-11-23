@@ -110,7 +110,7 @@ class ReaderConfig extends ConnectionConfig
     lookupdPollJitter: 0.3
     name: null
     nsqdTCPAddresses: []
-    maxAttempts: 5
+    maxAttempts: 0
     maxBackoffDuration: 128
 
   conditions: ->
@@ -120,7 +120,7 @@ class ReaderConfig extends ConnectionConfig
       lookupdPollJitter: [@isNumberExclusive, 0, 1]
       name: [@isNonEmptyString]
       nsqdTCPAddresses: [@isAddressList]
-      maxAttempts: [@isNumber, 1]
+      maxAttempts: [@isNumber, 0]
       maxBackoffDuration: [@isNumber, 0]
 
   validate: ->

@@ -109,7 +109,6 @@ class Reader extends EventEmitter
 
     # On close, remove the connection id from this reader.
     conn.on NSQDConnection.CLOSED, =>
-      # TODO(dudley): Update when switched to lo-dash
       index = @connectionIds.indexOf connectionId
       return if index is -1
       @connectionIds.splice index, 1
@@ -122,10 +121,16 @@ class Reader extends EventEmitter
       # Give the internal event listeners a chance at the events before clients
       # of the Reader.
       process.nextTick =>
-        if message.attempts < @config.maxAttempts
-          @emit Reader.MESSAGE, message
-        else
+        # We discard only when max attempts is specified and a discard handler
+        # is present.
+        autoFinishMessage = 0 < @config.maxAttempts <= message.attempts
+
+        if autoFinishMessage and @listeners(Reader.DISCARD) > 0
           @emit Reader.DISCARD, message
+        else
+          @emit Reader.MESSAGE, message
+
+        message.finish() if autoFinishMessage
 
     @readerRdy.addConnection conn
 
