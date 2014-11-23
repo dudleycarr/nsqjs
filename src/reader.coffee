@@ -96,7 +96,7 @@ class Reader extends EventEmitter
     return if @connectionIds.indexOf(connectionId) isnt -1
     @connectionIds.push connectionId
 
-    conn = new NSQDConnection host, port, @topic, @channel, @config.options
+    conn = new NSQDConnection host, port, @topic, @channel, @config
 
     conn.on NSQDConnection.CONNECTED, =>
       @emit Reader.NSQD_CONNECTED, host, port
