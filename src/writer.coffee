@@ -32,7 +32,7 @@ class Writer extends EventEmitter
     @config.validate()
 
   connect: ->
-    @conn = new WriterNSQDConnection @nsqdHost, @nsqdPort, @config.options
+    @conn = new WriterNSQDConnection @nsqdHost, @nsqdPort, @config
     @conn.connect()
 
     @conn.on WriterNSQDConnection.READY, =>
