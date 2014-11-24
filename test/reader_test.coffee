@@ -64,14 +64,14 @@ describe 'reader', ->
       # Registering this to make sure that even if the listener is available,
       # it should not be getting called.
       reader.on nsq.Reader.DISCARD, (msg) ->
-        # Should not get here.
+        done new Error 'Unexpected discard message'
 
-      messageHandlerCalled = false
-      reader.on nsq.Reader.MESSAGE, (msg) ->
-        messageHandlerCalled = true
+      messageHandlerSpy = sinon.spy()
+      reader.on nsq.Reader.MESSAGE, messageHandlerSpy
 
       reader.handleMessage message
 
       process.nextTick ->
+        messageHandlerSpy.called.should.be.true
         message.finish.called.should.be.false
         done()

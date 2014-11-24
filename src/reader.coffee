@@ -130,11 +130,10 @@ class Reader extends EventEmitter
     # Give the internal event listeners a chance at the events before clients
     # of the Reader.
     process.nextTick =>
-      # We discard only when max attempts is specified and a discard handler
-      # is present.
       autoFinishMessage = 0 < @config.maxAttempts <= message.attempts
+      numDiscardListeners = @listeners(Reader.DISCARD).length
 
-      if autoFinishMessage and @listeners(Reader.DISCARD).length > 0
+      if autoFinishMessage and numDiscardListeners > 0
         @emit Reader.DISCARD, message
       else
         @emit Reader.MESSAGE, message
