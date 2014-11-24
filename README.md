@@ -342,6 +342,14 @@ w.on Writer.CLOSED, ->
 
 Changes
 -------
+* **0.7.0**
+  * Fixes for configuration breakages
+  * Automatically finish messages when maxAttempts have been exceeded.
+  * `maxAttempts` is now by default 0.
+  * discarded messages will now be sent to the `MESSAGE` listener if there's no
+    `DISCARD` listener.
+  * Support for emphemeral topics.
+  * Support for 64 char topic / channel names.
 * **0.6.0**
   * Added support for authentication
   * Added support for sample rate
