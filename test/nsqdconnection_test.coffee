@@ -44,7 +44,7 @@ describe 'Reader ConnectionState', ->
   it 'handle OK identify response', ->
     {statemachine, connection} = state
     statemachine.start()
-    statemachine.raise 'response', 'OK'
+    statemachine.raise 'response', new Buffer('OK')
 
     connection.maxRdyCount.should.eq 2500
     connection.maxMsgTimeout.should.eq 900000 # 15 minutes
