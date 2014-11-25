@@ -55,8 +55,6 @@ publish = (topic, message, done) ->
 describe 'integration', ->
   nsqdProcess = null
   reader = null
-  topic = null
-  n = 0
 
   before (done) ->
     temp.mkdir '/nsq', (err, dirPath) ->
@@ -73,8 +71,9 @@ describe 'integration', ->
     createTopic 'test', (err) ->
       done err
 
-  afterEach ->
+  afterEach (done) ->
     reader.close()
+    deleteTopic 'test', done
 
   describe 'stream compression and encryption', ->
     optionPermutations = [
@@ -129,15 +128,13 @@ describe 'integration', ->
           reader.connect()
 
   describe 'end to end', ->
-    n = 0
-    topic = null
+    topic = 'test'
     channel = 'default'
     tcpAddress = "127.0.0.1:#{TCP_PORT}"
     writer = null
     reader = null
 
     beforeEach (done) ->
-      topic = "test#{n++}"
       writer = new nsq.Writer '127.0.0.1', TCP_PORT
       writer.on 'ready', ->
         reader = new nsq.Reader topic, channel, nsqdTCPAddresses: tcpAddress
