@@ -81,9 +81,11 @@ class NSQDConnection extends EventEmitter
     @lastMessageTimestamp = null   # Timestamp of last message received
     @lastReceivedTimestamp = null  # Timestamp of last data received
     @conn = null                   # Socket connection to NSQD
-    @id = null                     # Id that comes from connection local port
     @identifyTimeoutId = null      # Timeout ID for triggering identifyFail
     @messageCallbacks = []         # Callbacks on message sent responses
+
+  id: ->
+    "#{@nsqdHost}:#{@nsqdPort}"
 
   connectionState: ->
     @statemachine or new ConnectionState this
@@ -93,7 +95,6 @@ class NSQDConnection extends EventEmitter
     # right after calling connect.
     process.nextTick =>
       @conn = net.connect @nsqdPort, @nsqdHost, =>
-        @id = @conn.localPort
         @statemachine.start()
         @emit NSQDConnection.CONNECTED
         # Once there's a socket connection, give it 5 seconds to receive an

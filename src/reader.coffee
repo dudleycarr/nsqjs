@@ -92,14 +92,20 @@ class Reader extends EventEmitter
       @connectToNSQD n.broadcast_address, n.tcp_port for n in nodes unless err
 
   connectToNSQD: (host, port) ->
-    connectionId = "#{host}:#{port}"
-    return if @connectionIds.indexOf(connectionId) isnt -1
-    @connectionIds.push connectionId
-
     conn = new NSQDConnection host, port, @topic, @channel, @config
 
+    # Ensure a connection doesn't already exist to this nsqd instance.
+    return if @connectionIds.indexOf(conn.id()) isnt -1
+    @connectionIds.push conn.id()
+
+    @registerConnectionListeners conn
+    @readerRdy.addConnection conn
+
+    conn.connect()
+
+  registerConnectionListeners: (conn) ->
     conn.on NSQDConnection.CONNECTED, =>
-      @emit Reader.NSQD_CONNECTED, host, port
+      @emit Reader.NSQD_CONNECTED, conn.nsqdHost, conn.nsqdPort
 
     conn.on NSQDConnection.ERROR, (err) =>
       @emit Reader.ERROR, err
@@ -109,27 +115,29 @@ class Reader extends EventEmitter
 
     # On close, remove the connection id from this reader.
     conn.on NSQDConnection.CLOSED, =>
-      # TODO(dudley): Update when switched to lo-dash
-      index = @connectionIds.indexOf connectionId
+      index = @connectionIds.indexOf conn.id()
       return if index is -1
       @connectionIds.splice index, 1
 
-      @emit Reader.NSQD_CLOSED, host, port
+      @emit Reader.NSQD_CLOSED, conn.nsqdHost, conn.nsqdPort
 
     # On message, send either a message or discard event depending on the
     # number of attempts.
     conn.on NSQDConnection.MESSAGE, (message) =>
-      # Give the internal event listeners a chance at the events before clients
-      # of the Reader.
-      process.nextTick =>
-        if message.attempts < @config.maxAttempts
-          @emit Reader.MESSAGE, message
-        else
-          @emit Reader.DISCARD, message
+      @handleMessage message
 
-    @readerRdy.addConnection conn
+  handleMessage: (message) ->
+    # Give the internal event listeners a chance at the events before clients
+    # of the Reader.
+    process.nextTick =>
+      autoFinishMessage = 0 < @config.maxAttempts <= message.attempts
+      numDiscardListeners = @listeners(Reader.DISCARD).length
 
-    conn.connect()
+      if autoFinishMessage and numDiscardListeners > 0
+        @emit Reader.DISCARD, message
+      else
+        @emit Reader.MESSAGE, message
 
+      message.finish() if autoFinishMessage
 
 module.exports = Reader
