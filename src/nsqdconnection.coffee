@@ -267,7 +267,7 @@ class ConnectionState extends NodeState
 
     IDENTIFY_RESPONSE:
       response: (data) ->
-        if data is 'OK'
+        if data.toString() is 'OK'
           data = JSON.stringify
             max_rdy_count: 2500
             max_msg_timeout: 15 * 60 * 1000    # 15 minutes

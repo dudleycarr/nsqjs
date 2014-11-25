@@ -21,7 +21,8 @@ startNSQD = (dataPath, additionalOptions, callback) ->
 
   _.extend options, additionalOptions
   options = _.flatten (["-#{key}", value] for key, value of options)
-  process = child_process.spawn 'nsqd', options.concat additionalOptions
+  process = child_process.spawn 'nsqd', options.concat(additionalOptions),
+    stdio: ['ignore', 'ignore', 'ignore']
 
   # Give nsqd a chance to startup successfully.
   setTimeout _.partial(callback, null, process), 500
@@ -68,8 +69,9 @@ describe 'integration', ->
     # Give nsqd a chance to exit before it's data directory will be cleaned up.
     setTimeout done, 500
 
-  beforeEach ->
-    topic = "test#{n++}"
+  beforeEach (done) ->
+    createTopic 'test', (err) ->
+      done err
 
   afterEach ->
     reader.close()
@@ -237,3 +239,4 @@ describe 'integration', ->
           reader.unpause()
         , 100
 
+        done()
