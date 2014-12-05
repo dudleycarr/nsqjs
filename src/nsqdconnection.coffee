@@ -324,6 +324,7 @@ class ConnectionState extends NodeState
       Enter: ->
         return @goto @afterIdentify() unless @conn.config.authSecret
         @conn.write wire.auth @conn.config.authSecret
+        return @goto 'AUTH_RESPONSE'
 
     AUTH_RESPONSE:
       response: (data) ->
