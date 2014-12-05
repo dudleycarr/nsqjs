@@ -104,19 +104,38 @@ describe 'ConnectionConfig', ->
         config.isBoolean 'tls', 'hi'
       check.should.throw()
 
-  describe 'isAddressList', ->
+  describe 'isBareAddresses', ->
     it 'should validate against a validate address list of 1', ->
       check = ->
-        config.isAddressList 'nsqdTCPAddresses', ['127.0.0.1:4150']
+        config.isBareAddresses 'nsqdTCPAddresses', ['127.0.0.1:4150']
       check.should.not.throw()
     it 'should validate against a validate address list of 2', ->
       check = ->
         addrs = ['127.0.0.1:4150', 'localhost:4150']
-        config.isAddressList 'nsqdTCPAddresses', addrs
+        config.isBareAddresses 'nsqdTCPAddresses', addrs
       check.should.not.throw()
     it 'should not validate non-numeric port', ->
       check = ->
-        config.isAddressList 'nsqdTCPAddresses', ['localhost']
+        config.isBareAddresses 'nsqdTCPAddresses', ['localhost']
+      check.should.throw()
+
+  describe 'isLookupdHTTPAddresses', ->
+    it 'should validate against a validate address list of 1', ->
+      check = ->
+        config.isLookupdHTTPAddresses 'lookupdHTTPAddresses', ['127.0.0.1:4150']
+      check.should.not.throw()
+    it 'should validate against a validate address list of 2', ->
+      check = ->
+        addrs = ['127.0.0.1:4150', 'localhost:4150', 'http://localhost/nsq/lookup', 'https://localhost/nsq/lookup']
+        config.isLookupdHTTPAddresses 'lookupdHTTPAddresses', addrs
+      check.should.not.throw()
+    it 'should not validate non-numeric port', ->
+      check = ->
+        config.isLookupdHTTPAddresses 'lookupdHTTPAddresses', ['localhost']
+      check.should.throw()
+    it 'should not validate non-HTTP/HTTPs address', ->
+      check = ->
+        config.isLookupdHTTPAddresses 'lookupdHTTPAddresses', ['localhost']
       check.should.throw()
 
 
