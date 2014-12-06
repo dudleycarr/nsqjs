@@ -26,30 +26,44 @@ describe 'Message', ->
     it 'should not allow requeue after finish', (done) ->
       msg = createMessage 'body', 90, 50, 100
 
+      responseSpy = sinon.spy()
+      msg.on Message.RESPOND, responseSpy
+
       firstFinish = ->
         msg.finish()
 
       secondRequeue = ->
-        (-> msg.requeue()).should.throw()
+        msg.requeue()
+
+      check = ->
+        responseSpy.calledOnce.should.be.true
         done()
 
       setTimeout firstFinish, 10
       setTimeout secondRequeue, 20
+      setTimeout check, 20
 
     it 'should allow touch and then finish post first timeout', (done) ->
       touchIn = 15
       timeoutIn = 20
       finishIn = 25
+      checkIn = 30
 
       msg = createMessage 'body', 90, timeoutIn, 100
+      responseSpy = sinon.spy()
+      msg.on Message.RESPOND, responseSpy
 
       touch = ->
         msg.touch()
 
       finish = ->
         msg.timedOut.should.be.eql false
-        (-> msg.finish()).should.not.throw()
+        msg.finish()
+
+      check = ->
+        responseSpy.calledTwice.should.be.true
         done()
 
       setTimeout touch, touchIn
       setTimeout finish, finishIn
+      setTimeout check, checkIn

@@ -66,7 +66,8 @@ class Message extends EventEmitter
     @respond Message.TOUCH, wire.touch @id
 
   respond: (responseType, wireData) ->
-    throw new Error "Already responded to message (#{@id})" if @hasResponded
+    # TODO: Add a debug/warn when we moved to debug.js
+    return if @hasResponded
 
     process.nextTick =>
       if responseType isnt Message.TOUCH
