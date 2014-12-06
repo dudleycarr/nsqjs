@@ -136,10 +136,9 @@ exports.auth = (token) ->
   command 'AUTH', token
 
 validTopicName = (topic) ->
-  topicRe = /^[\.a-zA-Z0-9_-]+$/
-  (0 < topic.length < 65) and topic.match(topicRe)?
+  (0 < topic.length < 65) and topic.match(/^[\w._-]+(?:#ephemeral)?$/)?
 
 validChannelName = (channel) ->
-  channelRe = /^[\.a-zA-Z0-9_-]+(#ephemeral)?$/
+  channelRe = /^[\w._-]+(?:#ephemeral)?$/
   (0 < channel.length < 65) and channel.match(channelRe)?
 

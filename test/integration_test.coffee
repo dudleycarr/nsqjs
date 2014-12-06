@@ -68,8 +68,7 @@ describe 'integration', ->
     setTimeout done, 500
 
   beforeEach (done) ->
-    createTopic 'test', (err) ->
-      done err
+    createTopic 'test', done
 
   afterEach (done) ->
     reader.close()
