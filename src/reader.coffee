@@ -80,7 +80,7 @@ class Reader extends EventEmitter
     @readerRdy.unpause()
 
   isPaused: ->
-    @readerRdy.paused
+    @readerRdy.isPaused()
 
   queryLookupd: ->
     # Don't establish new connections while the Reader is paused.

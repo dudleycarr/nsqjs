@@ -73,8 +73,7 @@ describe 'integration', ->
 
   afterEach (done) ->
     reader.close()
-    deleteTopic 'test', (err) ->
-      done err
+    deleteTopic 'test', done
 
   describe 'stream compression and encryption', ->
     optionPermutations = [
@@ -159,4 +158,82 @@ describe 'integration', ->
 
       reader.on 'message', (readMsg) ->
         readByte.should.equal message[i] for readByte, i in readMsg.body
+        readMsg.finish()
+        done()    
+
+    it 'should not receive messages when immediately paused', (done) ->
+      waitedLongEnough = false
+
+      timeout = setTimeout ->
+        reader.unpause()
+        waitedLongEnough = true
+      , 100
+
+      # Note: because NSQDConnection.connect() does most of it's work in 
+      # process.nextTick(), we're really pausing before the reader is 
+      # connected.
+      #
+      reader.pause()
+      reader.on 'message', (msg) ->
+        msg.finish()
+        clearTimeout timeout
+        waitedLongEnough.should.be.true
+        done()
+
+      writer.publish topic, 'pause test'
+      
+    it 'should not receive any new messages when paused', (done) ->
+      writer.publish topic, messageShouldArrive: true
+
+      reader.on 'message', (msg) ->
+        # check the message
+        msg.json().messageShouldArrive.should.be.true
+        msg.finish()
+
+        if reader.isPaused() then return done()
+
+        reader.pause()
+
+        process.nextTick ->
+          # send it again, shouldn't get this one
+          writer.publish topic, messageShouldArrive: false
+          setTimeout done, 100
+
+
+    it 'should not receive any requeued messages when paused', (done) ->
+      writer.publish topic, 'requeue me'
+      id = ''
+
+      reader.on 'message', (msg) ->
+        # this will fail if the msg comes through again
+        id.should.equal ''
+        id = msg.id
+        
+        if reader.isPaused() then return done()
+        reader.pause()
+
+        process.nextTick ->
+          # send it again, shouldn't get this one
+          msg.requeue 0, false
+          setTimeout done, 100
+
+    it 'should start receiving messages again after unpause', (done) ->
+      shouldReceive = true
+      writer.publish topic, sentWhilePaused: false
+
+      reader.on 'message', (msg) ->
+        shouldReceive.should.be.true
+        
+        reader.pause()
+        msg.requeue()
+
+        if msg.json().sentWhilePaused then return done()
+
+        shouldReceive = false
+        writer.publish topic, sentWhilePaused: true
+        setTimeout ->
+          shouldReceive = true
+          reader.unpause()
+        , 100
+
         done()
