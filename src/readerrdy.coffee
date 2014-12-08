@@ -32,7 +32,9 @@ class ConnectionRdy extends EventEmitter
   @STATE_CHANGE: 'statechange'
 
   constructor: (@conn) ->
-    @debug = Debug "nsqjs:reader:#{@conn.topic}/#{@conn.channel}:rdy:conn:#{@conn.id().replace ':', '/'}"
+    readerId = "#{@conn.topic}/#{@conn.channel}"
+    connId = "#{conn.id().replace ':', '/'}"
+    @debug = Debug "nsqjs:reader:#{readerId}:rdy:conn:#{connId}"
 
     @maxConnRdy = 0      # The absolutely maximum the RDY count can be per conn.
     @inFlight = 0        # The num. messages currently in-flight for this conn.
@@ -198,10 +200,12 @@ class ReaderRdy extends NodeState
   - maxInFlight        : Maximum number of messages in-flight across all
                            connections.
   - maxBackoffDuration : The longest amount of time (secs) for a backoff event.
+  - readerId           : The descriptive id for the Reader
   - lowRdyTimeout      : Time (secs) to rebalance RDY count among connections
                            during low RDY conditions.
   ###
-  constructor: (@maxInFlight, @maxBackoffDuration, @readerId, @lowRdyTimeout=1.5) ->
+  constructor: (@maxInFlight, @maxBackoffDuration, @readerId,
+    @lowRdyTimeout=1.5) ->
     @debug = Debug "nsqjs:reader:#{@readerId}:rdy"
 
     super
@@ -338,8 +342,8 @@ class ReaderRdy extends NodeState
       clearTimeout @balanceId
       @balanceId = null
 
-    max = switch @current_state_name 
-      when 'TRY_ONE' then 1 
+    max = switch @current_state_name
+      when 'TRY_ONE' then 1
       when 'PAUSE' then 0
       else @maxInFlight
 

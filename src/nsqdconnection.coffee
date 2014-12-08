@@ -69,7 +69,8 @@ class NSQDConnection extends EventEmitter
   @READY: 'ready'
 
   constructor: (@nsqdHost, @nsqdPort, @topic, @channel, options={}) ->
-    @debug or= Debug "nsqjs:reader:#{@topic}/#{@channel}:conn:#{@id().replace ':', '/'}"
+    connId = @id().replace ':', '/'
+    @debug or= Debug "nsqjs:reader:#{@topic}/#{@channel}:conn:#{connId}"
 
     @config = new ConnectionConfig options
     @config.validate()
@@ -104,7 +105,7 @@ class NSQDConnection extends EventEmitter
         @identifyTimeoutId = setTimeout @identifyTimeout.bind(this), 5000
 
       @registerStreamListeners @conn
-  
+
   registerStreamListeners: (conn) ->
     conn.on 'data', (data) =>
       @receiveRawData data
@@ -172,7 +173,7 @@ class NSQDConnection extends EventEmitter
     longName = os.hostname()
     shortName = longName.split('.')[0]
 
-    identify = 
+    identify =
       client_id: @config.clientId or shortName
       deflate: @config.deflate
       deflate_level: @config.deflateLevel

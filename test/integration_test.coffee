@@ -158,7 +158,7 @@ describe 'integration', ->
       reader.on 'message', (readMsg) ->
         readByte.should.equal message[i] for readByte, i in readMsg.body
         readMsg.finish()
-        done()    
+        done()
 
     it 'should not receive messages when immediately paused', (done) ->
       waitedLongEnough = false
@@ -168,8 +168,8 @@ describe 'integration', ->
         waitedLongEnough = true
       , 100
 
-      # Note: because NSQDConnection.connect() does most of it's work in 
-      # process.nextTick(), we're really pausing before the reader is 
+      # Note: because NSQDConnection.connect() does most of it's work in
+      # process.nextTick(), we're really pausing before the reader is
       # connected.
       #
       reader.pause()
@@ -180,7 +180,7 @@ describe 'integration', ->
         done()
 
       writer.publish topic, 'pause test'
-      
+
     it 'should not receive any new messages when paused', (done) ->
       writer.publish topic, messageShouldArrive: true
 
@@ -207,7 +207,7 @@ describe 'integration', ->
         # this will fail if the msg comes through again
         id.should.equal ''
         id = msg.id
-        
+
         if reader.isPaused() then return done()
         reader.pause()
 
@@ -222,7 +222,7 @@ describe 'integration', ->
 
       reader.on 'message', (msg) ->
         shouldReceive.should.be.true
-        
+
         reader.pause()
         msg.requeue()
 

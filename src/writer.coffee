@@ -63,7 +63,7 @@ class Writer extends EventEmitter
 
   Arguments:
     topic: A valid nsqd topic.
-    msgs: A string, a buffer, a JSON serializable object, or 
+    msgs: A string, a buffer, a JSON serializable object, or
       a list of string / buffers / JSON serializable objects.
   ###
   publish: (topic, msgs, callback) ->
