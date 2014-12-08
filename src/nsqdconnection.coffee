@@ -1,3 +1,4 @@
+Debug = require 'debug'
 net = require 'net'
 os = require 'os'
 tls = require 'tls'
@@ -13,7 +14,6 @@ NodeState = require 'node-state'
 FrameBuffer = require './framebuffer'
 Message = require './message'
 wire = require './wire'
-StateChangeLogger = require './logging'
 version = require './version'
 
 
@@ -69,6 +69,8 @@ class NSQDConnection extends EventEmitter
   @READY: 'ready'
 
   constructor: (@nsqdHost, @nsqdPort, @topic, @channel, options={}) ->
+    @debug or= Debug "nsqjs:reader:#{@topic}/#{@channel}:conn:#{@id().replace ':', '/'}"
+
     @config = new ConnectionConfig options
     @config.validate()
 
@@ -209,12 +211,16 @@ class NSQDConnection extends EventEmitter
     msg = new Message msgComponents..., @config.requeueDelay, @msgTimeout,
       @maxMsgTimeout
 
+    @debug "Received message [#{msg.id}] [attempts: #{msg.attempts}]"
+
     msg.on Message.RESPOND, (responseType, wireData) =>
       @write wireData
 
       if responseType is Message.FINISH
+        @debug "Finished message [#{msg.id}]"
         @emit NSQDConnection.FINISHED
       else if responseType is Message.REQUEUE
+        @debug "Requeued message [#{msg.id}]"
         @emit NSQDConnection.REQUEUED
 
     msg.on Message.BACKOFF, =>
@@ -240,11 +246,12 @@ class ConnectionState extends NodeState
       initial_state: 'CONNECTED'
       sync_goto: true
 
+    @debug = @conn.debug
     @identifyResponse = null
 
   log: (message) ->
-    StateChangeLogger.log 'NSQDConnection', @current_state_name, @conn?.id,
-      message
+    @debug "#{@current_state_name}"
+    @debug message if message
 
   afterIdentify: ->
     'SUBSCRIBE'
@@ -263,7 +270,9 @@ class ConnectionState extends NodeState
     IDENTIFY:
       Enter: ->
         # Send configuration details
-        @conn.write wire.identify @conn.identify()
+        identify = @conn.identify()
+        @debug identify
+        @conn.write wire.identify identify
         @goto 'IDENTIFY_RESPONSE'
 
     IDENTIFY_RESPONSE:
@@ -275,6 +284,7 @@ class ConnectionState extends NodeState
             msg_timeout: 60 * 1000             #  1 minute
 
         @identifyResponse = JSON.parse data
+        @debug @identifyResponse
         @conn.maxRdyCount = @identifyResponse.max_rdy_count
         @conn.maxMsgTimeout = @identifyResponse.max_msg_timeout
         @conn.msgTimeout = @identifyResponse.msg_timeout
@@ -423,11 +433,11 @@ class ConnectionState extends NodeState
   transitions:
     '*':
       '*': (data, callback) ->
-        @log ''
+        @log()
         callback data
 
       CONNECTED: (data, callback) ->
-        @log "#{@conn.nsqdHost}:#{@conn.nsqdPort}"
+        @log()
         callback data
 
       ERROR: (err, callback) ->
@@ -452,6 +462,7 @@ c.on NSQDConnectionWriter.READY, ->
 class WriterNSQDConnection extends NSQDConnection
 
   constructor: (nsqdHost, nsqdPort, options={}) ->
+    @debug = Debug "nsqjs:writer:conn:#{nsqdHost}/#{nsqdPort}"
     super nsqdHost, nsqdPort, null, null, options
 
   connectionState: ->

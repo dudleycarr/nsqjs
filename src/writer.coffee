@@ -1,3 +1,4 @@
+Debug = require 'debug'
 {EventEmitter} = require 'events'
 
 _ = require 'underscore'
@@ -28,23 +29,32 @@ class Writer extends EventEmitter
   @ERROR: 'error'
 
   constructor: (@nsqdHost, @nsqdPort, options) ->
+    @debug = Debug "nsqjs:writer:#{@nsqdHost}/#{@nsqdPort}"
     @config = new ConnectionConfig options
     @config.validate()
 
+    @debug 'Configuration'
+    @debug @config
+
   connect: ->
     @conn = new WriterNSQDConnection @nsqdHost, @nsqdPort, @config
+    @debug 'connect'
     @conn.connect()
 
     @conn.on WriterNSQDConnection.READY, =>
+      @debug 'ready'
       @emit Writer.READY
 
     @conn.on WriterNSQDConnection.CLOSED, =>
+      @debug 'closed'
       @emit Writer.CLOSED
 
     @conn.on WriterNSQDConnection.ERROR, (err) =>
+      @debug 'error', err
       @emit Writer.ERROR, err
 
     @conn.on WriterNSQDConnection.CONNECTION_ERROR, (err) =>
+      @debug 'error', err
       @emit Writer.ERROR, err
 
   ###

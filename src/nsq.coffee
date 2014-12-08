@@ -5,4 +5,3 @@ module.exports =
   Writer: require './writer'
   NSQDConnection: NSQDConnection
   WriterNSQDConnection: WriterNSQDConnection
-  StateChangeLogger: require './logging'
