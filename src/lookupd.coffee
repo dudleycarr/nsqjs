@@ -1,6 +1,7 @@
 _ = require 'underscore'
 async = require 'async'
 request = require 'request'
+url = require 'url'
 
 ###
 lookupdRequest returns the list of producers from a lookupd given a URL to
@@ -77,7 +78,14 @@ Arguments:
 ###
 lookup = (lookupdEndpoints, topic, callback) ->
   endpointURL = (endpoint) ->
-    "http://#{endpoint}/lookup?topic=#{topic}"
+    endpoint = "http://#{endpoint}" if endpoint.indexOf('://') is -1
+    parsedUrl = url.parse endpoint, true
+
+    if (not parsedUrl.pathname) or (parsedUrl.pathname is '/')
+      parsedUrl.pathname = "/lookup"
+    parsedUrl.query.topic = topic
+    delete parsedUrl.search
+    url.format(parsedUrl)
   dedupedRequests lookupdEndpoints, endpointURL, callback
 
 module.exports = lookup

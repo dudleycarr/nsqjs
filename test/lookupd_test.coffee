@@ -6,6 +6,7 @@ nock      = require 'nock'
 should    = chai.should()
 sinon     = require 'sinon'
 sinonChai = require 'sinon-chai'
+url       = require 'url'
 
 chai.use sinonChai
 
@@ -29,22 +30,60 @@ NSQD_2 =
   tcp_port: 5150
   topics: ['sample_topic']
   version: '0.2.23'
+NSQD_3 =
+  address: 'localhost'
+  broadcast_address: 'localhost'
+  hostname: 'localhost'
+  http_port: 6151
+  remote_address: 'localhost:23456'
+  tcp_port: 6150
+  topics: ['sample_topic']
+  version: '0.2.23'
+NSQD_4 =
+  address: 'localhost'
+  broadcast_address: 'localhost'
+  hostname: 'localhost'
+  http_port: 7151
+  remote_address: 'localhost:34567'
+  tcp_port: 7150
+  topics: ['sample_topic']
+  version: '0.2.23'
 
 LOOKUPD_1 = '127.0.0.1:4161'
 LOOKUPD_2 = '127.0.0.1:5161'
+LOOKUPD_3 = 'http://127.0.0.1:6161/'
+LOOKUPD_4 = 'http://127.0.0.1:7161/path/lookup'
+
+nockUrlSplit = (url) ->
+  match = url.match(/^(https?:\/\/[^\/]+)(\/.*$)/i)
+  if match
+    baseUrl: match[1]
+    path: match[2]
 
 registerWithLookupd = (lookupdAddress, nsqd) ->
   producers = if nsqd? then [nsqd] else []
 
   if nsqd?
     for topic in nsqd.topics
-      nock("http://#{lookupdAddress}")
-        .get("/lookup?topic=#{topic}")
-        .reply 200,
-          status_code: 200
-          status_txt: 'OK'
-          data:
-            producers: producers
+      if lookupdAddress.indexOf('://') is -1
+        nock("http://#{lookupdAddress}")
+          .get("/lookup?topic=#{topic}")
+          .reply 200,
+            status_code: 200
+            status_txt: 'OK'
+            data:
+              producers: producers
+      else
+        {baseUrl, path} = nockUrlSplit(lookupdAddress)
+        if not path or path is '/'
+          path = '/lookup'
+        nock(baseUrl)
+          .get("#{path}?topic=#{topic}")
+          .reply 200,
+            status_code: 200
+            status_txt: 'OK'
+            data:
+              producers: producers
 
 setFailedTopicReply = (lookupdAddress, topic) ->
   nock("http://#{lookupdAddress}")
@@ -80,21 +119,25 @@ describe 'lookupd.lookup', ->
     it 'should combine results from multiple lookupds', (done) ->
       registerWithLookupd LOOKUPD_1, NSQD_1
       registerWithLookupd LOOKUPD_2, NSQD_2
+      registerWithLookupd LOOKUPD_3, NSQD_3
+      registerWithLookupd LOOKUPD_4, NSQD_4
 
-      lookupdAddresses = [LOOKUPD_1, LOOKUPD_2]
+      lookupdAddresses = [LOOKUPD_1, LOOKUPD_2, LOOKUPD_3, LOOKUPD_4]
       lookup lookupdAddresses, 'sample_topic', (err, nodes) ->
-        nodes.should.have.length 2
+        nodes.should.have.length 4
         _.chain(nodes)
           .pluck('tcp_port')
           .sort()
-          .value().should.be.eql [4150, 5150]
+          .value().should.be.eql [4150, 5150, 6150, 7150]
         done()
 
     it 'should dedupe combined results', (done) ->
       registerWithLookupd LOOKUPD_1, NSQD_1
       registerWithLookupd LOOKUPD_2, NSQD_1
+      registerWithLookupd LOOKUPD_3, NSQD_1
+      registerWithLookupd LOOKUPD_4, NSQD_1
 
-      lookupdAddresses = [LOOKUPD_1, LOOKUPD_2]
+      lookupdAddresses = [LOOKUPD_1, LOOKUPD_2, LOOKUPD_3, LOOKUPD_4]
       lookup lookupdAddresses, 'sample_topic', (err, nodes) ->
         nodes.should.have.length 1
         done()

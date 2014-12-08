@@ -30,8 +30,8 @@ options object.
   A string or an array of string representing the host/port pair for nsqd instances.
   <br/> For example: `['localhost:4150']`
 * ```lookupdHTTPAddresses``` <br/>
-  A string or an array of strings representing the host/port pair of nsqlookupd instaces.
-  <br/> For example: `['localhost:4161']`
+  A string or an array of strings representing the host/port pair of nsqlookupd instaces or the full HTTP/HTTPS URIs of the nsqlookupd instances.
+  <br/> For example: `['localhost:4161']`, `['http://localhost/lookup']`, `['http://localhost/path/lookup?extra_param=true']`
 * ```lookupdPollInterval: 60``` <br/>
   The frequency in seconds for querying lookupd instances.
 * ```lookupdPollJitter: 0.3``` <br/>

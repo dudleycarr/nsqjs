@@ -1,4 +1,5 @@
 _ = require 'underscore'
+url = require 'url'
 
 class ConnectionConfig
   @DEFAULTS =
@@ -54,13 +55,22 @@ class ConnectionConfig
     unless _.isBoolean value
       throw new Error "#{option} must be either true or false"
 
-  isAddressList: (option, value) ->
+  isBareAddress = (addr) ->
+    [host, port] = addr.split ':'
+    host.length > 0 and port > 0
+
+  isBareAddresses: (option, value) ->
+    unless _.isArray(value) and _.every value, isBareAddress
+      throw new Error "#{option} must be a list of addresses 'host:port'"
+
+  isLookupdHTTPAddresses: (option, value) ->
     isAddr = (addr) ->
-      [host, port] = addr.split ':'
-      host.length > 0 and port > 0
+      return isBareAddress(addr) if addr.indexOf('://') is -1
+      parsedUrl = url.parse(addr)
+      parsedUrl.protocol in ['http:', 'https:'] and !!parsedUrl.host
 
     unless _.isArray(value) and _.every value, isAddr
-      throw new Error "#{option} must be a list of addresses 'host:port'"
+      throw new Error "#{option} must be a list of addresses 'host:port' or HTTP/HTTPS URI"
 
   conditions: ->
     authSecret: [@isNonEmptyString]
@@ -115,11 +125,11 @@ class ReaderConfig extends ConnectionConfig
 
   conditions: ->
     _.extend {}, super(),
-      lookupdHTTPAddresses: [@isAddressList]
+      lookupdHTTPAddresses: [@isLookupdHTTPAddresses]
       lookupdPollInterval: [@isNumber, 1]
       lookupdPollJitter: [@isNumberExclusive, 0, 1]
       name: [@isNonEmptyString]
-      nsqdTCPAddresses: [@isAddressList]
+      nsqdTCPAddresses: [@isBareAddresses]
       maxAttempts: [@isNumber, 0]
       maxBackoffDuration: [@isNumber, 0]
 
