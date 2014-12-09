@@ -12,7 +12,6 @@ chai.use sinonChai
 {NSQDConnection} = require '../src/nsqdconnection'
 Message = require '../src/message'
 {ReaderRdy, ConnectionRdy} = require '../src/readerrdy'
-StateChangeLogger = require '../src/logging'
 
 
 class StubNSQDConnection extends EventEmitter
@@ -23,13 +22,18 @@ class StubNSQDConnection extends EventEmitter
     @maxRdyCount = 2500
     @msgTimeout = 60 * 1000
     @maxMsgTimeout = 15 * 60 * 1000
+    @rdyCounts = []
+
+  id: ->
+    "#{@nsqdHost}:#{@nsqdPort}"
 
   connect: ->
     # Empty
   destroy: ->
     # Empty
   setRdy: (rdyCount) ->
-    # Empty
+    @rdyCounts.push rdyCount
+
   createMessage: (msgId, msgTimestamp, attempts, msgBody) ->
 
     msgComponents = [msgId, msgTimestamp, attempts, msgBody]
@@ -38,26 +42,19 @@ class StubNSQDConnection extends EventEmitter
 
     msg.on Message.RESPOND, (responseType, wireData) =>
       if responseType is Message.FINISH
-        StateChangeLogger.log 'NSQDConnection', null, @conn.localPort,
-          'msg finished'
         @emit NSQDConnection.FINISHED
       else if responseType is Message.REQUEUE
-        StateChangeLogger.log 'NSQDConnection', null, @conn.localPort,
-          'msg requeued'
         @emit NSQDConnection.REQUEUED
     msg.on Message.BACKOFF, =>
       @emit NSQDConnection.BACKOFF
 
-    StateChangeLogger.log 'NSQDConnection', 'READY_RECV', '1',
-      "message (#{msgId})"
     @emit NSQDConnection.MESSAGE, msg
     msg
 
 createNSQDConnection = (id) ->
-  conn = new StubNSQDConnection 'localhost', '4151', 'test', 'default', 60, 30
+  conn = new StubNSQDConnection "host#{id}", '4150', 'test', 'default', 60, 30
   conn.conn.localPort = id
   conn
-
 
 describe 'ConnectionRdy', ->
   [conn, spy, cRdy] = [null, null, null]
@@ -171,64 +168,11 @@ describe 'ConnectionRdy', ->
     expect(spy.lastCall.args[0]).is.eql 10
 
 
-###
-Helper functions for dealing with StateChangeLogger entries.
-###
-
-###
-Returns log entries for the ConnectionRdy state that reflect the updated
-RDY count. The RDY count is parsed out and added as an object property.
-###
-connRdyEntries = ->
-  _.chain(StateChangeLogger.logs)
-  # Only logs from ConnectionRdy instances
-  .where({'component': 'ConnectionRdy'})
-  # Only logs with messages updating RDY count
-  .filter (entry) ->
-    /RDY \d+/.test entry.message
-  # Put the RDY count in the modified log entry
-  .map (entry) ->
-    rdy = Number /RDY (\d+)/.exec(entry.message)[1]
-    _.extend {}, entry, rdy: rdy
-  .map (entry) ->
-    _.pick entry, ['id', 'rdy']
-  .value()
-
-###
-In low RDY situations, the RDY count should alternate between 0 and 1 as
-each connections loses and gains the shared RDY count via the periodic
-balance call.
-###
-rdyAlternates = (entries) ->
-  # Get an even number of entries
-  entries = if entries.length % 2 is 0 then entries else entries[0...-1]
-
-  # Since the RDY should be alternating between 0 and 1, seperate the
-  # entries by even or odd index.
-  evens = (entries[i] for i in [0...entries.length] by 2)
-  odds = (entries[i+1] for i in [0...entries.length-1] by 2)
-
-  # All the entry RDY values should be exactly the same.
-  evensMatch = _.all evens, (entry) ->
-    entry.rdy is evens[0].rdy
-
-  oddsMatch = _.all odds, (entry) ->
-    entry.rdy is odds[0].rdy
-
-  return false unless evensMatch and oddsMatch
-
-  # The values in the two lists should differ
-  evens[0].rdy isnt odds[0].rdy
-
-
 describe 'ReaderRdy', ->
   readerRdy = null
 
   beforeEach ->
-    readerRdy = new ReaderRdy 1, 128
-    StateChangeLogger.storeLogs = true
-    StateChangeLogger.debug = false
-    StateChangeLogger.logs = []
+    readerRdy = new ReaderRdy 1, 128, 'topic/channel'
 
   afterEach ->
     readerRdy.close()
@@ -268,7 +212,7 @@ describe 'ReaderRdy', ->
     expect(readerRdy.current_state_name).is.eql 'ZERO'
 
   it 'should evenly distribute RDY count across connections', ->
-    readerRdy = new ReaderRdy 100, 128
+    readerRdy = new ReaderRdy 100, 128, 'topic/channel'
 
     conn1 = createNSQDConnection 1
     conn2 = createNSQDConnection 2
@@ -287,14 +231,22 @@ describe 'ReaderRdy', ->
     expect(setRdyStub1.lastCall.args[0]).is.eql 50
     expect(setRdyStub2.lastCall.args[0]).is.eql 50
 
-
   describe 'low RDY conditions', ->
-    it 'should periodically redistribute RDY', (done) ->
-      # Set to true to see the debug the test.
-      StateChangeLogger.debug = false
+    assertAlternatingRdyCounts = (conn1, conn2) ->
+      minSize = Math.min conn1.rdyCounts.length, conn2.rdyCounts.length
 
-      # Shortening the periodica `balance` calls to every 10ms.
-      readerRdy = new ReaderRdy 1, 128, 0.01
+      zippedCounts = _.zip conn1.rdyCounts[-minSize..],
+        conn2.rdyCounts[-minSize..]
+
+      # We expect the connection RDY counts to look like this:
+      # conn 0: [1, 0, 1, 0]
+      # conn 1: [0, 1, 0, 1]
+      for [firstRdy, secondRdy] in zippedCounts
+        (firstRdy + secondRdy).should.eq 1
+
+    it 'should periodically redistribute RDY', (done) ->
+      # Shortening the periodically `balance` calls to every 10ms.
+      readerRdy = new ReaderRdy 1, 128, 'topic/channel', 0.01
 
       connections = for i in [1..2]
         createNSQDConnection i
@@ -310,8 +262,7 @@ describe 'ReaderRdy', ->
       expect(readerRdy.isLowRdy()).is.eql true
 
       checkRdyCounts = ->
-        entries = connRdyEntries()
-        expect(rdyAlternates entries).should.be.ok
+        assertAlternatingRdyCounts connections...
         done()
 
       # We have to wait a small period of time for log events to occur since the
@@ -319,11 +270,8 @@ describe 'ReaderRdy', ->
       setTimeout checkRdyCounts, 50
 
     it 'should handle the transition from normal', (done) ->
-      # Set to true to see the debug the test.
-      StateChangeLogger.debug = false
-
       # Shortening the periodica `balance` calls to every 10ms.
-      readerRdy = new ReaderRdy 1, 128, 0.01
+      readerRdy = new ReaderRdy 1, 128, 'topic/channel', 0.01
 
       conn1 = createNSQDConnection 1
       conn2 = createNSQDConnection 2
@@ -348,8 +296,7 @@ describe 'ReaderRdy', ->
       setTimeout addConnection, 20
 
       checkRdyCounts = ->
-        entries = connRdyEntries()
-        expect(rdyAlternates entries).should.be.ok
+        assertAlternatingRdyCounts conn1, conn2
         done()
 
       # We have to wait a small period of time for log events to occur since the
@@ -357,11 +304,8 @@ describe 'ReaderRdy', ->
       setTimeout checkRdyCounts, 40
 
     it 'should handle the transition to normal conditions', (done) ->
-      # Set to true to see the debug the test.
-      StateChangeLogger.debug = false
-
       # Shortening the periodica `balance` calls to every 10ms.
-      readerRdy = new ReaderRdy 1, 128, 0.01
+      readerRdy = new ReaderRdy 1, 128, 'topic/channel', 0.01
 
       connections = for i in [1..2]
         createNSQDConnection i
@@ -375,8 +319,6 @@ describe 'ReaderRdy', ->
       expect(readerRdy.isLowRdy()).is.eql true
 
       removeConnection = ->
-        StateChangeLogger.log 'NSQDConnection', 'CLOSED', '2',
-          'connection closed'
         connections[1].emit NSQDConnection.CLOSED
 
         setTimeout checkNormal, 20
@@ -400,11 +342,8 @@ describe 'ReaderRdy', ->
       3. Check to see if the 1st connection does get it's RDY count.
       ###
 
-      # Set to true to see the debug the test.
-      StateChangeLogger.debug = false
-
       # Shortening the periodica `balance` calls to every 10ms.
-      readerRdy = new ReaderRdy 1, 128, 0.01
+      readerRdy = new ReaderRdy 1, 128, 'topic/channel', 0.01
 
       connections = for i in [1..2]
         createNSQDConnection i
@@ -416,8 +355,6 @@ describe 'ReaderRdy', ->
       expect(readerRdy.isLowRdy()).is.eql true
 
       removeConnection = _.once ->
-        StateChangeLogger.log 'NSQDConnection', 'CLOSED', '2',
-          'connection closed'
         connections[1].emit NSQDConnection.CLOSED
         setTimeout checkNormal, 30
 
@@ -442,11 +379,8 @@ describe 'ReaderRdy', ->
 
 
     it 'should not exceed maxInFlight for long running message.', (done) ->
-      # Set to true to see the debug the test.
-      StateChangeLogger.debug = false
-
       # Shortening the periodica `balance` calls to every 10ms.
-      readerRdy = new ReaderRdy 1, 128, 0.01
+      readerRdy = new ReaderRdy 1, 128, 'topic/channel', 0.01
 
       connections = for i in [1..2]
         createNSQDConnection i
@@ -503,11 +437,8 @@ describe 'ReaderRdy', ->
          RDY count.
       ###
 
-      # Set to true to see the debug the test.
-      StateChangeLogger.debug = false
-
       # Shortening the periodica `balance` calls to every 10ms.
-      readerRdy = new ReaderRdy 1, 128, 0.01
+      readerRdy = new ReaderRdy 1, 128, 'topic/channel', 0.01
 
       connections = for i in [1..5]
         createNSQDConnection i
@@ -570,12 +501,9 @@ describe 'ReaderRdy', ->
          is in the try one state and the others are still in backoff.
       ###
 
-      # Set to true to see the debug the test.
-      StateChangeLogger.debug = false
-
       # Shortening the periodic `balance` calls to every 10ms. Changing the
       # max backoff duration to 10 sec.
-      readerRdy = new ReaderRdy 100, 10, 0.01
+      readerRdy = new ReaderRdy 100, 10, 'topic/channel', 0.01
 
       connections = for i in [1..5]
         createNSQDConnection i
@@ -619,12 +547,9 @@ describe 'ReaderRdy', ->
          either ONE or MAX. At least on ConnectionRdy should be in MAX as well.
       ###
 
-      # Set to true to see the debug the test.
-      StateChangeLogger.debug = false
-
       # Shortening the periodica `balance` calls to every 10ms. Changing the
       # max backoff duration to 1 sec.
-      readerRdy = new ReaderRdy 100, 1, 0.01
+      readerRdy = new ReaderRdy 100, 1, 'topic/channel', 0.01
 
       connections = for i in [1..5]
         createNSQDConnection i
@@ -664,7 +589,7 @@ describe 'ReaderRdy', ->
     beforeEach ->
       # Shortening the periodic `balance` calls to every 10ms. Changing the
       # max backoff duration to 1 sec.
-      readerRdy = new ReaderRdy 100, 1, 0.01
+      readerRdy = new ReaderRdy 100, 1, 'topic/channel', 0.01
 
       connections = for i in [1..5]
         createNSQDConnection i
@@ -674,9 +599,6 @@ describe 'ReaderRdy', ->
         conn.emit NSQDConnection.READY
 
     it 'should drop ready count to zero on all connections when paused', ->
-      # Set to true to see the debug the test.
-      StateChangeLogger.debug = false
-
       readerRdy.pause()
       expect(readerRdy.current_state_name).to.eql 'PAUSE'
 
@@ -684,9 +606,6 @@ describe 'ReaderRdy', ->
         expect(conn.lastRdySent).to.eql 0
 
     it 'should unpause by trying one', ->
-      # Set to true to see the debug the test.
-      StateChangeLogger.debug = false
-
       readerRdy.pause()
       readerRdy.unpause()
 

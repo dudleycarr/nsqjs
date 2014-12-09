@@ -1,4 +1,5 @@
 _ = require 'underscore'
+Debug = require 'debug'
 request = require 'request'
 {EventEmitter} = require 'events'
 
@@ -27,11 +28,16 @@ class Reader extends EventEmitter
   @NSQD_CLOSED: 'nsqd_closed'
 
   constructor: (@topic, @channel, options) ->
+    @debug = Debug "nsqjs:reader:#{@topic}/#{@channel}"
     @config = new ReaderConfig options
     @config.validate()
 
+    @debug 'Configuration'
+    @debug @config
+
     @roundrobinLookupd = new RoundRobinList @config.lookupdHTTPAddresses
-    @readerRdy = new ReaderRdy @config.maxInFlight, @config.maxBackoffDuration
+    @readerRdy = new ReaderRdy @config.maxInFlight, @config.maxBackoffDuration,
+      "#{@topic}/#{@channel}"
     @connectIntervalId = null
     @connectionIds = []
 
@@ -74,9 +80,11 @@ class Reader extends EventEmitter
     @readerRdy.close()
 
   pause: ->
+    @debug 'pause'
     @readerRdy.pause()
 
   unpause: ->
+    @debug 'unpause'
     @readerRdy.unpause()
 
   isPaused: ->
@@ -92,6 +100,7 @@ class Reader extends EventEmitter
       @connectToNSQD n.broadcast_address, n.tcp_port for n in nodes unless err
 
   connectToNSQD: (host, port) ->
+    @debug "connecting to #{host}:#{port}"
     conn = new NSQDConnection host, port, @topic, @channel, @config
 
     # Ensure a connection doesn't already exist to this nsqd instance.
@@ -105,16 +114,23 @@ class Reader extends EventEmitter
 
   registerConnectionListeners: (conn) ->
     conn.on NSQDConnection.CONNECTED, =>
+      @debug Reader.NSQD_CONNECTED
       @emit Reader.NSQD_CONNECTED, conn.nsqdHost, conn.nsqdPort
 
     conn.on NSQDConnection.ERROR, (err) =>
+      @debug Reader.ERROR
+      @debug err
       @emit Reader.ERROR, err
 
     conn.on NSQDConnection.CONNECTION_ERROR, (err) =>
+      @debug Reader.ERROR
+      @debug err
       @emit Reader.ERROR, err
 
     # On close, remove the connection id from this reader.
     conn.on NSQDConnection.CLOSED, =>
+      @debug Reader.NSQD_CLOSED
+
       index = @connectionIds.indexOf conn.id()
       return if index is -1
       @connectionIds.splice index, 1

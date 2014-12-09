@@ -276,20 +276,29 @@ reader.on Reader.MESSAGE, (msg) ->
 ```
 
 ### Enable nsqjs debugging
-If you want to see the internal events of nsqjs, you can do so by doing the
-following:
+nsqjs used [debug](https://github.com/visionmedia/debug) to log debug output.
 
-#### JavaScript
-```js
-var nsq = require('nsqjs');
-nsq.StateChangeLogger.debug = true;
+To see all nsqjs events:
+```
+$ DEBUG=nsqjs:* node my_nsqjs_script.js
 ```
 
-#### CoffeeScript
-```coffee-script
-nsq = require 'nsqjs'
-nsq.StateChangeLogger.debug = true
+To see all reader events:
 ```
+$ DEBUG=nsqjs:reader:* node my_nsqjs_script.js
+```
+
+To see a specific reader's events:
+```
+$ DEBUG=nsqjs:reader:<topic>/<channel>:* node my_nsqjs_script.js
+```
+> Replace `<topic>` and `<channel>`
+
+To see all writer events:
+```
+$ DEBUG=nsqjs:writer:* node my_nsqjs_script.js
+```
+
 
 ### A Writer Example
 
