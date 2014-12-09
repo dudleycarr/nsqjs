@@ -103,11 +103,9 @@ class ConnectionRdyState extends NodeState
       initial_state: 'INIT'
       sync_goto: true
 
-    @debug = @connRdy.debug
-
   log: (message) ->
-    @debug @current_state_name
-    @debug message if message
+    @connRdy.debug @current_state_name
+    @connRdy.debug message if message
 
   states:
     INIT:
