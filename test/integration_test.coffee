@@ -142,6 +142,9 @@ describe 'integration', ->
 
       writer.connect()
 
+    afterEach ->
+      writer.close()
+
     it 'should send and receive a string', (done) ->
       message = 'hello world'
       writer.publish topic, message
