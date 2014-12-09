@@ -70,7 +70,7 @@ class NSQDConnection extends EventEmitter
 
   constructor: (@nsqdHost, @nsqdPort, @topic, @channel, options={}) ->
     connId = @id().replace ':', '/'
-    @debug or= Debug "nsqjs:reader:#{@topic}/#{@channel}:conn:#{connId}"
+    @debug = Debug "nsqjs:reader:#{@topic}/#{@channel}:conn:#{connId}"
 
     @config = new ConnectionConfig options
     @config.validate()
@@ -247,12 +247,11 @@ class ConnectionState extends NodeState
       initial_state: 'CONNECTED'
       sync_goto: true
 
-    @debug = @conn.debug
     @identifyResponse = null
 
   log: (message) ->
-    @debug "#{@current_state_name}"
-    @debug message if message
+    @conn.debug "#{@current_state_name}"
+    @conn.debug message if message
 
   afterIdentify: ->
     'SUBSCRIBE'
@@ -272,7 +271,7 @@ class ConnectionState extends NodeState
       Enter: ->
         # Send configuration details
         identify = @conn.identify()
-        @debug identify
+        @conn.debug identify
         @conn.write wire.identify identify
         @goto 'IDENTIFY_RESPONSE'
 
@@ -285,7 +284,7 @@ class ConnectionState extends NodeState
             msg_timeout: 60 * 1000             #  1 minute
 
         @identifyResponse = JSON.parse data
-        @debug @identifyResponse
+        @conn.debug @identifyResponse
         @conn.maxRdyCount = @identifyResponse.max_rdy_count
         @conn.maxMsgTimeout = @identifyResponse.max_msg_timeout
         @conn.msgTimeout = @identifyResponse.msg_timeout
@@ -463,8 +462,8 @@ c.on NSQDConnectionWriter.READY, ->
 class WriterNSQDConnection extends NSQDConnection
 
   constructor: (nsqdHost, nsqdPort, options={}) ->
-    @debug = Debug "nsqjs:writer:conn:#{nsqdHost}/#{nsqdPort}"
     super nsqdHost, nsqdPort, null, null, options
+    @debug = Debug "nsqjs:writer:conn:#{nsqdHost}/#{nsqdPort}"
 
   connectionState: ->
     @statemachine or new WriterConnectionState this
