@@ -67,7 +67,7 @@ class Writer extends EventEmitter
       a list of string / buffers / JSON serializable objects.
   ###
   publish: (topic, msgs, callback) ->
-    if not @conn or @conn.connectionState().current_state_name is 'CLOSED'
+    if not @conn or @conn.connectionState and @conn.connectionState().current_state_name is 'CLOSED'
       err = new Error 'No active Writer connection to send messages'
 
     if not msgs or _.isEmpty msgs
