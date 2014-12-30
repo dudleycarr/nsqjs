@@ -29,9 +29,15 @@ class Writer extends EventEmitter
   @ERROR: 'error'
 
   constructor: (@nsqdHost, @nsqdPort, options) ->
+    super
+    # Handy in the event that there are tons of publish calls
+    # while the Writer is connecting.
+    @setMaxListeners 10000
+
     @debug = Debug "nsqjs:writer:#{@nsqdHost}/#{@nsqdPort}"
     @config = new ConnectionConfig options
     @config.validate()
+    @ready = false
 
     @debug 'Configuration'
     @debug @config
@@ -57,6 +63,15 @@ class Writer extends EventEmitter
       @debug 'error', err
       @emit Writer.ERROR, err
 
+    @on Writer.READY, =>
+      @ready = true
+
+    @on Writer.ERROR, =>
+      @ready = false
+
+    @on Writer.CLOSED, =>
+      @ready = false
+
   ###
   Publish a message or a list of messages to the connected nsqd. The contents
   of the messages should either be strings or buffers with the payload encoded.
@@ -67,7 +82,9 @@ class Writer extends EventEmitter
       a list of string / buffers / JSON serializable objects.
   ###
   publish: (topic, msgs, callback) ->
-    unless @conn
+    connState = @conn?.connectionState()?.current_state_name
+
+    if not @conn or connState in ['CLOSED', 'ERROR']
       err = new Error 'No active Writer connection to send messages'
 
     if not msgs or _.isEmpty msgs
@@ -76,6 +93,15 @@ class Writer extends EventEmitter
     if err
       return callback err if callback
       throw err
+
+    # TODO: Add CONNECTING event.
+
+    # Call publish again once the Writer is ready.
+    unless @ready
+      @on Writer.READY, (err) =>
+        return callback err if err
+        @publish topic, msgs, callback
+      return
 
     msgs = [msgs] unless _.isArray msgs
 

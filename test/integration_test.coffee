@@ -1,4 +1,5 @@
 _ = require 'underscore'
+async = require 'async'
 child_process = require 'child_process'
 request = require 'request'
 
@@ -239,3 +240,47 @@ describe 'integration', ->
         , 100
 
         done()
+
+#   it.only 'should successfully publish a message before fully connected', (done) ->
+#     writer = new nsq.Writer '127.0.0.1', 4150
+#     writer.publish 'a_topic', 'a message', (err) ->
+#       err.should.not.exist
+#       done()
+#     writer.connect()
+
+
+describe 'failures', ->
+  nsqdProcess = null
+
+  before (done) ->
+    temp.mkdir '/nsq', (err, dirPath) ->
+      startNSQD dirPath, {}, (err, process) ->
+        nsqdProcess = process
+        done err
+
+  after (done) ->
+    nsqdProcess.kill()
+    # Give nsqd a chance to exit before it's data directory will be cleaned up.
+    setTimeout done, 500
+
+  describe 'Writer', ->
+    describe 'nsqd disconnect before publish', ->
+      it 'should fail to publish a message', (done) ->
+        writer = new nsq.Writer '127.0.0.1', TCP_PORT
+        async.series [
+          # Connect the writer to the nsqd.
+          (callback) ->
+            writer.connect()
+            writer.on 'ready', ->
+              callback()
+          # Stop the nsqd process.
+          (callback) ->
+            nsqdProcess.kill()
+            setTimeout callback, 500
+          # Attempt to publish a message.
+          (callback) ->
+            writer.publish 'test_topic', 'a message that should fail', (err) ->
+              err.should.exist
+              callback()
+        ], (err) ->
+          done()

@@ -69,6 +69,8 @@ class NSQDConnection extends EventEmitter
   @READY: 'ready'
 
   constructor: (@nsqdHost, @nsqdPort, @topic, @channel, options={}) ->
+    super
+
     connId = @id().replace ':', '/'
     @debug = Debug "nsqjs:reader:#{@topic}/#{@channel}:conn:#{connId}"
 
@@ -98,7 +100,7 @@ class NSQDConnection extends EventEmitter
     # right after calling connect.
     process.nextTick =>
       @conn = net.connect @nsqdPort, @nsqdHost, =>
-        @statemachine.start()
+        @statemachine.raise 'connected'
         @emit NSQDConnection.CONNECTED
         # Once there's a socket connection, give it 5 seconds to receive an
         # identify response.
@@ -243,8 +245,8 @@ class NSQDConnection extends EventEmitter
 class ConnectionState extends NodeState
   constructor: (@conn) ->
     super
-      autostart: false,
-      initial_state: 'CONNECTED'
+      autostart: true,
+      initial_state: 'CONNECTING'
       sync_goto: true
 
     @identifyResponse = null
@@ -257,6 +259,10 @@ class ConnectionState extends NodeState
     'SUBSCRIBE'
 
   states:
+    CONNECTING:
+      connected: ->
+        @goto 'CONNECTED'
+
     CONNECTED:
       Enter: ->
         @goto 'SEND_MAGIC_IDENTIFIER'
