@@ -246,6 +246,16 @@ class ReaderRdy extends NodeState
   isLowRdy: ->
     @maxInFlight < @connections.length
 
+  onMessageSuccess: (connectionRdy) ->
+    unless @isPaused()
+      if @isLowRdy()
+        # Balance the RDY count amoung existing connections given the low RDY
+        # condition.
+        @balance()
+      else
+        # Restore RDY count for connection to the connection max.
+        connectionRdy.bump()
+
   addConnection: (conn) ->
     connectionRdy = @createConnectionRdy conn
 
@@ -254,18 +264,7 @@ class ReaderRdy extends NodeState
       @balance()
 
     conn.on NSQDConnection.FINISHED, =>
-      @backoffTimer.success()
-
-      unless @isPaused()
-        if @isLowRdy()
-          # Balance the RDY count amoung existing connections given the low RDY
-          # condition.
-          @balance()
-        else
-          # Restore RDY count for connection to the connection max.
-          connectionRdy.bump()
-
-      @raise 'success'
+      @raise 'success', connectionRdy
 
     conn.on NSQDConnection.REQUEUED, =>
       # Since there isn't a guaranteed order for the REQUEUED and BACKOFF
@@ -301,17 +300,17 @@ class ReaderRdy extends NodeState
     @balance()
 
   backoff: ->
-    @backoffTimer.failure()
-
     conn.backoff() for conn in @connections
     clearTimeout @backoffId if @backoffId
 
     onTimeout = =>
+      @log 'Backoff done'
       @raise 'try'
 
     # Convert from the BigNumber representation to Number.
     delay = new Number(@backoffTimer.getInterval().valueOf()) * 1000
     @backoffId = setTimeout onTimeout, delay
+    @log "Backoff for #{delay}"
 
   inFlight: ->
     add = (previous, conn) ->
@@ -411,7 +410,9 @@ class ReaderRdy extends NodeState
         @try()
       backoff: ->
         @goto 'BACKOFF'
-      success: ->
+      success: (connectionRdy) ->
+        @backoffTimer.success()
+        @onMessageSuccess connectionRdy
         @goto 'MAX'
       try: ->            # No-op
       pause: ->
@@ -420,10 +421,13 @@ class ReaderRdy extends NodeState
 
     MAX:
       Enter: ->
+        @balance()
         @bump()
       backoff: ->
         @goto 'BACKOFF'
-      success: ->       # No-op
+      success: (connectionRdy) ->
+        @backoffTimer.success()
+        @onMessageSuccess connectionRdy
       try: ->           # No-op
       pause: ->
         @goto 'PAUSE'
@@ -432,8 +436,10 @@ class ReaderRdy extends NodeState
 
     BACKOFF:
       Enter: ->
+        @backoffTimer.failure()
         @backoff()
       backoff: ->
+        @backoffTimer.failure()
         @backoff()
       success: ->       # No-op
       try: ->
