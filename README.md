@@ -351,6 +351,9 @@ w.on Writer.CLOSED, ->
 
 Changes
 -------
+* **0.7.2**
+	* Fix build for iojs and node v0.12
+	* Bumped snappystream version.
 * **0.7.1**
   * Fix connection returning to max connection RDY after backoff
   * Fix backoff ignored when `message.finish` is called after backoff event.
