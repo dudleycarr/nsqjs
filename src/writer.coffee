@@ -91,9 +91,24 @@ class Writer extends EventEmitter
 
     # Call publish again once the Writer is ready.
     unless @ready
-      @on Writer.READY, (err) =>
-        return callback err if err
+      ready = =>
+        remove()
         @publish topic, msgs, callback
+
+      failed = (err) ->
+        err or= new Error 'Connection closed!'
+        remove()
+        callback err
+
+      remove = =>
+        @removeListener Writer.READY, ready
+        @removeListener Writer.ERROR, failed
+        @removeListener Writer.CLOSED, failed
+
+      @on Writer.READY, ready
+      @on Writer.ERROR, failed
+      @on Writer.CLOSED, failed
+
       return
 
     msgs = [msgs] unless _.isArray msgs
