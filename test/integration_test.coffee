@@ -148,7 +148,8 @@ describe 'integration', ->
 
     it 'should send and receive a string', (done) ->
       message = 'hello world'
-      writer.publish topic, message
+      writer.publish topic, message, (err) ->
+        done err if err
 
       reader.on 'message', (msg) ->
         msg.body.toString().should.eql message
@@ -276,7 +277,7 @@ describe 'failures', ->
           # Stop the nsqd process.
           (callback) ->
             nsqdProcess.kill()
-            setTimeout callback, 500
+            setTimeout callback, 10
           # Attempt to publish a message.
           (callback) ->
             writer.publish 'test_topic', 'a message that should fail', (err) ->

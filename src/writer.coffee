@@ -49,28 +49,23 @@ class Writer extends EventEmitter
 
     @conn.on WriterNSQDConnection.READY, =>
       @debug 'ready'
+      @ready = true
       @emit Writer.READY
 
     @conn.on WriterNSQDConnection.CLOSED, =>
       @debug 'closed'
+      @ready = false
       @emit Writer.CLOSED
 
     @conn.on WriterNSQDConnection.ERROR, (err) =>
       @debug 'error', err
+      @ready = false
       @emit Writer.ERROR, err
 
     @conn.on WriterNSQDConnection.CONNECTION_ERROR, (err) =>
       @debug 'error', err
+      @ready = false
       @emit Writer.ERROR, err
-
-    @on Writer.READY, =>
-      @ready = true
-
-    @on Writer.ERROR, =>
-      @ready = false
-
-    @on Writer.CLOSED, =>
-      @ready = false
 
   ###
   Publish a message or a list of messages to the connected nsqd. The contents
@@ -82,7 +77,7 @@ class Writer extends EventEmitter
       a list of string / buffers / JSON serializable objects.
   ###
   publish: (topic, msgs, callback) ->
-    connState = @conn?.connectionState()?.current_state_name
+    connState = @conn?.statemachine?.current_state_name
 
     if not @conn or connState in ['CLOSED', 'ERROR']
       err = new Error 'No active Writer connection to send messages'

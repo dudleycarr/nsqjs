@@ -36,14 +36,14 @@ describe 'Reader ConnectionState', ->
 
   it 'handle initial handshake', ->
     {statemachine, sent} = state
-    statemachine.start()
+    statemachine.raise 'connected'
 
     sent[0].should.match /^  V2$/
     sent[1].should.match /^IDENTIFY/
 
   it 'handle OK identify response', ->
     {statemachine, connection} = state
-    statemachine.start()
+    statemachine.raise 'connected'
     statemachine.raise 'response', new Buffer('OK')
 
     connection.maxRdyCount.should.eq 2500
@@ -52,7 +52,7 @@ describe 'Reader ConnectionState', ->
 
   it 'handle identify response', ->
     {statemachine, connection} = state
-    statemachine.start()
+    statemachine.raise 'connected'
 
     statemachine.raise 'response', JSON.stringify
       max_rdy_count: 1000
@@ -69,7 +69,7 @@ describe 'Reader ConnectionState', ->
       # Subscribe notification
       done()
 
-    statemachine.start()
+    statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
 
     sent[2].should.match /^SUB topic_test channel_test\n$/
@@ -81,7 +81,7 @@ describe 'Reader ConnectionState', ->
     connection.on NSQDConnection.MESSAGE, (msg) ->
       done()
 
-    statemachine.start()
+    statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
     statemachine.raise 'response', 'OK' # Subscribe response
 
@@ -102,7 +102,7 @@ describe 'Reader ConnectionState', ->
       setTimeout fin, 10
 
     # Advance the connection to the READY state.
-    statemachine.start()
+    statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
     statemachine.raise 'response', 'OK' # Subscribe response
 
@@ -146,7 +146,7 @@ describe 'WriterConnectionState', ->
       statemachine.current_state_name.should.eq 'READY_SEND'
       done()
 
-    statemachine.start()
+    statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
 
   it 'should use PUB when sending a single message', (done) ->
@@ -157,7 +157,7 @@ describe 'WriterConnectionState', ->
       sent[sent.length-1].should.match /^PUB/
       done()
 
-    statemachine.start()
+    statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
 
   it 'should use MPUB when sending multiplie messages', (done) ->
@@ -168,7 +168,7 @@ describe 'WriterConnectionState', ->
       sent[sent.length-1].should.match /^MPUB/
       done()
 
-    statemachine.start()
+    statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
 
   it 'should call the callback when supplied on publishing a message', (done) ->
@@ -180,7 +180,7 @@ describe 'WriterConnectionState', ->
 
       statemachine.raise 'response', 'OK' # Message response
 
-    statemachine.start()
+    statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
 
   it 'should call the the right callback on several messages', (done) ->
@@ -196,7 +196,7 @@ describe 'WriterConnectionState', ->
       statemachine.raise 'response', 'OK' # Message response
       statemachine.raise 'response', 'OK' # Message response
 
-    statemachine.start()
+    statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
 
   it 'should call all callbacks on nsqd disconnect', (done) ->
@@ -218,5 +218,5 @@ describe 'WriterConnectionState', ->
       expect(secondCb.calledOnce).is.ok
       done()
 
-    statemachine.start()
+    statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
