@@ -56,8 +56,8 @@ command = (cmd, body) ->
   Buffer.concat buffers
 
 exports.subscribe = (topic, channel) ->
-  throw new Error 'Invalid topic name' unless validTopicName topic
-  throw new Error 'Invalid channel name' unless validChannelName channel
+  throw new Error "Invalid topic: #{topic}" unless validTopicName topic
+  throw new Error "Invalid channel: #{channel}" unless validChannelName channel
   command 'SUB', null, topic, channel
 
 exports.identify = (data) ->
