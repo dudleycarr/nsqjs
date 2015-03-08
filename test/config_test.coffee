@@ -126,7 +126,12 @@ describe 'ConnectionConfig', ->
       check.should.not.throw()
     it 'should validate against a validate address list of 2', ->
       check = ->
-        addrs = ['127.0.0.1:4150', 'localhost:4150', 'http://localhost/nsq/lookup', 'https://localhost/nsq/lookup']
+        addrs = [
+          '127.0.0.1:4150'
+          'localhost:4150'
+          'http://localhost/nsq/lookup'
+          'https://localhost/nsq/lookup'
+        ]
         config.isLookupdHTTPAddresses 'lookupdHTTPAddresses', addrs
       check.should.not.throw()
     it 'should not validate non-numeric port', ->
