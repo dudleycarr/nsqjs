@@ -89,8 +89,6 @@ class Writer extends EventEmitter
       return callback err if callback
       throw err
 
-    # TODO: Add CONNECTING event.
-
     # Call publish again once the Writer is ready.
     unless @ready
       @on Writer.READY, (err) =>

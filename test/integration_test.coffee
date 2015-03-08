@@ -242,12 +242,18 @@ describe 'integration', ->
 
         done()
 
-#   it.only 'should successfully publish a message before fully connected', (done) ->
-#     writer = new nsq.Writer '127.0.0.1', 4150
-#     writer.publish 'a_topic', 'a message', (err) ->
-#       err.should.not.exist
-#       done()
-#     writer.connect()
+    it 'should successfully publish a message before fully connected', (done) ->
+      writer = new nsq.Writer '127.0.0.1', TCP_PORT
+      writer.connect()
+
+      # The writer is connecting, but it shouldn't be ready to publish.
+      writer.ready.should.eql false
+
+      # Publish the message. It should succeed since the writer will queue up
+      # the message while connecting.
+      writer.publish 'a_topic', 'a message', (err) ->
+        should.not.exist err
+        done()
 
 
 describe 'failures', ->
@@ -281,7 +287,7 @@ describe 'failures', ->
           # Attempt to publish a message.
           (callback) ->
             writer.publish 'test_topic', 'a message that should fail', (err) ->
-              err.should.exist
+              should.exist err
               callback()
         ], (err) ->
           done()
