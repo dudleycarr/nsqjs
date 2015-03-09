@@ -1,12 +1,6 @@
 _ = require 'underscore'
-
-chai      = require 'chai'
-expect    = chai.expect
-should    = chai.should()
-sinon     = require 'sinon'
-sinonChai = require 'sinon-chai'
-
-chai.use sinonChai
+should = require 'should'
+sinon = require 'sinon'
 
 {ConnectionState, NSQDConnection, WriterNSQDConnection, WriterConnectionState} =
   require '../src/nsqdconnection'
@@ -46,9 +40,9 @@ describe 'Reader ConnectionState', ->
     statemachine.raise 'connected'
     statemachine.raise 'response', new Buffer('OK')
 
-    connection.maxRdyCount.should.eq 2500
-    connection.maxMsgTimeout.should.eq 900000 # 15 minutes
-    connection.msgTimeout.should.eq 60000     # 1 minute
+    connection.maxRdyCount.should.eql 2500
+    connection.maxMsgTimeout.should.eql 900000 # 15 minutes
+    connection.msgTimeout.should.eql 60000     # 1 minute
 
   it 'handle identify response', ->
     {statemachine, connection} = state
@@ -59,9 +53,9 @@ describe 'Reader ConnectionState', ->
       max_msg_timeout: 10 * 60 * 1000      # 10 minutes
       msg_timeout: 2 * 60 * 1000           #  2 minutes
 
-    connection.maxRdyCount.should.eq 1000
-    connection.maxMsgTimeout.should.eq 600000  # 10 minutes
-    connection.msgTimeout.should.eq 120000     #  2 minute
+    connection.maxRdyCount.should.eql 1000
+    connection.maxMsgTimeout.should.eql 600000  # 10 minutes
+    connection.msgTimeout.should.eql 120000     #  2 minute
 
   it 'create a subscription', (done) ->
     {sent, statemachine, connection} = state
@@ -85,10 +79,10 @@ describe 'Reader ConnectionState', ->
     statemachine.raise 'response', 'OK' # Identify response
     statemachine.raise 'response', 'OK' # Subscribe response
 
-    statemachine.current_state_name.should.eq 'READY_RECV'
+    statemachine.current_state_name.should.eql 'READY_RECV'
 
     statemachine.raise 'consumeMessage', {}
-    statemachine.current_state_name.should.eq 'READY_RECV'
+    statemachine.current_state_name.should.eql 'READY_RECV'
 
   it 'handle a message finish after a disconnect', (done) ->
     {statemachine, connection} = state
@@ -143,7 +137,7 @@ describe 'WriterConnectionState', ->
     {statemachine, connection} = state
 
     connection.on WriterNSQDConnection.READY, ->
-      statemachine.current_state_name.should.eq 'READY_SEND'
+      statemachine.current_state_name.should.eql 'READY_SEND'
       done()
 
     statemachine.raise 'connected'
@@ -190,7 +184,7 @@ describe 'WriterConnectionState', ->
       connection.produceMessages 'test', ['one']
       connection.produceMessages 'test', ['two'], ->
         # There should be no more callbacks
-        connection.messageCallbacks.length.should.be.eq 0
+        connection.messageCallbacks.length.should.be.eql 0
         done()
 
       statemachine.raise 'response', 'OK' # Message response
@@ -214,8 +208,8 @@ describe 'WriterConnectionState', ->
       statemachine.goto 'ERROR', 'lost connection'
       
     connection.on WriterNSQDConnection.CLOSED, ->
-      expect(firstCb.calledOnce).is.ok
-      expect(secondCb.calledOnce).is.ok
+      firstCb.calledOnce.should.be.ok
+      secondCb.calledOnce.should.be.ok
       done()
 
     statemachine.raise 'connected'

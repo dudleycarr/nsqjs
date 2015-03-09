@@ -1,6 +1,6 @@
 nsqjs
 =====
-A NodeJS client for the [nsq](http://bitly.github.io/nsq/) client protocol. This implementation attempts to be
+The official NodeJS client for the [nsq](http://bitly.github.io/nsq/) client protocol. This implementation attempts to be
 fully compliant and maintain feature parity with the official Go ([go-nsq](https://github.com/bitly/go-nsq)) and Python ([pynsq](https://github.com/bitly/pynsq)) clients.
 
 [![Build Status](https://travis-ci.org/dudleycarr/nsqjs.png?branch=master)](https://travis-ci.org/dudleycarr/nsqjs)
@@ -351,6 +351,14 @@ w.on Writer.CLOSED, ->
 
 Changes
 -------
+* **0.7.3**
+  * Slightly better invalid topic and channel error messages.
+* **0.7.2**
+	* Fix build for iojs and node v0.12
+	* Bumped snappystream version.
+* **0.7.1**
+  * Fix connection returning to max connection RDY after backoff
+  * Fix backoff ignored when `message.finish` is called after backoff event.
 * **0.7.0**
   * Fixes for configuration breakages
   * Fix for AUTH

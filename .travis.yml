@@ -1,6 +1,8 @@
 language: node_js
 node_js:
   - "0.10"
+  - "0.12"
+  - iojs
 before_script:
   - npm install -g grunt-cli
   - wget "https://s3.amazonaws.com/bitly-downloads/nsq/nsq-0.3.2.linux-amd64.go1.4.1.tar.gz"

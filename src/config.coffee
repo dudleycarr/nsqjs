@@ -70,7 +70,8 @@ class ConnectionConfig
       parsedUrl.protocol in ['http:', 'https:'] and !!parsedUrl.host
 
     unless _.isArray(value) and _.every value, isAddr
-      throw new Error "#{option} must be a list of addresses 'host:port' or HTTP/HTTPS URI"
+      throw new Error "#{option} must be a list of addresses 'host:port' or
+        HTTP/HTTPS URI"
 
   conditions: ->
     authSecret: [@isNonEmptyString]

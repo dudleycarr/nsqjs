@@ -1,6 +1,6 @@
 _ = require 'underscore'
 assert = require 'assert'
-should = require('chai').should()
+should = require 'should'
 RoundRobinList = require '../src/roundrobinlist'
 
 describe 'roundrobinlist', ->
@@ -19,20 +19,20 @@ describe 'roundrobinlist', ->
       assert rrl.lst isnt lst
 
     it 'should have @index eq to 0', ->
-      rrl.index.should.eq 0
+      rrl.index.should.eql 0
 
   describe 'add', ->
     it '@lst should include the item', ->
       rrl.add 10
-      rrl.lst.should.contain 10
+      should.ok 10 in rrl.lst
 
   describe 'next', ->
     it 'should return a list of 1 item by default', ->
       assert _.isEqual rrl.next(), lst[0...1]
-      rrl.index.should.eq 1
+      rrl.index.should.eql 1
     it 'should return a list as large as the count provided', ->
       assert _.isEqual rrl.next(2), lst[0...2]
-      rrl.index.should.eq 2
+      rrl.index.should.eql 2
     it 'should return all items and and then start over', ->
       assert _.isEqual rrl.next(), [1]
       assert _.isEqual rrl.next(), [2]
@@ -42,7 +42,7 @@ describe 'roundrobinlist', ->
   describe 'remove', ->
     it 'should remove the item if it exists in the list', ->
       rrl.remove 3
-      rrl.lst.should.not.contain 3
+      should.ok 3 not in rrl.lst
 
     it 'should not affect the order of items returned', ->
       rrl.remove 1
@@ -60,4 +60,4 @@ describe 'roundrobinlist', ->
     it 'should silently fail when it does not have the item', ->
       rrl.remove 10
       assert _.isEqual rrl.lst, [1, 2, 3]
-      rrl.index.should.eq 0
+      rrl.index.should.eql 0
