@@ -1,12 +1,6 @@
 _ = require 'underscore'
-
-chai      = require 'chai'
-expect    = chai.expect
-should    = chai.should
-sinon     = require 'sinon'
-sinonChai = require 'sinon-chai'
-
-chai.use sinonChai
+should = require 'should'
+sinon = require 'sinon'
 
 {EventEmitter} = require 'events'
 {NSQDConnection} = require '../src/nsqdconnection'
@@ -78,19 +72,19 @@ describe 'ConnectionRdy', ->
     mock.verify()
 
   it 'should have a connection RDY max of zero', ->
-    expect(cRdy.maxConnRdy).is.eql 0
+    cRdy.maxConnRdy.should.eql 0
 
   it 'should not increase RDY when connection RDY max has not been set', ->
     # This bump should be a no-op
     cRdy.bump()
-    expect(cRdy.maxConnRdy).is.eql 0
-    expect(spy.called).is.not.ok
+    cRdy.maxConnRdy.should.eql 0
+    spy.called.should.not.be.ok
 
   it 'should not allow RDY counts to be negative', ->
     cRdy.setConnectionRdyMax 10
     cRdy.setRdy -1
 
-    expect(spy.notCalled).is.ok
+    spy.notCalled.should.be.ok
 
   it 'should not allow RDY counts to exceed the connection max', ->
     cRdy.setConnectionRdyMax 10
@@ -98,74 +92,74 @@ describe 'ConnectionRdy', ->
     cRdy.setRdy 10
     cRdy.setRdy 20
 
-    expect(spy.calledTwice).is.ok
-    expect(spy.firstCall.args[0]).is.eql 9
-    expect(spy.secondCall.args[0]).is.eql 10
+    spy.calledTwice.should.be.ok
+    spy.firstCall.args[0].should.eql 9
+    spy.secondCall.args[0].should.eql 10
 
   it 'should set RDY to max after initial bump', ->
     cRdy.setConnectionRdyMax 3
     cRdy.bump()
 
-    expect(spy.firstCall.args[0]).is.eql 3
+    spy.firstCall.args[0].should.eql 3
 
   it 'should keep RDY at max after 1+ bumps', ->
     cRdy.setConnectionRdyMax 3
     for i in [1..3]
       cRdy.bump()
 
-    expect(cRdy.maxConnRdy).is.eql 3
+    cRdy.maxConnRdy.should.eql 3
     for i in [0...spy.callCount]
-      expect(spy.getCall(i).args[0]).is.at.most 3
+      should.ok spy.getCall(i).args[0] <= 3
 
   it 'should set RDY to zero from after first bump and then backoff', ->
     cRdy.setConnectionRdyMax 3
     cRdy.bump()
     cRdy.backoff()
 
-    expect(spy.lastCall.args[0]).is.eql 0
+    spy.lastCall.args[0].should.eql 0
 
   it 'should set RDY to zero after 1+ bumps and then a backoff', ->
     cRdy.setConnectionRdyMax 3
     cRdy.bump()
     cRdy.backoff()
 
-    expect(spy.lastCall.args[0]).is.eql 0
+    spy.lastCall.args[0].should.eql 0
 
   it 'should raise RDY when new connection RDY max is lower', ->
     cRdy.setConnectionRdyMax 3
     cRdy.bump()
     cRdy.setConnectionRdyMax 5
 
-    expect(cRdy.maxConnRdy).is.eql 5
-    expect(spy.lastCall.args[0]).is.eql 5
+    cRdy.maxConnRdy.should.eql 5
+    spy.lastCall.args[0].should.eql 5
 
   it 'should reduce RDY when new connection RDY max is higher', ->
     cRdy.setConnectionRdyMax 3
     cRdy.bump()
     cRdy.setConnectionRdyMax 2
 
-    expect(cRdy.maxConnRdy).is.eql 2
-    expect(spy.lastCall.args[0]).is.eql 2
+    cRdy.maxConnRdy.should.eql 2
+    spy.lastCall.args[0].should.eql 2
 
   it 'should update RDY when 75% of previous RDY is consumed', ->
     cRdy.setConnectionRdyMax 10
     cRdy.bump()
 
-    expect(spy.firstCall.args[0]).is.eql 10
+    spy.firstCall.args[0].should.eql 10
 
     for i in [1..7]
       msg = conn.createMessage "#{i}", Date.now(), 0, "Message #{i}"
       msg.finish()
       cRdy.bump()
 
-    expect(spy.callCount).is.eql 1
+    spy.callCount.should.eql 1
 
     msg = conn.createMessage '8', Date.now(), 0, 'Message 8'
     msg.finish()
     cRdy.bump()
 
-    expect(spy.callCount).is.eql 2
-    expect(spy.lastCall.args[0]).is.eql 10
+    spy.callCount.should.eql 2
+    spy.lastCall.args[0].should.eql 10
 
 
 describe 'ReaderRdy', ->
@@ -197,11 +191,11 @@ describe 'ReaderRdy', ->
   it 'should be in the zero state until a new connection is READY', ->
     conn = createNSQDConnection 1
 
-    expect(readerRdy.current_state_name).is.eql 'ZERO'
+    readerRdy.current_state_name.should.eql 'ZERO'
     readerRdy.addConnection conn
-    expect(readerRdy.current_state_name).is.eql 'ZERO'
+    readerRdy.current_state_name.should.eql 'ZERO'
     conn.emit NSQDConnection.READY
-    expect(readerRdy.current_state_name).is.eql 'MAX'
+    readerRdy.current_state_name.should.eql 'MAX'
 
   it 'should be in the zero state if it loses all connections', ->
     conn = createNSQDConnection 1
@@ -209,7 +203,7 @@ describe 'ReaderRdy', ->
     readerRdy.addConnection conn
     conn.emit NSQDConnection.READY
     conn.emit NSQDConnection.CLOSED
-    expect(readerRdy.current_state_name).is.eql 'ZERO'
+    readerRdy.current_state_name.should.eql 'ZERO'
 
   it 'should evenly distribute RDY count across connections', ->
     readerRdy = new ReaderRdy 100, 128, 'topic/channel'
@@ -223,13 +217,13 @@ describe 'ReaderRdy', ->
     readerRdy.addConnection conn1
     conn1.emit NSQDConnection.READY
 
-    expect(setRdyStub1.lastCall.args[0]).is.eql 100
+    setRdyStub1.lastCall.args[0].should.eql 100
 
     readerRdy.addConnection conn2
     conn2.emit NSQDConnection.READY
 
-    expect(setRdyStub1.lastCall.args[0]).is.eql 50
-    expect(setRdyStub2.lastCall.args[0]).is.eql 50
+    setRdyStub1.lastCall.args[0].should.eql 50
+    setRdyStub2.lastCall.args[0].should.eql 50
 
   describe 'low RDY conditions', ->
     assertAlternatingRdyCounts = (conn1, conn2) ->
@@ -242,7 +236,7 @@ describe 'ReaderRdy', ->
       # conn 0: [1, 0, 1, 0]
       # conn 1: [0, 1, 0, 1]
       for [firstRdy, secondRdy] in zippedCounts
-        (firstRdy + secondRdy).should.eq 1
+        should.ok (firstRdy + secondRdy) is 1
 
     it 'should periodically redistribute RDY', (done) ->
       # Shortening the periodically `balance` calls to every 10ms.
@@ -259,7 +253,7 @@ describe 'ReaderRdy', ->
 
       # Given the number of connections and the maxInFlight, we should be in low
       # RDY conditions.
-      expect(readerRdy.isLowRdy()).is.eql true
+      readerRdy.isLowRdy().should.eql true
 
       checkRdyCounts = ->
         assertAlternatingRdyCounts connections...
@@ -281,7 +275,7 @@ describe 'ReaderRdy', ->
       readerRdy.addConnection conn1
       conn1.emit NSQDConnection.READY
 
-      expect(readerRdy.isLowRdy()).is.eql false
+      readerRdy.isLowRdy().should.eql false
 
       addConnection = ->
         readerRdy.addConnection conn2
@@ -289,7 +283,7 @@ describe 'ReaderRdy', ->
 
         # Given the number of connections and the maxInFlight, we should be in
         # low RDY conditions.
-        expect(readerRdy.isLowRdy()).is.eql true
+        readerRdy.isLowRdy().should.eql true
 
       # Add the 2nd connections after some duration to simulate a new nsqd being
       # discovered and connected.
@@ -316,7 +310,7 @@ describe 'ReaderRdy', ->
         readerRdy.addConnection conn
         conn.emit NSQDConnection.READY
 
-      expect(readerRdy.isLowRdy()).is.eql true
+      readerRdy.isLowRdy().should.eql true
 
       removeConnection = ->
         connections[1].emit NSQDConnection.CLOSED
@@ -324,10 +318,10 @@ describe 'ReaderRdy', ->
         setTimeout checkNormal, 20
 
       checkNormal = ->
-        expect(readerRdy.isLowRdy()).is.eql false
-        expect(readerRdy.balanceId).is.null
+        readerRdy.isLowRdy().should.eql false
+        should.ok readerRdy.balanceId is null
 
-        expect(readerRdy.connections[0].lastRdySent).is.eql 1
+        readerRdy.connections[0].lastRdySent.should.eql 1
         done()
 
       # Remove a connection after some period of time to get back to normal
@@ -352,7 +346,7 @@ describe 'ReaderRdy', ->
         readerRdy.addConnection conn
         conn.emit NSQDConnection.READY
 
-      expect(readerRdy.isLowRdy()).is.eql true
+      readerRdy.isLowRdy().should.eql true
 
       removeConnection = _.once ->
         connections[1].emit NSQDConnection.CLOSED
@@ -368,9 +362,9 @@ describe 'ReaderRdy', ->
             setTimeout removeConnection, 0
 
       checkNormal = ->
-        expect(readerRdy.isLowRdy()).is.eql false
-        expect(readerRdy.balanceId).is.null
-        expect(readerRdy.connections[0].lastRdySent).is.eql 1
+        readerRdy.isLowRdy().should.eql false
+        should.ok readerRdy.balanceId is null
+        readerRdy.connections[0].lastRdySent.should.eql 1
         done()
 
       # Remove a connection after some period of time to get back to normal
@@ -416,9 +410,9 @@ describe 'ReaderRdy', ->
       # When the message is in-flight, balance cannot give a RDY count out to
       # any of the connections.
       checkRdyCount = ->
-        expect(readerRdy.isLowRdy()).is.eql true
-        expect(readerRdy.connections[0].lastRdySent).is.eql 0
-        expect(readerRdy.connections[1].lastRdySent).is.eql 0
+        readerRdy.isLowRdy().should.eql true
+        readerRdy.connections[0].lastRdySent.should.eql 0
+        readerRdy.connections[1].lastRdySent.should.eql 0
 
       # We have to wait a small period of time for log events to occur since the
       # `balance` call is invoked perdiocally.
@@ -478,13 +472,13 @@ describe 'ReaderRdy', ->
       # When the message is in-flight, balance cannot give a RDY count out to
       # any of the connections.
       checkRdyCount = ->
-        expect(readerRdy.isLowRdy()).is.eql true
+        readerRdy.isLowRdy().should.eql true
 
         rdyCounts = for connRdy in readerRdy.connections
           connRdy.lastRdySent
 
-        expect(readerRdy.connections.length).is.eql 4
-        expect(1 in rdyCounts).is.ok
+        readerRdy.connections.length.should.eql 4
+        should.ok 1 in rdyCounts
 
       # We have to wait a small period of time for log events to occur since the
       # `balance` call is invoked perdiocally.
@@ -518,7 +512,7 @@ describe 'ReaderRdy', ->
 
       checkInBackoff = ->
         for connRdy in readerRdy.connections
-          expect(connRdy.statemachine.current_state_name).is.eql 'BACKOFF'
+          connRdy.statemachine.current_state_name.should.eql 'BACKOFF'
 
       setTimeout checkInBackoff, 0
 
@@ -529,8 +523,8 @@ describe 'ReaderRdy', ->
         ones = (s for s in states when s is 'ONE')
         backoffs = (s for s in states when s is 'BACKOFF')
 
-        expect(ones).to.have.length 1
-        expect(backoffs).to.have.length 4
+        ones.length.should.eql 1
+        backoffs.length.should.eql 4
         done()
 
       # Add 50ms to the delay so that we're confident that the event fired.
@@ -576,8 +570,8 @@ describe 'ReaderRdy', ->
 
           max = (s for s in states when s in ['ONE', 'MAX'])
 
-          expect(max).to.have.length 5
-          expect(states).to.contain 'MAX'
+          max.length.should.eql 5
+          should.ok 'MAX' in states
           done()
 
         setTimeout verifyMax, 0
@@ -600,21 +594,20 @@ describe 'ReaderRdy', ->
 
     it 'should drop ready count to zero on all connections when paused', ->
       readerRdy.pause()
-      expect(readerRdy.current_state_name).to.eql 'PAUSE'
+      readerRdy.current_state_name.should.eql 'PAUSE'
 
       for conn in readerRdy.connections
-        expect(conn.lastRdySent).to.eql 0
+        conn.lastRdySent.should.eql 0
 
     it 'should unpause by trying one', ->
       readerRdy.pause()
       readerRdy.unpause()
 
-      expect(readerRdy.current_state_name).to.eql 'TRY_ONE'
+      readerRdy.current_state_name.should.eql 'TRY_ONE'
 
     it 'should update the value of @isPaused when paused', ->
       readerRdy.pause()
-      expect(readerRdy.isPaused()).to.be.true
+      readerRdy.isPaused().should.ok
       
       readerRdy.unpause()
-      expect(readerRdy.isPaused()).to.be.false
-      
+      readerRdy.isPaused().should.eql false
