@@ -1,10 +1,4 @@
-chai      = require 'chai'
-expect    = chai.expect
-should    = chai.should()
-sinon     = require 'sinon'
-sinonChai = require 'sinon-chai'
-
-chai.use sinonChai
+should = require 'should'
 
 FrameBuffer = require '../src/framebuffer.coffee'
 wire = require '../src/wire'
@@ -24,8 +18,8 @@ describe 'FrameBuffer', ->
     frameBuffer.consume data
 
     [frameId, payload] = frameBuffer.nextFrame()
-    frameId.should.eq wire.FRAME_TYPE_RESPONSE
-    payload.toString().should.eq 'OK'
+    frameId.should.eql wire.FRAME_TYPE_RESPONSE
+    payload.toString().should.eql 'OK'
 
   it 'should parse two full frames', ->
     frameBuffer = new FrameBuffer()
@@ -36,15 +30,15 @@ describe 'FrameBuffer', ->
 
     frameBuffer.consume Buffer.concat [firstFrame, secondFrame]
     frames = [frameBuffer.nextFrame(), frameBuffer.nextFrame()]
-    frames.length.should.eq 2
+    frames.length.should.eql 2
 
     [frameId, data] = frames.shift()
-    frameId.should.eq wire.FRAME_TYPE_RESPONSE
-    data.toString().should.eq 'OK'
+    frameId.should.eql wire.FRAME_TYPE_RESPONSE
+    data.toString().should.eql 'OK'
 
     [frameId, data] = frames.shift()
-    frameId.should.eq wire.FRAME_TYPE_ERROR
-    data.toString().should.eq JSON.stringify {shortname: 'localhost'}
+    frameId.should.eql wire.FRAME_TYPE_ERROR
+    data.toString().should.eql JSON.stringify {shortname: 'localhost'}
 
   it 'should parse frame delivered in partials', ->
     frameBuffer = new FrameBuffer()

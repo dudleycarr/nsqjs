@@ -1,16 +1,9 @@
-chai      = require('chai')
-expect    = chai.expect
-should    = chai.should()
-sinon     = require('sinon')
-sinonChai = require('sinon-chai')
-
-chai.use(sinonChai)
-
+should = require 'should'
 wire = require '../src/wire.coffee'
 
 matchCommand = (commandFn, args, expected) ->
   commandOut = commandFn.apply null, args
-  commandOut.toString().should.eq expected
+  commandOut.toString().should.eql expected
 
 describe "nsq wire", ->
 
@@ -79,8 +72,8 @@ describe "nsq wire", ->
     msgParts = wire.unpackMessage new Buffer msgPayload.join(''), 'hex'
 
     [id, timestamp, attempts, body] = msgParts
-    timestamp.toString(10).should.eq '1381679323234827642'
-    id.should.eq '055c5be1ce433027'
-    attempts.should.eq 1
+    timestamp.toString(10).should.eql '1381679323234827642'
+    id.should.eql '055c5be1ce433027'
+    attempts.should.eql 1
 
     

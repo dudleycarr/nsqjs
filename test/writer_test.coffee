@@ -1,11 +1,5 @@
-chai = require 'chai'
-expect = chai.expect
-nock = require 'nock'
-should = chai.should()
+should = require 'should'
 sinon = require 'sinon'
-sinonChai = require 'sinon-chai'
-
-chai.use sinonChai
 
 nsq = require '../src/nsq'
 

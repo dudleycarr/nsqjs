@@ -1,14 +1,8 @@
 _ = require 'underscore'
 
-chai      = require 'chai'
-expect    = chai.expect
-nock      = require 'nock'
-should    = chai.should()
-sinon     = require 'sinon'
-sinonChai = require 'sinon-chai'
-url       = require 'url'
-
-chai.use sinonChai
+nock = require 'nock'
+should = require 'should'
+url = require 'url'
 
 lookup = require '../src/lookupd'
 
@@ -112,7 +106,7 @@ describe 'lookupd.lookup', ->
       lookup LOOKUPD_1, 'sample_topic', (err, nodes) ->
         nodes.should.have.length 1
         for key in ['address', 'broadcast_address', 'tcp_port', 'http_port']
-          _.keys(nodes[0]).should.contain key
+          should.ok key in _.keys(nodes[0])
         done()
 
   describe 'querying a multiple lookupd', ->
