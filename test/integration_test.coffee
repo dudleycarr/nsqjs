@@ -255,18 +255,15 @@ describe 'integration', ->
         should.not.exist err
         done()
 
-
 describe 'failures', ->
-  nsqdProcess = null
-
   before (done) ->
-    temp.mkdir '/nsq', (err, dirPath) ->
-      startNSQD dirPath, {}, (err, process) ->
-        nsqdProcess = process
+    temp.mkdir '/nsq', (err, dirPath) =>
+      startNSQD dirPath, {}, (err, process) =>
+        @nsqdProcess = process
         done err
 
   after (done) ->
-    nsqdProcess.kill()
+    @nsqdProcess.kill()
     # Give nsqd a chance to exit before it's data directory will be cleaned up.
     setTimeout done, 500
 
@@ -281,8 +278,8 @@ describe 'failures', ->
             writer.on 'ready', ->
               callback()
           # Stop the nsqd process.
-          (callback) ->
-            nsqdProcess.kill()
+          (callback) =>
+            @nsqdProcess.kill()
             setTimeout callback, 10
           # Attempt to publish a message.
           (callback) ->
@@ -290,4 +287,4 @@ describe 'failures', ->
               should.exist err
               callback()
         ], (err) ->
-          done()
+          done err
