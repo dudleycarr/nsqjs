@@ -5,6 +5,6 @@ node_js:
   - iojs
 before_script:
   - npm install -g grunt-cli
-  - wget "https://s3.amazonaws.com/bitly-downloads/nsq/nsq-0.3.0.linux-amd64.go1.3.3.tar.gz"
-  - tar zvxf "nsq-0.3.0.linux-amd64.go1.3.3.tar.gz"
-  - export PATH="$PATH:./nsq-0.3.0.linux-amd64.go1.3.3/bin"
+  - wget "https://s3.amazonaws.com/bitly-downloads/nsq/nsq-0.3.2.linux-amd64.go1.4.1.tar.gz"
+  - tar zvxf "nsq-0.3.2.linux-amd64.go1.4.1.tar.gz"
+  - export PATH="$PATH:./nsq-0.3.2.linux-amd64.go1.4.1/bin"

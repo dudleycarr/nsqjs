@@ -95,3 +95,9 @@ describe 'writer', ->
       writer.publish topic, msg, (err) ->
         err.should.exist
         done()
+
+    it 'should fail when the Writer is not connected', (done) ->
+      writer = new nsq.Writer '127.0.0.1', '4150'
+      writer.publish 'test_topic', 'a briliant message', (err) ->
+        err.should.exist
+        done()

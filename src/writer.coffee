@@ -29,9 +29,15 @@ class Writer extends EventEmitter
   @ERROR: 'error'
 
   constructor: (@nsqdHost, @nsqdPort, options) ->
+    super
+    # Handy in the event that there are tons of publish calls
+    # while the Writer is connecting.
+    @setMaxListeners 10000
+
     @debug = Debug "nsqjs:writer:#{@nsqdHost}/#{@nsqdPort}"
     @config = new ConnectionConfig options
     @config.validate()
+    @ready = false
 
     @debug 'Configuration'
     @debug @config
@@ -43,18 +49,22 @@ class Writer extends EventEmitter
 
     @conn.on WriterNSQDConnection.READY, =>
       @debug 'ready'
+      @ready = true
       @emit Writer.READY
 
     @conn.on WriterNSQDConnection.CLOSED, =>
       @debug 'closed'
+      @ready = false
       @emit Writer.CLOSED
 
     @conn.on WriterNSQDConnection.ERROR, (err) =>
       @debug 'error', err
+      @ready = false
       @emit Writer.ERROR, err
 
     @conn.on WriterNSQDConnection.CONNECTION_ERROR, (err) =>
       @debug 'error', err
+      @ready = false
       @emit Writer.ERROR, err
 
   ###
@@ -67,7 +77,9 @@ class Writer extends EventEmitter
       a list of string / buffers / JSON serializable objects.
   ###
   publish: (topic, msgs, callback) ->
-    unless @conn
+    connState = @conn?.statemachine?.current_state_name
+
+    if not @conn or connState in ['CLOSED', 'ERROR']
       err = new Error 'No active Writer connection to send messages'
 
     if not msgs or _.isEmpty msgs
@@ -76,6 +88,28 @@ class Writer extends EventEmitter
     if err
       return callback err if callback
       throw err
+
+    # Call publish again once the Writer is ready.
+    unless @ready
+      ready = =>
+        remove()
+        @publish topic, msgs, callback
+
+      failed = (err) ->
+        err or= new Error 'Connection closed!'
+        remove()
+        callback err
+
+      remove = =>
+        @removeListener Writer.READY, ready
+        @removeListener Writer.ERROR, failed
+        @removeListener Writer.CLOSED, failed
+
+      @on Writer.READY, ready
+      @on Writer.ERROR, failed
+      @on Writer.CLOSED, failed
+
+      return
 
     msgs = [msgs] unless _.isArray msgs
 

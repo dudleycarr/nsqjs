@@ -1,4 +1,5 @@
 _ = require 'underscore'
+async = require 'async'
 child_process = require 'child_process'
 request = require 'request'
 
@@ -147,7 +148,8 @@ describe 'integration', ->
 
     it 'should send and receive a string', (done) ->
       message = 'hello world'
-      writer.publish topic, message
+      writer.publish topic, message, (err) ->
+        done err if err
 
       reader.on 'message', (msg) ->
         msg.body.toString().should.eql message
@@ -239,3 +241,50 @@ describe 'integration', ->
         , 100
 
         done()
+
+    it 'should successfully publish a message before fully connected', (done) ->
+      writer = new nsq.Writer '127.0.0.1', TCP_PORT
+      writer.connect()
+
+      # The writer is connecting, but it shouldn't be ready to publish.
+      writer.ready.should.eql false
+
+      # Publish the message. It should succeed since the writer will queue up
+      # the message while connecting.
+      writer.publish 'a_topic', 'a message', (err) ->
+        should.not.exist err
+        done()
+
+describe 'failures', ->
+  before (done) ->
+    temp.mkdir '/nsq', (err, dirPath) =>
+      startNSQD dirPath, {}, (err, process) =>
+        @nsqdProcess = process
+        done err
+
+  after (done) ->
+    @nsqdProcess.kill()
+    # Give nsqd a chance to exit before it's data directory will be cleaned up.
+    setTimeout done, 500
+
+  describe 'Writer', ->
+    describe 'nsqd disconnect before publish', ->
+      it 'should fail to publish a message', (done) ->
+        writer = new nsq.Writer '127.0.0.1', TCP_PORT
+        async.series [
+          # Connect the writer to the nsqd.
+          (callback) ->
+            writer.connect()
+            writer.on 'ready', ->
+              callback()
+          # Stop the nsqd process.
+          (callback) =>
+            @nsqdProcess.kill()
+            setTimeout callback, 10
+          # Attempt to publish a message.
+          (callback) ->
+            writer.publish 'test_topic', 'a message that should fail', (err) ->
+              should.exist err
+              callback()
+        ], (err) ->
+          done err
