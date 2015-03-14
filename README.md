@@ -353,6 +353,7 @@ Changes
 -------
 * **0.7.3**
   * Slightly better invalid topic and channel error messages.
+  * Handle more conditions for failing to publish a message.
 * **0.7.2**
 	* Fix build for iojs and node v0.12
 	* Bumped snappystream version.
