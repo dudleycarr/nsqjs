@@ -351,6 +351,8 @@ w.on Writer.CLOSED, ->
 
 Changes
 -------
+* **0.7.6**
+  * Fix npm install by adding .npmignore.
 * **0.7.3**
   * Slightly better invalid topic and channel error messages.
   * Handle more conditions for failing to publish a message.
