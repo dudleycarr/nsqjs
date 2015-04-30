@@ -1,6 +1,6 @@
 nsqjs
 =====
-The official NodeJS client for the [nsq](http://bitly.github.io/nsq/) client protocol. This implementation attempts to be
+The official NodeJS client for the [nsq](http://nsq.io/) client protocol. This implementation attempts to be
 fully compliant and maintain feature parity with the official Go ([go-nsq](https://github.com/bitly/go-nsq)) and Python ([pynsq](https://github.com/bitly/pynsq)) clients.
 
 [![Build Status](https://travis-ci.org/dudleycarr/nsqjs.png?branch=master)](https://travis-ci.org/dudleycarr/nsqjs)
@@ -155,8 +155,8 @@ These methods are available on a Writer object:
 
 ### Simple example
 
-Start [nsqd](http://bitly.github.io/nsq/components/nsqd.html) and
-[nsqdlookupd](http://bitly.github.io/nsq/components/nsqlookupd.html)
+Start [nsqd](http://nsq.io/components/nsqd.html) and
+[nsqdlookupd](http://nsq.io/components/nsqlookupd.html)
 ```bash
 # nsqdLookupd Listens on 4161 for HTTP requests and 4160 for TCP requests
 $ nsqlookupd &
