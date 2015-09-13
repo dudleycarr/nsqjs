@@ -351,6 +351,8 @@ w.on Writer.CLOSED, ->
 
 Changes
 -------
+* **0.7.7**
+  * Build with Node v4
 * **0.7.6**
   * Fix npm install by adding .npmignore.
 * **0.7.3**
