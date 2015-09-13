@@ -1,10 +1,28 @@
-language: node_js
-node_js:
-  - "0.10"
-  - "0.12"
-  - iojs
-before_script:
+sudo: false
+os:
+  - linux
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
+env:
+  - TRAVIS_NODE_VERSION="0.10"
+  - TRAVIS_NODE_VERSION="0.12"
+  - TRAVIS_NODE_VERSION="iojs"
+  - TRAVIS_NODE_VERSION="4"
+language: cpp
+install:
+  - rm -rf ~/.nvm
+  - git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`)
+  - source ~/.nvm/nvm.sh
+  - nvm install $TRAVIS_NODE_VERSION
+  - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX=g++-4.8; fi
+  - $CXX --version
+  - npm install
   - npm install -g grunt-cli
-  - wget "https://s3.amazonaws.com/bitly-downloads/nsq/nsq-0.3.2.linux-amd64.go1.4.1.tar.gz"
-  - tar zvxf "nsq-0.3.2.linux-amd64.go1.4.1.tar.gz"
-  - export PATH="$PATH:./nsq-0.3.2.linux-amd64.go1.4.1/bin"
+  - wget "https://s3.amazonaws.com/bitly-downloads/nsq/nsq-0.3.5.linux-amd64.go1.4.2.tar.gz"
+  - tar zvxf "nsq-0.3.5.linux-amd64.go1.4.2.tar.gz"
+  - export PATH="$PATH:./nsq-0.3.5.linux-amd64.go1.4.2/bin"
+script: npm test
