@@ -49,7 +49,7 @@ options object.
   Use Snappy compression.
 * ```authSecret: null```<br/>
   Authenticate using the provided auth secret.
-* ```ouputBufferSize: null```<br/>
+* ```outputBufferSize: null```<br/>
   The size in bytes of the buffer nsqd will use when writing to this client. -1
   disables buffering. ```outputBufferSize >= 64```
 * ```outputBufferTimeout: null```<br/>
