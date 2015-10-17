@@ -33,7 +33,7 @@ class ConnectionRdy extends EventEmitter
 
   constructor: (@conn) ->
     readerId = "#{@conn.topic}/#{@conn.channel}"
-    connId = "#{conn.id().replace ':', '/'}"
+    connId = "#{@conn.id().replace ':', '/'}"
     @debug = Debug "nsqjs:reader:#{readerId}:rdy:conn:#{connId}"
 
     @maxConnRdy = 0      # The absolutely maximum the RDY count can be per conn.
