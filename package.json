@@ -63,7 +63,7 @@
     "node-int64": "~0.3.0",
     "node-state": "~1.4.1",
     "request": "~2.30.0",
-    "snappystream": "git+https://github.com/dudleycarr/snappystream",
+    "snappystream": "git+https://github.com/samhogg/snappystream.git#update-deps",
     "underscore": "~1.5.2"
   }
 }
