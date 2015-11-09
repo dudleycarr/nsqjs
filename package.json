@@ -63,7 +63,7 @@
     "node-int64": "~0.3.0",
     "node-state": "~1.4.1",
     "request": "~2.64.0",
-    "snappystream": "git+https://github.com/dudleycarr/snappystream",
+    "snappystream": "^0.3.3",
     "underscore": "~1.5.2"
   }
 }
