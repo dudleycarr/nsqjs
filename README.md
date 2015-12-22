@@ -1,7 +1,7 @@
 nsqjs
 =====
 The official NodeJS client for the [nsq](http://nsq.io/) client protocol. This implementation attempts to be
-fully compliant and maintain feature parity with the official Go ([go-nsq](https://github.com/bitly/go-nsq)) and Python ([pynsq](https://github.com/bitly/pynsq)) clients.
+fully compliant and maintain feature parity with the official Go ([go-nsq](https://github.com/nsqio/go-nsq)) and Python ([pynsq](https://github.com/nsqio/pynsq)) clients.
 
 [![Build Status](https://travis-ci.org/dudleycarr/nsqjs.png?branch=master)](https://travis-ci.org/dudleycarr/nsqjs)
 
