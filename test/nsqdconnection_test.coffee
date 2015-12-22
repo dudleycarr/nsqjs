@@ -111,6 +111,19 @@ describe 'Reader ConnectionState', ->
     # Undo stub
     wire.unpackMessage.restore()
 
+  it 'handles non-fatal errors', (done) ->
+    {connection, statemachine} = state
+
+    # Note: we still want an error event raised, just not a closed connection
+    connection.on NSQDConnection.ERROR, (err) ->
+      done()
+
+    # Yields an error if the connection actually closes
+    connection.on NSQDConnection.CLOSED, ->
+      done new Error 'Should not have closed!'
+
+    statemachine.goto 'ERROR', 'Error: E_REQ_FAILED'
+
 describe 'WriterConnectionState', ->
   state =
     sent: []
@@ -206,7 +219,7 @@ describe 'WriterConnectionState', ->
       connection.produceMessages 'test', ['one'], firstCb
       connection.produceMessages 'test', ['two'], secondCb
       statemachine.goto 'ERROR', 'lost connection'
-      
+
     connection.on WriterNSQDConnection.CLOSED, ->
       firstCb.calledOnce.should.be.ok
       secondCb.calledOnce.should.be.ok

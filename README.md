@@ -351,6 +351,8 @@ w.on Writer.CLOSED, ->
 
 Changes
 -------
+* **0.7.9**
+  * Treat non-fatal errors appropriately
 * **0.7.7**
   * Build with Node v4
 * **0.7.6**

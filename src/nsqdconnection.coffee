@@ -413,7 +413,15 @@ class ConnectionState extends NodeState
         cb? err
 
         @conn.emit NSQDConnection.ERROR, err
-        @goto 'CLOSED'
+
+        # According to NSQ docs, the following errors are non-fatal and should
+        # not close the connection. See here for more info:
+        # http://nsq.io/clients/building_client_libraries.html
+        errorCode = err.split(/\s+/)?[1]
+        if errorCode in ['E_REQ_FAILED', 'E_FIN_FAILED', 'E_TOUCH_FAILED']
+          @goto 'READY_RECV'
+        else
+          @goto 'CLOSED'
 
       close: ->
         @goto 'CLOSED'
