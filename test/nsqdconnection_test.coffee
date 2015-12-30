@@ -122,7 +122,7 @@ describe 'Reader ConnectionState', ->
     connection.on NSQDConnection.CLOSED, ->
       done new Error 'Should not have closed!'
 
-    statemachine.goto 'ERROR', 'Error: E_REQ_FAILED'
+    statemachine.goto 'ERROR', new Error 'E_REQ_FAILED'
 
 describe 'WriterConnectionState', ->
   state =

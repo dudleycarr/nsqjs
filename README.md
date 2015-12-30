@@ -351,6 +351,8 @@ w.on Writer.CLOSED, ->
 
 Changes
 -------
+* **0.7.10**
+  * Properly handles non-string errors
 * **0.7.9**
   * Treat non-fatal errors appropriately
 * **0.7.7**
