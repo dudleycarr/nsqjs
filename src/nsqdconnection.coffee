@@ -417,6 +417,7 @@ class ConnectionState extends NodeState
         # According to NSQ docs, the following errors are non-fatal and should
         # not close the connection. See here for more info:
         # http://nsq.io/clients/building_client_libraries.html
+        err = err.toString() unless _.isString err
         errorCode = err.split(/\s+/)?[1]
         if errorCode in ['E_REQ_FAILED', 'E_FIN_FAILED', 'E_TOUCH_FAILED']
           @goto 'READY_RECV'
