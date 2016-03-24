@@ -100,11 +100,12 @@ class Reader extends EventEmitter
       @connectToNSQD n.broadcast_address, n.tcp_port for n in nodes unless err
 
   connectToNSQD: (host, port) ->
-    @debug "connecting to #{host}:#{port}"
+    @debug "discovered #{host}:#{port} for #{@topic} topic"
     conn = new NSQDConnection host, port, @topic, @channel, @config
 
     # Ensure a connection doesn't already exist to this nsqd instance.
     return if @connectionIds.indexOf(conn.id()) isnt -1
+    @debug "connecting to #{host}:#{port}"
     @connectionIds.push conn.id()
 
     @registerConnectionListeners conn

@@ -83,6 +83,7 @@ class NSQDConnection extends EventEmitter
     @maxRdyCount = 0               # Max RDY value for a conn to this NSQD
     @msgTimeout = 0                # Timeout time in milliseconds for a Message
     @maxMsgTimeout = 0             # Max time to process a Message in millisecs
+    @nsqdVersion = null            # Version returned by nsqd
     @lastMessageTimestamp = null   # Timestamp of last message received
     @lastReceivedTimestamp = null  # Timestamp of last data received
     @conn = null                   # Socket connection to NSQD
@@ -96,6 +97,8 @@ class NSQDConnection extends EventEmitter
     @statemachine or new ConnectionState this
 
   connect: ->
+    @statemachine.raise 'connecting'
+
     # Using nextTick so that clients of Reader can register event listeners
     # right after calling connect.
     process.nextTick =>
@@ -220,7 +223,9 @@ class NSQDConnection extends EventEmitter
       @write wireData
 
       if responseType is Message.FINISH
-        @debug "Finished message [#{msg.id}]"
+        @debug "Finished message [#{msg.id}] [timedout=#{msg.timedout is true},
+          elapsed=#{Date.now()-msg.receivedOn}ms,
+          touch_count=#{msg.touchCount}]"
         @emit NSQDConnection.FINISHED
       else if responseType is Message.REQUEUE
         @debug "Requeued message [#{msg.id}]"
@@ -246,19 +251,23 @@ class ConnectionState extends NodeState
   constructor: (@conn) ->
     super
       autostart: true,
-      initial_state: 'CONNECTING'
+      initial_state: 'INIT'
       sync_goto: true
 
     @identifyResponse = null
 
   log: (message) ->
-    @conn.debug "#{@current_state_name}"
+    @conn.debug "#{@current_state_name}" unless @current_state_name is 'INIT'
     @conn.debug message if message
 
   afterIdentify: ->
     'SUBSCRIBE'
 
   states:
+    INIT:
+      connecting: ->
+        @goto 'CONNECTING'
+
     CONNECTING:
       connected: ->
         @goto 'CONNECTED'
@@ -294,6 +303,7 @@ class ConnectionState extends NodeState
         @conn.maxRdyCount = @identifyResponse.max_rdy_count
         @conn.maxMsgTimeout = @identifyResponse.max_msg_timeout
         @conn.msgTimeout = @identifyResponse.msg_timeout
+        @conn.nsqdVersion = @identifyResponse.version
         @conn.clearIdentifyTimeout()
 
         return @goto 'TLS_START' if @identifyResponse.tls_v1
@@ -356,13 +366,11 @@ class ConnectionState extends NodeState
       response: (data) ->
         if data.toString() is 'OK'
           @goto 'READY_RECV'
+          # Notify listener that this nsqd connection has passed the subscribe
+          # phase. Do this only once for a connection.
+          @conn.emit NSQDConnection.READY
 
     READY_RECV:
-      Enter: ->
-        # Notify listener that this nsqd connection has passed the subscribe
-        # phase.
-        @conn.emit NSQDConnection.READY
-
       consumeMessage: (msg) ->
         @conn.emit NSQDConnection.MESSAGE, msg
 
