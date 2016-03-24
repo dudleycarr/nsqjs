@@ -224,7 +224,7 @@ class NSQDConnection extends EventEmitter
 
       if responseType is Message.FINISH
         @debug "Finished message [#{msg.id}] [timedout=#{msg.timedout is true},
-          elapsed=#{Date.now()-msg.receivedOn}ms,
+          elapsed=#{Date.now() - msg.receivedOn}ms,
           touch_count=#{msg.touchCount}]"
         @emit NSQDConnection.FINISHED
       else if responseType is Message.REQUEUE
