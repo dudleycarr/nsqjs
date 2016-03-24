@@ -136,8 +136,11 @@ class ConnectionRdyState extends NodeState
       Enter: ->
         @raise 'bump'
       bump: ->
-        if @connRdy.availableRdy <= @connRdy.lastRdySent * 0.25
-          @connRdy.setRdy @connRdy.maxConnRdy
+        # No need to keep setting the RDY count for versions of NSQD >= 0.3.0.
+        version = @connRdy.conn?.nsqdVersion
+        if not version or version.split('.') < [0, 3, 0]
+          if @connRdy.availableRdy <= @connRdy.lastRdySent * 0.25
+            @connRdy.setRdy @connRdy.maxConnRdy
       backoff: ->
         @goto 'BACKOFF'
       adjustMax: ->

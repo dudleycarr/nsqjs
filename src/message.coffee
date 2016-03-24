@@ -17,6 +17,7 @@ class Message extends EventEmitter
     @hasResponded = false
     @receivedOn = Date.now()
     @lastTouched = @receivedOn
+    @touchCount = 0
 
     # Keep track of when this message actually times out.
     @timedOut = false
@@ -62,6 +63,7 @@ class Message extends EventEmitter
     @emit Message.BACKOFF if backoff
 
   touch: ->
+    @touchCount += 1
     @lastTouched = Date.now()
     @respond Message.TOUCH, wire.touch @id
 

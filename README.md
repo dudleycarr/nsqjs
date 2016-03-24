@@ -351,6 +351,17 @@ w.on Writer.CLOSED, ->
 
 Changes
 -------
+* **0.7.11**
+  * Improvement: Keep track of touch count in Message instances.
+  * Improvement: Stop sending RDY count to main max-in-flight for newer
+    versions of nsqd.
+  * Improvement: Make the connect debug message more accurate in Reader.
+    Previously lookupd poll results suggested new connections were being made
+    when they were not.
+  * Bug: Non-fatal nsqd errors would cause RDY count to decrease and never
+    return to normal. This will happen for example when finishing messages
+    that have exceeded their amount of time to process a message.
+  * 
 * **0.7.10**
   * Properly handles non-string errors
 * **0.7.9**

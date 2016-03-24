@@ -30,6 +30,7 @@ describe 'Reader ConnectionState', ->
 
   it 'handle initial handshake', ->
     {statemachine, sent} = state
+    statemachine.raise 'connecting'
     statemachine.raise 'connected'
 
     sent[0].should.match /^  V2$/
@@ -37,6 +38,7 @@ describe 'Reader ConnectionState', ->
 
   it 'handle OK identify response', ->
     {statemachine, connection} = state
+    statemachine.raise 'connecting'
     statemachine.raise 'connected'
     statemachine.raise 'response', new Buffer('OK')
 
@@ -46,6 +48,7 @@ describe 'Reader ConnectionState', ->
 
   it 'handle identify response', ->
     {statemachine, connection} = state
+    statemachine.raise 'connecting'
     statemachine.raise 'connected'
 
     statemachine.raise 'response', JSON.stringify
@@ -63,6 +66,7 @@ describe 'Reader ConnectionState', ->
       # Subscribe notification
       done()
 
+    statemachine.raise 'connecting'
     statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
 
@@ -75,6 +79,7 @@ describe 'Reader ConnectionState', ->
     connection.on NSQDConnection.MESSAGE, (msg) ->
       done()
 
+    statemachine.raise 'connecting'
     statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
     statemachine.raise 'response', 'OK' # Subscribe response
@@ -96,6 +101,7 @@ describe 'Reader ConnectionState', ->
       setTimeout fin, 10
 
     # Advance the connection to the READY state.
+    statemachine.raise 'connecting'
     statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
     statemachine.raise 'response', 'OK' # Subscribe response
@@ -153,6 +159,7 @@ describe 'WriterConnectionState', ->
       statemachine.current_state_name.should.eql 'READY_SEND'
       done()
 
+    statemachine.raise 'connecting'
     statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
 
@@ -164,6 +171,7 @@ describe 'WriterConnectionState', ->
       sent[sent.length-1].should.match /^PUB/
       done()
 
+    statemachine.raise 'connecting'
     statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
 
@@ -175,6 +183,7 @@ describe 'WriterConnectionState', ->
       sent[sent.length-1].should.match /^MPUB/
       done()
 
+    statemachine.raise 'connecting'
     statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
 
@@ -187,6 +196,7 @@ describe 'WriterConnectionState', ->
 
       statemachine.raise 'response', 'OK' # Message response
 
+    statemachine.raise 'connecting'
     statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
 
@@ -203,6 +213,7 @@ describe 'WriterConnectionState', ->
       statemachine.raise 'response', 'OK' # Message response
       statemachine.raise 'response', 'OK' # Message response
 
+    statemachine.raise 'connecting'
     statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
 
@@ -225,5 +236,6 @@ describe 'WriterConnectionState', ->
       secondCb.calledOnce.should.be.ok
       done()
 
+    statemachine.raise 'connecting'
     statemachine.raise 'connected'
     statemachine.raise 'response', 'OK' # Identify response
