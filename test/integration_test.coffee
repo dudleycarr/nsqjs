@@ -282,7 +282,7 @@ describe 'failures', ->
           # Stop the nsqd process.
           (callback) =>
             @nsqdProcess.kill()
-            setTimeout callback, 10
+            setTimeout callback, 200
           # Attempt to publish a message.
           (callback) ->
             writer.publish 'test_topic', 'a message that should fail', (err) ->
