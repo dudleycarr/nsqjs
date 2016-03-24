@@ -1,1 +1,1 @@
-module.exports = '0.7.11'
+module.exports = require('../package.json').version
