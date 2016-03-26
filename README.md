@@ -351,6 +351,10 @@ w.on Writer.CLOSED, ->
 
 Changes
 -------
+* **0.7.12**
+  * Bug: Fix issue introduced by not sending RDY count to main max-in-flight.
+    Readers connected to mulitple nsqds do not set RDY count for connections
+    made after the first nsqd connection.
 * **0.7.11**
   * Improvement: Keep track of touch count in Message instances.
   * Improvement: Stop sending RDY count to main max-in-flight for newer
