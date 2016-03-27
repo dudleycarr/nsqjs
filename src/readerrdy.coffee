@@ -134,7 +134,7 @@ class ConnectionRdyState extends NodeState
 
     MAX:
       Enter: ->
-        @raise 'bump'
+        @connRdy.setRdy @connRdy.maxConnRdy
       bump: ->
         # No need to keep setting the RDY count for versions of NSQD >= 0.3.0.
         version = @connRdy.conn?.nsqdVersion
