@@ -23,11 +23,11 @@ options object.
   The maximum amount of time (seconds) the Reader will backoff for any single backoff
   event.
 * ```maxAttempts: 0``` <br/>
-  The number of times to a message can be requeued before it will be handed to the DISCARD handler and then automatically finished. 0 means that there is **no limit.** If not DISCARD handler is specified and `maxAttempts > 0`, then the message will be finished automatically when the number attempts has been exhausted.
+  The number of times to a message can be requeued before it will be handed to the DISCARD handler and then automatically finished. 0 means that there is **no limit.** If no DISCARD handler is specified and `maxAttempts > 0`, then the message will be finished automatically when the number of attempts has been exhausted.
 * ```requeueDelay: 90``` <br/>
   The default amount of time (seconds) a message requeued should be delayed by before being dispatched by nsqd.
 * ```nsqdTCPAddresses``` <br/>
-  A string or an array of string representing the host/port pair for nsqd instances.
+  A string or an array of strings representing the host/port pair for nsqd instances.
   <br/> For example: `['localhost:4150']`
 * ```lookupdHTTPAddresses``` <br/>
   A string or an array of strings representing the host/port pair of nsqlookupd instaces or the full HTTP/HTTPS URIs of the nsqlookupd instances.
@@ -53,7 +53,7 @@ options object.
   The size in bytes of the buffer nsqd will use when writing to this client. -1
   disables buffering. ```outputBufferSize >= 64```
 * ```outputBufferTimeout: null```<br/>
-  The timeout after which any data that nsqd has buffered will be flushed to this client. Value is in milliseconds. ```1 <= outputBufferTimeout```. A value of ```-1``` disables timeouts.
+  The timeout after which any data that nsqd has buffered will be flushed to this client. Value is in milliseconds. ```outputBufferTimeout >= 1```. A value of ```-1``` disables timeouts.
 * ```messageTimeout: null```<br/>
   Sets the server-side message timeout in milliseconds for messages delivered to this client.
 * ```sampleRate: null```<br/>
@@ -148,7 +148,7 @@ These methods are available on a Writer object:
 * `connect()` <br/>
   Connect to the nsqd specified.
 * `close()` <br/>
-  Disconnect from the nsqd.
+  Disconnect from nsqd.
 * `publish(topic, msgs, [callback])` <br/>
   `topic` is a string. `msgs` is either a string, a `Buffer`, JSON serializable
   object, a list of strings / `Buffers` / JSON serializable objects. `callback` takes a single `error` argument.
@@ -276,7 +276,7 @@ reader.on Reader.MESSAGE, (msg) ->
 ```
 
 ### Enable nsqjs debugging
-nsqjs used [debug](https://github.com/visionmedia/debug) to log debug output.
+nsqjs uses [debug](https://github.com/visionmedia/debug) to log debug output.
 
 To see all nsqjs events:
 ```
