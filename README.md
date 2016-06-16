@@ -113,7 +113,7 @@ instance.
 * `finish()` <br/>
   Finish the message as successful.
 * `requeue(delay=null, backoff=true)`
-  The delay is in seconds. This is how long nsqd will hold on the message
+  The delay is in milliseconds. This is how long nsqd will hold on the message
   before attempting it again. The backoff parameter indicates that we should
   treat this as an error within this process and we need to backoff to recover.
 * `touch()` <br/>
