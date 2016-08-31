@@ -61,11 +61,11 @@ options object.
   sampleRate <= 99```
 * ```clientId: null```<br/>
   An identifier used to disambiguate this client.
-* ```ca: <same as node.js tls.connect() description>```  
+* ```ca: <string> | <string[]> | <Buffer> | <Buffer[]>```  
   Trusted certificates in PEM format. If this is omitted several well known "root" CAs (like VeriSign) will be used. (only used for tls client verification)
-* ```key: <same as node.js tls.connect() description>```  
+* ```key: <string> | <string[]> | <Buffer> | <Buffer[]>```  
   Private key of the client in PEM format. (only used for tls client verification)
-* ```cert: <same as node.js tls.connect() description>```  
+* ```cert: <string> | <string[]> | <Buffer> | <Buffer[]>```  
   Certificate key of the client in PEM format. (only used for tls client verification)
 
   
@@ -144,6 +144,12 @@ Available Writer options:
   Use Snappy compression.
 * ```clientId: null```<br/>
   An identifier used to disambiguate this client.
+* ```ca: <string> | <string[]> | <Buffer> | <Buffer[]>```  
+  Trusted certificates in PEM format. If this is omitted several well known "root" CAs (like VeriSign) will be used. (only used for tls client verification)
+* ```key: <string> | <string[]> | <Buffer> | <Buffer[]>```  
+  Private key of the client in PEM format. (only used for tls client verification)
+* ```cert: <string> | <string[]> | <Buffer> | <Buffer[]>```  
+  Certificate key of the client in PEM format. (only used for tls client verification)
 
 Writer events are:
 
