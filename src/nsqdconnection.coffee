@@ -123,9 +123,15 @@ class NSQDConnection extends EventEmitter
   startTLS: (callback) ->
     @conn.removeAllListeners event for event in ['data', 'error', 'close']
 
-    options =
+    {ca, key, cert, tlsVerification} = @config
+    options = {
       socket: @conn
-      rejectUnauthorized: @config.tlsVerification
+      rejectUnauthorized: tlsVerification
+      ca
+      key
+      cert
+    }
+    
     tlsConn = tls.connect options, =>
       @conn = tlsConn
       callback?()

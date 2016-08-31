@@ -17,6 +17,12 @@ class ConnectionConfig
     snappy: false
     tls: false
     tlsVerification: true
+    
+    # add client verification
+    # support for nsqd `--tls-client-auth-policy` argument
+    ca: null
+    key: null
+    cert: null
 
   constructor: (options={}) ->
     options = _.chain(options)
@@ -88,10 +94,13 @@ class ConnectionConfig
     snappy: [@isBoolean]
     tls: [@isBoolean]
     tlsVerification: [@isBoolean]
+    ca: []
+    key: []
+    cert: []
 
   validateOption: (option, value) ->
     [fn, args...] = @conditions()[option]
-    fn option, value, args...
+    fn? option, value, args...
 
   validate: ->
     for option, value of this
@@ -106,7 +115,7 @@ class ConnectionConfig
       keys = ['outputBufferSize', 'outputBufferTimeout']
       if option in keys and value is -1
         continue
-
+      
       @validateOption option, value
 
     # Mutually exclusive options

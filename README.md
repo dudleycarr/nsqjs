@@ -61,6 +61,13 @@ options object.
   sampleRate <= 99```
 * ```clientId: null```<br/>
   An identifier used to disambiguate this client.
+* ```ca: <same as node.js tls.connect() description>```  
+  Trusted certificates in PEM format. If this is omitted several well known "root" CAs (like VeriSign) will be used. (only used for tls client verification)
+* ```key: <same as node.js tls.connect() description>```  
+  Private key of the client in PEM format. (only used for tls client verification)
+* ```cert: <same as node.js tls.connect() description>```  
+  Certificate key of the client in PEM format. (only used for tls client verification)
+
   
 
 Reader events are:
