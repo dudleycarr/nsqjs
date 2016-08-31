@@ -10,7 +10,7 @@ temp = require('temp').track()
 nsq = require '../src/nsq'
 
 TCP_PORT = 14150
-HTTP_PORT = 14151
+HTTPS_PORT = 14152
 
 CLIENT_CERT = readFileSync './test/clientcert.cer'
 CLIENT_KEY = readFileSync './test/clientkey.pem'
@@ -19,7 +19,7 @@ CA_CERT = readFileSync './test/cert.pem'
 startNSQD = (dataPath, additionalOptions, callback) ->
   additionalOptions or= {}
   options =
-    'http-address': "127.0.0.1:#{HTTP_PORT}"
+    'https-address': "127.0.0.1:#{HTTPS_PORT}"
     'tcp-address': "127.0.0.1:#{TCP_PORT}"
     'data-path': dataPath
     'tls-cert': './test/cert.pem'
@@ -39,9 +39,14 @@ startNSQD = (dataPath, additionalOptions, callback) ->
 topicOp = (op, topic, callback) ->
   options =
     method: 'POST'
-    uri: "http://127.0.0.1:#{HTTP_PORT}/#{op}"
+    uri: "https://127.0.0.1:#{HTTPS_PORT}/#{op}"
     qs:
       topic: topic
+    agentOptions:
+      ca: CA_CERT
+      key: CLIENT_KEY
+      cert: CLIENT_CERT
+      rejectUnauthorized: no
 
   request options, (err, res, body) ->
     callback err
@@ -52,11 +57,16 @@ deleteTopic = _.partial topicOp, 'delete_topic'
 # Publish a single message via HTTP
 publish = (topic, message, done) ->
   options =
-    uri: "http://127.0.0.1:#{HTTP_PORT}/pub"
+    uri: "https://127.0.0.1:#{HTTPS_PORT}/pub"
     method: 'POST'
     qs:
       topic: topic
     body: message
+    agentOptions:
+      ca: CA_CERT
+      key: CLIENT_KEY
+      cert: CLIENT_CERT
+      rejectUnauthorized: no
 
   request options, (err, res, body) ->
     done? err
@@ -173,12 +183,16 @@ describe 'TLS client verification', ->
 
       beforeEach (done) ->
         writer = new nsq.Writer '127.0.0.1', TCP_PORT,
+          tls: true
+          tlsVerification: false
           ca: CA_CERT
           key: CLIENT_KEY
           cert: CLIENT_CERT
 
         writer.on 'ready', ->
           reader = new nsq.Reader topic, channel,
+            tls: true
+            tlsVerification: false
             nsqdTCPAddresses: tcpAddress
             ca: CA_CERT
             key: CLIENT_KEY
@@ -292,6 +306,8 @@ describe 'TLS client verification', ->
 
       it 'should successfully publish a message before fully connected', (done) ->
         writer = new nsq.Writer '127.0.0.1', TCP_PORT,
+          tls: true
+          tlsVerification: false
           ca: CA_CERT
           key: CLIENT_KEY
           cert: CLIENT_CERT
@@ -323,6 +339,8 @@ describe 'TLS client verification', ->
       describe 'nsqd disconnect before publish', ->
         it 'should fail to publish a message', (done) ->
           writer = new nsq.Writer '127.0.0.1', TCP_PORT,
+            tls: true
+            tlsVerification: false
             ca: CA_CERT
             key: CLIENT_KEY
             cert: CLIENT_CERT
