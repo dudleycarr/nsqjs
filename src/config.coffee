@@ -115,7 +115,7 @@ class ConnectionConfig
       keys = ['outputBufferSize', 'outputBufferTimeout']
       if option in keys and value is -1
         continue
-      
+
       @validateOption option, value
 
     # Mutually exclusive options
