@@ -35,7 +35,8 @@
     "build": "coffee --bare --compile --output lib src/*.coffee",
     "prepublish": "coffee --bare --compile --output lib src/*.coffee",
     "postpublish": "rm -rf lib",
-    "test": "node_modules/.bin/grunt test"
+    "test": "node_modules/.bin/grunt test",
+    "preinstall": "node_modules/.bin/coffee --bare --compile --output lib src/*.coffee"
   },
   "engines": {
     "node": ">= 0.10.0"
