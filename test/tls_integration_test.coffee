@@ -129,7 +129,7 @@ describe 'TLS client verification', ->
               reader = new nsq.Reader topic, channel,
                 _.extend {nsqdTCPAddresses: ["127.0.0.1:#{TCP_PORT}"]}, options
               
-              reader.on 'error', (err) ->
+              reader.once 'error', (err) ->
                 should.exist err
                 done()
 
@@ -384,7 +384,7 @@ describe 'TLS client verification', ->
             # Stop the nsqd process.
             (callback) =>
               @nsqdProcess.kill()
-              setTimeout callback, 200
+              setTimeout callback, 500
             # Attempt to publish a message.
             (callback) ->
               writer.publish 'test_topic', 'a message that should fail', (err) ->
