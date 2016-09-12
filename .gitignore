@@ -9,3 +9,7 @@ lib
 node_modules/
 share/man
 src/node-*
+*.js
+*.srl
+*.csr
+*.log

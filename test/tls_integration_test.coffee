@@ -91,7 +91,7 @@ describe 'TLS client verification', ->
       createTopic 'test', done
 
     afterEach (done) ->
-      reader.close()
+      reader?.close()
       deleteTopic 'test', done
 
     describe 'stream compression and encryption', ->
