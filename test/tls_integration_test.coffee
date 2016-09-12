@@ -29,8 +29,8 @@ startNSQD = (dataPath, additionalOptions, callback) ->
     'tls-root-ca-file': './test/cert.pem'
 
   _.extend options, additionalOptions
-  options = _.flatten (["-#{key}", value] for key, value of options)
-  process = child_process.spawn 'nsqd', options.concat(additionalOptions),
+  options = ("-#{key}=#{value}" for key, value of options)
+  process = child_process.spawn 'nsqd', options,
     stdio: ['ignore', 'ignore', 'ignore']
 
   # Give nsqd a chance to startup successfully.
@@ -95,84 +95,114 @@ describe 'TLS client verification', ->
       deleteTopic 'test', done
 
     describe 'stream compression and encryption', ->
-      optionPermutations = [
-        { deflate: true }
-        { snappy: true }
-        { tls: true, tlsVerification: false }
-        {
-          ca: CA_CERT
-          key: CLIENT_KEY
-          cert: CLIENT_CERT
-        }
-        { tls: true, tlsVerification: false, snappy: true }
-        { tls: true, tlsVerification: false, deflate: true }
-        {
-          tls: on
-          tlsVerification: off
-          ca: CA_CERT
-          key: CLIENT_KEY
-          cert: CLIENT_CERT
-        }
-        {
-          tls: on
-          tlsVerification: off
-          ca: CA_CERT
-          key: CLIENT_KEY
-          cert: CLIENT_CERT
-          snappy: off
-        }
-        {
-          tls: on
-          tlsVerification: off
-          ca: CA_CERT
-          key: CLIENT_KEY
-          cert: CLIENT_CERT
-          deflate: off
-        }
-      ]
-      for options in optionPermutations
-        # Figure out what compression is enabled
-        compression = (key for key in ['deflate', 'snappy'] when key of options)
-        compression.push 'none'
+      describe 'missing tls connection or/and verification opts', ->
+        [
+          { deflate: true }
+          { snappy: true }
+          { tls: true, tlsVerification: false }
+          { tls: true, tlsVerification: false, snappy: true }
+          { tls: true, tlsVerification: false, deflate: true }
+          {
+            tls: on
+            tlsVerification: off
+            ca: null
+            key: null
+            cert: null
+          }
+        ].forEach (options) ->
+          # Figure out what compression is enabled
+          compression = (key for key in ['deflate', 'snappy'] when key of options)
+          compression.push 'none'
 
-        description =
-          "reader with compression (#{compression[0]}) and tls (#{options.tls?})"
+          description =
+            "reader with compression (#{compression[0]}) and tls (#{options.tls?})"
 
-        describe description, ->
-          it 'should send and receive a message', (done) ->
+          describe description, ->
+            it 'should fail to connect to nsqd', (done) ->
 
-            topic = 'test'
-            channel = 'default'
-            message = "a message for our reader"
+              topic = 'test'
+              channel = 'default'
+              message = "a message for our reader"
 
-            publish topic, message
+              publish topic, message
 
-            reader = new nsq.Reader topic, channel,
-              _.extend {nsqdTCPAddresses: ["127.0.0.1:#{TCP_PORT}"]}, options
+              reader = new nsq.Reader topic, channel,
+                _.extend {nsqdTCPAddresses: ["127.0.0.1:#{TCP_PORT}"]}, options
+              
+              reader.on 'error', (err) ->
+                should.exist err
+                done()
 
-            reader.on 'message', (msg) ->
-              msg.body.toString().should.eql message
-              msg.finish()
-              done()
+              reader.connect()
+      
+      describe 'with both tls connection and verification opts', ->
+        [
+          {
+            tls: on
+            tlsVerification: off
+            ca: CA_CERT
+            key: CLIENT_KEY
+            cert: CLIENT_CERT
+          }
+          {
+            tls: on
+            tlsVerification: off
+            ca: CA_CERT
+            key: CLIENT_KEY
+            cert: CLIENT_CERT
+            snappy: off
+          }
+          {
+            tls: on
+            tlsVerification: off
+            ca: CA_CERT
+            key: CLIENT_KEY
+            cert: CLIENT_CERT
+            deflate: off
+          }
+        ].forEach (options) ->
+          # Figure out what compression is enabled
+          compression = (key for key in ['deflate', 'snappy'] when key of options)
+          compression.push 'none'
 
-            reader.connect()
+          description =
+            "reader with compression (#{compression[0]}) and tls (#{options.tls?})"
 
-          it 'should send and receive a large message', (done) ->
-            topic = 'test'
-            channel = 'default'
-            message = ('a' for i in [0..100000]).join ''
+          describe description, ->
+            it 'should send and receive a message', (done) ->
 
-            publish topic, message
+              topic = 'test'
+              channel = 'default'
+              message = "a message for our reader"
 
-            reader = new nsq.Reader topic, channel,
-              _.extend {nsqdTCPAddresses: ["127.0.0.1:#{TCP_PORT}"]}, options
+              publish topic, message
 
-            reader.on 'message', (msg) ->
-              msg.body.toString().should.eql message
-              msg.finish()
-              done()
+              reader = new nsq.Reader topic, channel,
+                _.extend {nsqdTCPAddresses: ["127.0.0.1:#{TCP_PORT}"]}, options
 
-            reader.connect()
+              reader.on 'message', (msg) ->
+                msg.body.toString().should.eql message
+                msg.finish()
+                done()
+
+              reader.connect()
+
+            it 'should send and receive a large message', (done) ->
+              topic = 'test'
+              channel = 'default'
+              message = ('a' for i in [0..100000]).join ''
+
+              publish topic, message
+
+              reader = new nsq.Reader topic, channel,
+                _.extend {nsqdTCPAddresses: ["127.0.0.1:#{TCP_PORT}"]}, options
+
+              reader.on 'message', (msg) ->
+                msg.body.toString().should.eql message
+                msg.finish()
+                done()
+
+              reader.connect()
 
     describe 'end to end', ->
       topic = 'test'
