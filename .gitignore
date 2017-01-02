@@ -1,5 +1,6 @@
 .Python
 .template
+.vagrant
 bin
 include/python2.7
 lib/dtrace
