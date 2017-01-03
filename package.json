@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "coffee-errors": "^0.8.6",
-    "coffee-script": "~1.6.3",
+    "coffee-script": "^1.12.2",
     "coffeelint": "~1.0.2",
     "grunt": "^1.0.0",
     "grunt-cli": "^1.2",
