@@ -36,7 +36,7 @@ describe 'Message', ->
         msg.requeue()
 
       check = ->
-        responseSpy.calledOnce.should.be.true
+        responseSpy.calledOnce.should.be.true()
         done()
 
       setTimeout firstFinish, 10
@@ -61,9 +61,17 @@ describe 'Message', ->
         msg.finish()
 
       check = ->
-        responseSpy.calledTwice.should.be.true
+        responseSpy.calledTwice.should.be.true()
         done()
 
       setTimeout touch, touchIn
       setTimeout finish, finishIn
       setTimeout check, checkIn
+
+    it 'should clear timeout on finish', (done) ->
+      msg = createMessage 'body', 10, 60, 120
+      msg.finish()
+
+      process.nextTick ->
+        should.not.exist msg.trackTimeoutId
+        done()

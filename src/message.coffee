@@ -18,6 +18,7 @@ class Message extends EventEmitter
     @receivedOn = Date.now()
     @lastTouched = @receivedOn
     @touchCount = 0
+    @trackTimeoutId = null
 
     # Keep track of when this message actually times out.
     @timedOut = false
@@ -29,7 +30,9 @@ class Message extends EventEmitter
 
       # Both values have to be not null otherwise we've timedout.
       @timedOut = not soft or not hard
-      setTimeout trackTimeout, Math.min soft, hard unless @timedOut
+      unless @timedOut
+        clearTimeout @trackTimeoutId
+        @trackTimeoutId = setTimeout trackTimeout, Math.min soft, hard
 
   json: ->
     unless @parsed?
@@ -74,6 +77,8 @@ class Message extends EventEmitter
     process.nextTick =>
       if responseType isnt Message.TOUCH
         @hasResponded = true
+        clearTimeout @trackTimeoutId
+        @trackTimeoutId = null
       else
         @lastTouched = Date.now()
 
