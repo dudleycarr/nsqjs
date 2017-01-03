@@ -232,8 +232,8 @@ describe 'WriterConnectionState', ->
       statemachine.goto 'ERROR', 'lost connection'
 
     connection.on WriterNSQDConnection.CLOSED, ->
-      firstCb.calledOnce.should.be.ok
-      secondCb.calledOnce.should.be.ok
+      firstCb.calledOnce.should.be.ok()
+      secondCb.calledOnce.should.be.ok()
       done()
 
     statemachine.raise 'connecting'

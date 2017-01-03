@@ -183,7 +183,7 @@ describe 'integration', ->
       reader.on 'message', (msg) ->
         msg.finish()
         clearTimeout timeout
-        waitedLongEnough.should.be.true
+        waitedLongEnough.should.be.true()
         done()
 
       writer.publish topic, 'pause test'
@@ -193,7 +193,7 @@ describe 'integration', ->
 
       reader.on 'message', (msg) ->
         # check the message
-        msg.json().messageShouldArrive.should.be.true
+        msg.json().messageShouldArrive.should.be.true()
         msg.finish()
 
         if reader.isPaused() then return done()
@@ -228,7 +228,7 @@ describe 'integration', ->
       writer.publish topic, sentWhilePaused: false
 
       reader.on 'message', (msg) ->
-        shouldReceive.should.be.true
+        shouldReceive.should.be.true()
 
         reader.pause()
         msg.requeue()

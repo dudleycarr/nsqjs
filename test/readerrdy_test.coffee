@@ -84,7 +84,7 @@ describe 'ConnectionRdy', ->
     cRdy.setConnectionRdyMax 10
     cRdy.setRdy -1
 
-    spy.notCalled.should.be.ok
+    spy.notCalled.should.be.ok()
 
   it 'should not allow RDY counts to exceed the connection max', ->
     cRdy.setConnectionRdyMax 10
@@ -92,7 +92,7 @@ describe 'ConnectionRdy', ->
     cRdy.setRdy 10
     cRdy.setRdy 20
 
-    spy.calledTwice.should.be.ok
+    spy.calledTwice.should.be.ok()
     spy.firstCall.args[0].should.eql 9
     spy.secondCall.args[0].should.eql 10
 

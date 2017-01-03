@@ -24,7 +24,7 @@ describe 'reader', ->
         reader.handleMessage message
 
         process.nextTick ->
-          message.finish.called.should.be.true
+          message.finish.called.should.be.true()
           done()
 
       it 'should call the DISCARD message hanlder if registered', (done) ->
@@ -72,6 +72,6 @@ describe 'reader', ->
       reader.handleMessage message
 
       process.nextTick ->
-        messageHandlerSpy.called.should.be.true
-        message.finish.called.should.be.false
+        messageHandlerSpy.called.should.be.true()
+        message.finish.called.should.be.false()
         done()
