@@ -49,7 +49,7 @@ dedupeOnHostPort = (results) ->
     .flatten()
     # De-dupe nodes by hostname / port
     .indexBy (item) ->
-      "#{item.hostname}:#{item.tcp_port}"
+      "#{item.broadcast_address}:#{item.tcp_port}"
     .values()
     .value()
 
