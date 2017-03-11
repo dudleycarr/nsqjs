@@ -1,9 +1,9 @@
-import _ from 'underscore';
-import url from 'url';
+import _ from 'underscore'
+import url from 'url'
 
-let isBareAddress = undefined;
+let isBareAddress
 class ConnectionConfig {
-  static initClass() {
+  static initClass () {
     this.DEFAULTS = {
       authSecret: null,
       clientId: null,
@@ -19,90 +19,86 @@ class ConnectionConfig {
       snappy: false,
       tls: false,
       tlsVerification: true
-    };
-  
-    isBareAddress = function(addr) {
-      let [host, port] = Array.from(addr.split(':'));
-      return (host.length > 0) && (port > 0);
-    };
-  }
+    }
 
-  constructor(options) {
-    if (options == null) { options = {}; }
-    options = _.chain(options)
-      .pick(_.keys(this.constructor.DEFAULTS))
-      .defaults(this.constructor.DEFAULTS)
-      .value();
-    _.extend(this, options);
-  }
-
-  isNonEmptyString(option, value) {
-    if (!_.isString(value) || !(value.length > 0)) {
-      throw new Error(`${option} must be a non-empty string`);
+    isBareAddress = function (addr) {
+      const [host, port] = Array.from(addr.split(':'))
+      return (host.length > 0) && (port > 0)
     }
   }
 
-  isNumber(option, value, lower, upper) {
-    if (upper == null) { upper = null; }
+  constructor (options) {
+    if (options == null) { options = {} }
+    options = _.chain(options)
+      .pick(_.keys(this.constructor.DEFAULTS))
+      .defaults(this.constructor.DEFAULTS)
+      .value()
+    _.extend(this, options)
+  }
+
+  isNonEmptyString (option, value) {
+    if (!_.isString(value) || !(value.length > 0)) {
+      throw new Error(`${option} must be a non-empty string`)
+    }
+  }
+
+  isNumber (option, value, lower, upper) {
+    if (upper == null) { upper = null }
     if (_.isNaN(value) || !_.isNumber(value)) {
-      throw new Error(`${option}(${value}) is not a number`);
+      throw new Error(`${option}(${value}) is not a number`)
     }
 
     if (upper) {
       if (!(lower <= value && value <= upper)) {
-        throw new Error(`${lower} <= ${option}(${value}) <= ${upper}`);
+        throw new Error(`${lower} <= ${option}(${value}) <= ${upper}`)
       }
-    } else {
-      if (!(lower <= value)) {
-        throw new Error(`${lower} <= ${option}(${value})`);
-      }
+    } else if (!(lower <= value)) {
+      throw new Error(`${lower} <= ${option}(${value})`)
     }
   }
 
-  isNumberExclusive(option, value, lower, upper) {
-    if (upper == null) { upper = null; }
+  isNumberExclusive (option, value, lower, upper) {
+    if (upper == null) { upper = null }
     if (_.isNaN(value) || !_.isNumber(value)) {
-      throw new Error(`${option}(${value}) is not a number`);
+      throw new Error(`${option}(${value}) is not a number`)
     }
 
     if (upper) {
       if (!(lower < value && value < upper)) {
-        throw new Error(`${lower} < ${option}(${value}) < ${upper}`);
+        throw new Error(`${lower} < ${option}(${value}) < ${upper}`)
       }
-    } else {
-      if (!(lower < value)) {
-        throw new Error(`${lower} < ${option}(${value})`);
-      }
+    } else if (!(lower < value)) {
+      throw new Error(`${lower} < ${option}(${value})`)
     }
   }
 
-  isBoolean(option, value) {
+  isBoolean (option, value) {
     if (!_.isBoolean(value)) {
-      throw new Error(`${option} must be either true or false`);
+      throw new Error(`${option} must be either true or false`)
     }
   }
 
-  isBareAddresses(option, value) {
+  isBareAddresses (option, value) {
     if (!_.isArray(value) || !_.every(value, isBareAddress)) {
-      throw new Error(`${option} must be a list of addresses 'host:port'`);
+      throw new Error(`${option} must be a list of addresses 'host:port'`)
     }
   }
 
-  isLookupdHTTPAddresses(option, value) {
-    let isAddr = function(addr) {
-      if (addr.indexOf('://') === -1) { return isBareAddress(addr); }
-      let parsedUrl = url.parse(addr);
-      return ['http:', 'https:'].includes(parsedUrl.protocol) && !!parsedUrl.host;
-    };
+  isLookupdHTTPAddresses (option, value) {
+    const isAddr = function (addr) {
+      if (addr.indexOf('://') === -1) { return isBareAddress(addr) }
+      const parsedUrl = url.parse(addr)
+      return ['http:', 'https:'].includes(parsedUrl.protocol) && !!parsedUrl.host
+    }
 
     if (!_.isArray(value) || !_.every(value, isAddr)) {
       throw new Error(`${option} must be a list of addresses 'host:port' or \
-HTTP/HTTPS URI`
-      );
+HTTP/HTTPS URI`,
+      )
     }
   }
 
-  conditions() {
+  conditions () {
     return {
       authSecret: [this.isNonEmptyString],
       clientId: [this.isNonEmptyString],
@@ -118,45 +114,44 @@ HTTP/HTTPS URI`
       snappy: [this.isBoolean],
       tls: [this.isBoolean],
       tlsVerification: [this.isBoolean]
-    };
+    }
   }
 
-  validateOption(option, value) {
-    let [fn, ...args] = Array.from(this.conditions()[option]);
-    return fn(option, value, ...args);
+  validateOption (option, value) {
+    const [fn, ...args] = Array.from(this.conditions()[option])
+    return fn(option, value, ...args)
   }
 
-  validate() {
-    for (let option in this) {
+  validate () {
+    for (const option in this) {
       // dont validate our methods
-      let value = this[option];
-      if (_.isFunction(value)) { continue; }
+      const value = this[option]
+      if (_.isFunction(value)) { continue }
 
       // Skip options that default to null
       if (_.isNull(value) && (this.constructor.DEFAULTS[option] === null)) {
-        continue;
+        continue
       }
 
       // Disabled via -1
-      let keys = ['outputBufferSize', 'outputBufferTimeout'];
+      const keys = ['outputBufferSize', 'outputBufferTimeout']
       if (Array.from(keys).includes(option) && (value === -1)) {
-        continue;
+        continue
       }
 
-      this.validateOption(option, value);
+      this.validateOption(option, value)
     }
 
     // Mutually exclusive options
     if (this.snappy && this.deflate) {
-      throw new Error('Cannot use both deflate and snappy');
+      throw new Error('Cannot use both deflate and snappy')
     }
   }
 }
-ConnectionConfig.initClass();
-
+ConnectionConfig.initClass()
 
 class ReaderConfig extends ConnectionConfig {
-  static initClass() {
+  static initClass () {
     this.DEFAULTS = _.extend({}, ConnectionConfig.DEFAULTS, {
       lookupdHTTPAddresses: [],
       lookupdPollInterval: 60,
@@ -165,11 +160,11 @@ class ReaderConfig extends ConnectionConfig {
       nsqdTCPAddresses: [],
       maxAttempts: 0,
       maxBackoffDuration: 128
-    }
-    );
+    },
+    )
   }
 
-  conditions() {
+  conditions () {
     return _.extend({}, super.conditions(), {
       lookupdHTTPAddresses: [this.isLookupdHTTPAddresses],
       lookupdPollInterval: [this.isNumber, 1],
@@ -178,31 +173,29 @@ class ReaderConfig extends ConnectionConfig {
       nsqdTCPAddresses: [this.isBareAddresses],
       maxAttempts: [this.isNumber, 0],
       maxBackoffDuration: [this.isNumber, 0]
-    });
+    })
   }
 
-  validate() {
-    let addresses = ['nsqdTCPAddresses', 'lookupdHTTPAddresses'];
+  validate () {
+    const addresses = ['nsqdTCPAddresses', 'lookupdHTTPAddresses']
 
     // Either a string or list of strings can be provided. Ensure list of
     // strings going forward.
-    for (let key of Array.from(addresses)) {
-      if (_.isString(this[key])) { this[key] = [this[key]]; }
+    for (const key of Array.from(addresses)) {
+      if (_.isString(this[key])) { this[key] = [this[key]] }
     }
 
-    super.validate(...arguments);
+    super.validate(...arguments)
 
-    let pass = _.chain(addresses)
-      .map(key => {
-        return this[key].length;
-      }).any(_.identity)
-      .value();
+    const pass = _.chain(addresses)
+      .map(key => this[key].length).any(_.identity)
+      .value()
 
     if (!pass) {
-      throw new Error(`Need to provide either ${addresses.join(' or ')}`);
+      throw new Error(`Need to provide either ${addresses.join(' or ')}`)
     }
   }
 }
-ReaderConfig.initClass();
+ReaderConfig.initClass()
 
-export { ConnectionConfig, ReaderConfig };
+export { ConnectionConfig, ReaderConfig }

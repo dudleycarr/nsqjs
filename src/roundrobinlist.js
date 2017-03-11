@@ -11,33 +11,32 @@ Usage:
   lst.next 2                      # Retunrs [3, 5]
 */
 class RoundRobinList {
-
-  constructor(lst) {
-    this.lst = lst.slice();
-    this.index = 0;
+  constructor (lst) {
+    this.lst = lst.slice()
+    this.index = 0
   }
 
-  length() {
-    return this.lst.length;
+  length () {
+    return this.lst.length
   }
 
-  add(item) {
-    return this.lst.push(item);
+  add (item) {
+    return this.lst.push(item)
   }
 
-  remove(item) {
-    let itemIndex = this.lst.indexOf(item);
-    if (itemIndex === -1) { return; }
-    if (this.index > itemIndex) { this.index -= 1; }
-    return this.lst.splice(itemIndex, 1);
+  remove (item) {
+    const itemIndex = this.lst.indexOf(item)
+    if (itemIndex === -1) { return }
+    if (this.index > itemIndex) { this.index -= 1 }
+    return this.lst.splice(itemIndex, 1)
   }
 
-  next(count) {
-    if (count == null) { count = 1; }
-    let { index } = this;
-    this.index = (this.index + count) % this.lst.length;
-    return this.lst.slice(index, index + count);
+  next (count) {
+    if (count == null) { count = 1 }
+    const { index } = this
+    this.index = (this.index + count) % this.lst.length
+    return this.lst.slice(index, index + count)
   }
 }
 
-export default RoundRobinList;
+export default RoundRobinList

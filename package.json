@@ -31,7 +31,14 @@
     }
   ],
   "scripts": {
+    "build": "babel src -d build",
+    "lint": "standard --fix --verbose | snazzy",
     "test": "mocha --compilers js:babel-core/register"
+  },
+  "standard": {
+    "env": {
+      "mocha": true
+    }
   },
   "main": "lib/nsq",
   "engines": {
@@ -39,12 +46,15 @@
   },
   "devDependencies": {
     "babel-core": "^6.23.1",
+    "babel-eslint": "^7.1.1",
     "babel-preset-es2015": "^6.22.0",
     "babel-preset-stage-0": "^6.22.0",
     "mocha": "^3.2",
     "nock": "~0.27.1",
     "should": "^11.1.2",
     "sinon": "~1.7.3",
+    "snazzy": "^6.0.0",
+    "standard": "^9.0.1",
     "temp": "^0.8.0"
   },
   "dependencies": {
