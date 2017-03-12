@@ -1,7 +1,6 @@
-import should from 'should'
-
-import FrameBuffer from '../src/framebuffer'
 import * as wire from '../src/wire'
+import FrameBuffer from '../src/framebuffer'
+import should from 'should'
 
 const createFrame = function (frameId, payload) {
   const frame = new Buffer(4 + 4 + payload.length)
@@ -19,7 +18,7 @@ describe('FrameBuffer', () => {
 
     const [frameId, payload] = Array.from(frameBuffer.nextFrame())
     frameId.should.eql(wire.FRAME_TYPE_RESPONSE)
-    return payload.toString().should.eql('OK')
+    payload.toString().should.eql('OK')
   })
 
   it('should parse two full frames', () => {
@@ -39,7 +38,7 @@ describe('FrameBuffer', () => {
 
     [frameId, data] = Array.from(frames.shift())
     frameId.should.eql(wire.FRAME_TYPE_ERROR)
-    return data.toString().should.eql(JSON.stringify({ shortname: 'localhost' }))
+    data.toString().should.eql(JSON.stringify({ shortname: 'localhost' }))
   })
 
   it('should parse frame delivered in partials', () => {
@@ -56,7 +55,7 @@ describe('FrameBuffer', () => {
 
     // Got the whole first frame.
     frameBuffer.consume(data.slice(8))
-    return should.exist(frameBuffer.nextFrame())
+    should.exist(frameBuffer.nextFrame())
   })
 
   it('should parse multiple frames delivered in partials', () => {
@@ -79,7 +78,7 @@ describe('FrameBuffer', () => {
 
     // Got the 2nd frame.
     frameBuffer.consume(data.slice(12))
-    return should.exist(frameBuffer.nextFrame())
+    should.exist(frameBuffer.nextFrame())
   })
 
   return it('empty internal buffer when all frames are consumed', () => {
@@ -87,8 +86,8 @@ describe('FrameBuffer', () => {
     const data = createFrame(wire.FRAME_TYPE_RESPONSE, 'OK')
 
     frameBuffer.consume(data)
-    while (frameBuffer.nextFrame()) { 'foo' }
+    while (frameBuffer.nextFrame()) {}
 
-    return should.not.exist(frameBuffer.buffer)
+    should.not.exist(frameBuffer.buffer)
   })
 })

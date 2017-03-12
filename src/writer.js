@@ -106,28 +106,26 @@ class Writer extends EventEmitter {
 
     // Call publish again once the Writer is ready.
     if (!this.ready) {
+      const remove = () => {
+        this.removeListener(Writer.READY, ready)
+        this.removeListener(Writer.ERROR, failed)
+        this.removeListener(Writer.CLOSED, failed)
+      }
+
       const ready = () => {
         remove()
-        return this.publish(topic, msgs, callback)
+        this.publish(topic, msgs, callback)
       }
 
       const failed = function (err) {
         if (!err) { err = new Error('Connection closed!') }
         remove()
-        return callback(err)
-      }
-
-      var remove = () => {
-        this.removeListener(Writer.READY, ready)
-        this.removeListener(Writer.ERROR, failed)
-        return this.removeListener(Writer.CLOSED, failed)
+        callback(err)
       }
 
       this.on(Writer.READY, ready)
       this.on(Writer.ERROR, failed)
       this.on(Writer.CLOSED, failed)
-
-      return
     }
 
     if (!_.isArray(msgs)) { msgs = [msgs] }

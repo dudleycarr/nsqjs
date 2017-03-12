@@ -1,13 +1,10 @@
-import _ from 'underscore'
 import Debug from 'debug'
-import request from 'request'
-import { EventEmitter } from 'events'
-
-import { ReaderConfig } from './config'
-import { NSQDConnection } from './nsqdconnection'
-import { ReaderRdy } from './readerrdy'
 import RoundRobinList from './roundrobinlist'
 import lookup from './lookupd'
+import { EventEmitter } from 'events'
+import { NSQDConnection } from './nsqdconnection'
+import { ReaderConfig } from './config'
+import { ReaderRdy } from './readerrdy'
 
 class Reader extends EventEmitter {
   static initClass () {
@@ -54,33 +51,36 @@ class Reader extends EventEmitter {
     if (this.config.nsqdTCPAddresses.length) {
       const directConnect = () => {
         // Don't establish new connections while the Reader is paused.
-        if (this.isPaused()) { return }
+        if (this.isPaused()) return
 
         if (this.connectionIds.length < this.config.nsqdTCPAddresses.length) {
-          let address,
-            port,
-            ref
-          return Array.from(this.config.nsqdTCPAddresses).map(addr =>
-            (([address, port] = Array.from(ref = addr.split(':')), ref),
-            this.connectToNSQD(address, Number(port))))
+          return this.config.nsqdTCPAddresses.forEach(addr => {
+            const [address, port] = addr.split(':')
+            this.connectToNSQD(address, Number(port))
+          })
         }
       }
 
-      delayedStart = () => this.connectIntervalId = setInterval(directConnect.bind(this), interval)
+      delayedStart = () => {
+        this.connectIntervalId = setInterval(directConnect.bind(this), interval)
+      }
 
       // Connect immediately.
       directConnect()
-      // Start interval for connecting after delay.
-      return setTimeout(delayedStart, delay)
 
-    // Connect to nsqds discovered via lookupd
+      // Start interval for connecting after delay.
+      setTimeout(delayedStart, delay)
     }
-    delayedStart = () => this.connectIntervalId = setInterval(this.queryLookupd.bind(this), interval)
+
+    delayedStart = () => {
+      this.connectIntervalId = setInterval(this.queryLookupd.bind(this), interval)
+    }
 
       // Connect immediately.
     this.queryLookupd()
-      // Start interval for querying lookupd after delay.
-    return setTimeout(delayedStart, delay)
+
+    // Start interval for querying lookupd after delay.
+    setTimeout(delayedStart, delay)
   }
 
   // Caution: in-flight messages will not get a chance to finish.

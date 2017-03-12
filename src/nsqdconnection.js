@@ -1,20 +1,17 @@
+import * as wire from './wire'
 import Debug from 'debug'
+import FrameBuffer from './framebuffer'
+import Message from './message'
+import NodeState from 'node-state'
+import _ from 'underscore'
 import net from 'net'
 import os from 'os'
 import tls from 'tls'
+import version from './version'
 import zlib from 'zlib'
-import fs from 'fs'
+import { ConnectionConfig } from './config'
 import { EventEmitter } from 'events'
 import { SnappyStream, UnsnappyStream } from 'snappystream'
-
-import _ from 'underscore'
-import NodeState from 'node-state'
-
-import { ConnectionConfig } from './config'
-import FrameBuffer from './framebuffer'
-import Message from './message'
-import * as wire from './wire'
-import version from './version'
 
 /*
 NSQDConnection is a reader connection to a nsqd instance. It manages all
@@ -113,11 +110,15 @@ class NSQDConnection extends EventEmitter {
       this.conn = net.connect({ port: this.nsqdPort, host: this.nsqdHost }, () => {
         this.statemachine.raise('connected')
         this.emit(NSQDConnection.CONNECTED)
+
         // Once there's a socket connection, give it 5 seconds to receive an
         // identify response.
-        return this.identifyTimeoutId = setTimeout(this.identifyTimeout.bind(this), 5000)
-      },
-      )
+        this.identifyTimeoutId = setTimeout(() => {
+          this.identifyTimeout()
+        }, 500)
+
+        return this.identifyTimeoutId
+      })
 
       return this.registerStreamListeners(this.conn)
     },
@@ -130,7 +131,7 @@ class NSQDConnection extends EventEmitter {
       this.statemachine.goto('CLOSED')
       return this.emit('connection_error', err)
     })
-    return conn.on('close', err => this.statemachine.raise('close'))
+    return conn.on('close', () => this.statemachine.raise('close'))
   }
 
   startTLS (callback) {
@@ -189,9 +190,10 @@ class NSQDConnection extends EventEmitter {
     this.frameBuffer.consume(data)
 
     return (() => {
-      let frame
+      let frame = this.frameBuffer.nextFrame()
       const result = []
-      while (frame = this.frameBuffer.nextFrame()) {
+
+      while (frame) {
         let item
         const [frameId, payload] = Array.from(frame)
         switch (frameId) {
@@ -206,7 +208,9 @@ class NSQDConnection extends EventEmitter {
             item = this.statemachine.raise('consumeMessage', this.createMessage(payload))
             break
         }
+
         result.push(item)
+        frame = this.frameBuffer.nextFrame()
       }
       return result
     })()
@@ -250,7 +254,7 @@ class NSQDConnection extends EventEmitter {
 
   clearIdentifyTimeout () {
     clearTimeout(this.identifyTimeoutId)
-    return this.identifyTimeoutId = null
+    this.identifyTimeoutId = null
   }
 
   // Create a Message object from the message payload received from nsqd.
@@ -274,11 +278,9 @@ touch_count=${msg.touchCount}]`,
         this.debug(`Requeued message [${msg.id}]`)
         return this.emit(NSQDConnection.REQUEUED)
       }
-    },
-    )
+    })
 
-    msg.on(Message.BACKOFF, () => this.emit(NSQDConnection.BACKOFF),
-    )
+    msg.on(Message.BACKOFF, () => this.emit(NSQDConnection.BACKOFF))
 
     return msg
   }

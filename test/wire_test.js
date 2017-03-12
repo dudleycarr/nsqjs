@@ -3,14 +3,13 @@ import * as wire from '../src/wire'
 
 const matchCommand = function (commandFn, args, expected) {
   const commandOut = commandFn(...args)
-  return commandOut.toString().should.eql(expected)
+  should.equal(commandOut.toString(), expected)
 }
 
 describe('nsq wire', () => {
-  it('should construct an identity message', () =>
-    matchCommand(wire.identify, [{ short_id: 1, long_id: 2 }],
-      'IDENTIFY\n\u0000\u0000\u0000\u001a{"short_id":1,"long_id":2}'),
-  )
+  it('should construct an identity message', () => {
+    matchCommand(wire.identify, [{ short_id: 1, long_id: 2 }], 'IDENTIFY\n\u0000\u0000\u0000\u001a{"short_id":1,"long_id":2}')
+  })
 
   it('should construct an identity message with unicode', () =>
     matchCommand(wire.identify,
@@ -76,7 +75,7 @@ describe('nsq wire', () => {
     ]
     const msgParts = wire.unpackMessage(new Buffer(msgPayload.join(''), 'hex'))
 
-    const [id, timestamp, attempts, body] = Array.from(msgParts)
+    const [id, timestamp, attempts] = Array.from(msgParts)
     timestamp.toString(10).should.eql('1381679323234827642')
     id.should.eql('055c5be1ce433027')
     return attempts.should.eql(1)

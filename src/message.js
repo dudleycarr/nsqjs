@@ -1,4 +1,3 @@
-import _ from 'underscore'
 import * as wire from './wire'
 import { EventEmitter } from 'events'
 
@@ -43,7 +42,7 @@ class Message extends EventEmitter {
       this.timedOut = !soft || !hard
       if (!this.timedOut) {
         clearTimeout(this.trackTimeoutId)
-        return this.trackTimeoutId = setTimeout(trackTimeout, Math.min(soft, hard))
+        this.trackTimeoutId = setTimeout(trackTimeout, Math.min(soft, hard))
       }
     })()
   }

@@ -19,28 +19,12 @@ const lookupdRequest = function (url, callback) {
     timeout: 2000
   }
 
-  return request(options, (err, response, data) => {
-    let producers,
-      status_code
-    if (err) {
-      callback(null, [])
-      return
+  request(options, (err, response, data = {}) => {
+    if (err || data.status_code !== 200) {
+      return callback(err, [])
     }
 
-    // Unpack JSON response
-    try {
-      ({ status_code, data: { producers } } = data)
-    } catch (error) {
-      callback(null, [])
-      return
-    }
-
-    if (status_code !== 200) {
-      callback(null, [])
-      return
-    }
-
-    return callback(null, producers)
+    callback(null, data.data.producers)
   })
 }
 

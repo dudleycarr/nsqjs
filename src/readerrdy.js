@@ -1,11 +1,10 @@
-import _ from 'underscore'
-import Debug from 'debug'
-import { EventEmitter } from 'events'
-
 import BackoffTimer from './backofftimer'
+import Debug from 'debug'
 import NodeState from 'node-state'
-import { NSQDConnection } from './nsqdconnection'
 import RoundRobinList from './roundrobinlist'
+import _ from 'underscore'
+import { EventEmitter } from 'events'
+import { NSQDConnection } from './nsqdconnection'
 
 /*
 Maintains the RDY and in-flight counts for a nsqd connection. ConnectionRdy
@@ -46,21 +45,16 @@ class ConnectionRdy extends EventEmitter {
     this.availableRdy = 0    // The RDY count remaining on the server for this conn.
     this.statemachine = new ConnectionRdyState(this)
 
-    this.conn.on(NSQDConnection.ERROR, err => this.log(err),
-    )
+    this.conn.on(NSQDConnection.ERROR, err => this.log(err))
     this.conn.on(NSQDConnection.MESSAGE, () => {
       if (this.idleId != null) { clearTimeout(this.idleId) }
       this.idleId = null
       this.inFlight += 1
-      return this.availableRdy -= 1
-    },
-    )
-    this.conn.on(NSQDConnection.FINISHED, () => this.inFlight -= 1,
-    )
-    this.conn.on(NSQDConnection.REQUEUED, () => this.inFlight -= 1,
-    )
-    this.conn.on(NSQDConnection.READY, () => this.start(),
-    )
+      this.availableRdy -= 1
+    })
+    this.conn.on(NSQDConnection.FINISHED, () => this.inFlight--)
+    this.conn.on(NSQDConnection.REQUEUED, () => this.inFlight--)
+    this.conn.on(NSQDConnection.READY, () => this.start())
   }
 
   close () {
@@ -99,12 +93,10 @@ class ConnectionRdy extends EventEmitter {
 
   setRdy (rdyCount) {
     this.log(`RDY ${rdyCount}`)
-    if ((rdyCount < 0) || (rdyCount > this.maxConnRdy)) {
-      return
-    }
+    if ((rdyCount < 0) || (rdyCount > this.maxConnRdy)) return
 
     this.conn.setRdy(rdyCount)
-    return this.availableRdy = this.lastRdySent = rdyCount
+    this.availableRdy = this.lastRdySent = rdyCount
   }
 
   log (message) {
@@ -130,7 +122,7 @@ class ConnectionRdyState extends NodeState {
           return this.connRdy.setRdy(0)
         },
         bump () {
-          if (this.connRdy.maxConnRdy > 0) { return this.goto('ONE') }
+          if (this.connRdy.maxConnRdy > 0) return this.goto('ONE')
         },
         backoff () {}, // No-op
         adjustMax () {}
@@ -260,7 +252,7 @@ class ReaderRdy extends NodeState {
 
       PAUSE: {
         Enter () {
-          return Array.from(this.connections).map(conn => conn.backoff())
+          return this.connections.map(conn => conn.backoff())
         },
         backoff () {},        // No-op
         success () {},        // No-op
@@ -354,8 +346,7 @@ class ReaderRdy extends NodeState {
   - lowRdyTimeout      : Time (secs) to rebalance RDY count among connections
                            during low RDY conditions.
   */
-  constructor (maxInFlight, maxBackoffDuration, readerId,
-    lowRdyTimeout) {
+  constructor (maxInFlight, maxBackoffDuration, readerId, lowRdyTimeout) {
     if (lowRdyTimeout == null) { lowRdyTimeout = 1.5 }
 
     super({
@@ -381,7 +372,7 @@ class ReaderRdy extends NodeState {
   close () {
     clearTimeout(this.backoffId)
     clearTimeout(this.balanceId)
-    return Array.from(this.connections).map(conn => conn.close())
+    return this.connections.map(conn => conn.close())
   }
 
   pause () {
@@ -442,12 +433,10 @@ class ReaderRdy extends NodeState {
 
     conn.on(NSQDConnection.CLOSED, () => {
       this.removeConnection(connectionRdy)
-      return this.balance()
-    },
-    )
+      this.balance()
+    })
 
-    conn.on(NSQDConnection.FINISHED, () => this.raise('success', connectionRdy),
-    )
+    conn.on(NSQDConnection.FINISHED, () => this.raise('success', connectionRdy))
 
     conn.on(NSQDConnection.REQUEUED, () => {
       // Since there isn't a guaranteed order for the REQUEUED and BACKOFF
@@ -455,13 +444,11 @@ class ReaderRdy extends NodeState {
       if ((this.current_state_name !== 'BACKOFF') && !this.isPaused()) {
         return connectionRdy.bump()
       }
-    },
-    )
+    })
 
-    conn.on(NSQDConnection.BACKOFF, () => this.raise('backoff'),
-    )
+    conn.on(NSQDConnection.BACKOFF, () => this.raise('backoff'))
 
-    return connectionRdy.on(ConnectionRdy.READY, () => {
+    connectionRdy.on(ConnectionRdy.READY, () => {
       this.connections.push(connectionRdy)
       this.roundRobinConnections.add(connectionRdy)
 
@@ -471,8 +458,7 @@ class ReaderRdy extends NodeState {
       } else if (['TRY_ONE', 'MAX'].includes(this.current_state_name)) {
         return connectionRdy.bump()
       }
-    },
-    )
+    })
   }
 
   removeConnection (conn) {
@@ -485,8 +471,7 @@ class ReaderRdy extends NodeState {
   }
 
   bump () {
-    return Array.from(this.connections).map(conn =>
-      conn.bump())
+    return Array.from(this.connections).map(conn => conn.bump())
   }
 
   try () {
@@ -494,8 +479,11 @@ class ReaderRdy extends NodeState {
   }
 
   backoff () {
-    for (const conn of Array.from(this.connections)) { conn.backoff() }
-    if (this.backoffId) { clearTimeout(this.backoffId) }
+    this.connections.forEach(conn => conn.backoff())
+
+    if (this.backoffId) {
+      clearTimeout(this.backoffId)
+    }
 
     const onTimeout = () => {
       this.log('Backoff done')
@@ -503,7 +491,7 @@ class ReaderRdy extends NodeState {
     }
 
     // Convert from the BigNumber representation to Number.
-    const delay = new Number(this.backoffTimer.getInterval().valueOf()) * 1000
+    const delay = Number(this.backoffTimer.getInterval().valueOf()) * 1000
     this.backoffId = setTimeout(onTimeout, delay)
     return this.log(`Backoff for ${delay}`)
   }
@@ -550,37 +538,38 @@ class ReaderRdy extends NodeState {
     if (perConnectionMax === 0) {
       // Backoff on all connections. In-flight messages from connections
       // will still be processed.
-      for (var c of Array.from(this.connections)) {
-        c.backoff()
-      }
+      this.connections.forEach(conn => conn.backoff())
 
       // Distribute available RDY count to the connections next in line.
-      for (c of Array.from(this.roundRobinConnections.next(max - this.inFlight()))) {
-        c.setConnectionRdyMax(1)
-        c.bump()
-      }
+      this.roundRobinConnections.next(max - this.inFlight()).forEach(conn => {
+        conn.setConnectionRdyMax(1)
+        conn.bump()
+      })
 
       // Rebalance periodically. Needed when no messages are received.
-      return this.balanceId = setTimeout(this.balance.bind(this), this.lowRdyTimeout * 1000)
-    }
-    let rdyRemainder = this.maxInFlight % this.connectionsLength
-    return (() => {
-      const result = []
-      for (let i = 0, end = this.connections.length, asc = end >= 0; asc ? i < end : i > end; asc ? i++ : i--) {
-        let connMax = perConnectionMax
+      this.balanceId = setTimeout(() => {
+        this.balance()
+      }, this.lowRdyTimeout * 1000)
+    } else {
+      let rdyRemainder = this.maxInFlight % this.connectionsLength
+      return (() => {
+        const result = []
+        for (let i = 0, end = this.connections.length, asc = end >= 0; asc ? i < end : i > end; asc ? i++ : i--) {
+          let connMax = perConnectionMax
 
-          // Distribute the remainder RDY count evenly between the first
-          // n connections.
-        if (rdyRemainder > 0) {
-          connMax += 1
-          rdyRemainder -= 1
+            // Distribute the remainder RDY count evenly between the first
+            // n connections.
+          if (rdyRemainder > 0) {
+            connMax += 1
+            rdyRemainder -= 1
+          }
+
+          this.connections[i].setConnectionRdyMax(connMax)
+          result.push(this.connections[i].bump())
         }
-
-        this.connections[i].setConnectionRdyMax(connMax)
-        result.push(this.connections[i].bump())
-      }
-      return result
-    })()
+        return result
+      })()
+    }
   }
 }
 ReaderRdy.initClass()

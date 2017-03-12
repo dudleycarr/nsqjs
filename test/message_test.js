@@ -12,14 +12,13 @@ describe('Message', () =>
       const msg = createMessage('body', 90, 50, 100)
 
       const firstFinish = () => msg.finish()
-
-      const secondFinish = function () {
+      const secondFinish = () => {
         msg.hasResponded.should.eql(true)
-        return done()
+        done()
       }
 
       setTimeout(firstFinish, 10)
-      return setTimeout(secondFinish, 20)
+      setTimeout(secondFinish, 20)
     })
 
     it('should not allow requeue after finish', (done) => {
@@ -29,17 +28,16 @@ describe('Message', () =>
       msg.on(Message.RESPOND, responseSpy)
 
       const firstFinish = () => msg.finish()
-
       const secondRequeue = () => msg.requeue()
 
-      const check = function () {
+      const check = () => {
         responseSpy.calledOnce.should.be.true()
-        return done()
+        done()
       }
 
       setTimeout(firstFinish, 10)
       setTimeout(secondRequeue, 20)
-      return setTimeout(check, 20)
+      setTimeout(check, 20)
     })
 
     it('should allow touch and then finish post first timeout', (done) => {

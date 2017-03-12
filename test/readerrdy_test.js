@@ -1,10 +1,9 @@
+import Message from '../src/message'
 import _ from 'underscore'
 import should from 'should'
 import sinon from 'sinon'
-
 import { EventEmitter } from 'events'
 import { NSQDConnection } from '../src/nsqdconnection'
-import Message from '../src/message'
 import { ReaderRdy, ConnectionRdy } from '../src/readerrdy'
 
 class StubNSQDConnection extends EventEmitter {
@@ -17,8 +16,7 @@ class StubNSQDConnection extends EventEmitter {
     this.channel = channel
     this.requeueDelay = requeueDelay
     this.heartbeatInterval = heartbeatInterval
-    this.conn =
-      { localPort: 1 }
+    this.conn = { localPort: 1 }
     this.maxRdyCount = 2500
     this.msgTimeout = 60 * 1000
     this.maxMsgTimeout = 15 * 60 * 1000
@@ -30,28 +28,33 @@ class StubNSQDConnection extends EventEmitter {
   }
 
   connect () {}
-    // Empty
+
+  // Empty
   destroy () {}
-    // Empty
+
+  // Empty
   setRdy (rdyCount) {
-    return this.rdyCounts.push(rdyCount)
+    this.rdyCounts.push(rdyCount)
   }
 
   createMessage (msgId, msgTimestamp, attempts, msgBody) {
     const msgComponents = [msgId, msgTimestamp, attempts, msgBody]
-    const msgArgs = msgComponents.concat([this.requeueDelay, this.msgTimeout, this.maxMsgTimeout])
+    const msgArgs = msgComponents.concat([
+      this.requeueDelay,
+      this.msgTimeout,
+      this.maxMsgTimeout
+    ])
     const msg = new Message(...msgArgs)
 
     msg.on(Message.RESPOND, (responseType, wireData) => {
       if (responseType === Message.FINISH) {
-        return this.emit(NSQDConnection.FINISHED)
+        this.emit(NSQDConnection.FINISHED)
       } else if (responseType === Message.REQUEUE) {
-        return this.emit(NSQDConnection.REQUEUED)
+        this.emit(NSQDConnection.REQUEUED)
       }
-    },
-    )
-    msg.on(Message.BACKOFF, () => this.emit(NSQDConnection.BACKOFF),
-    )
+    })
+
+    msg.on(Message.BACKOFF, () => this.emit(NSQDConnection.BACKOFF))
 
     this.emit(NSQDConnection.MESSAGE, msg)
     return msg
@@ -59,7 +62,8 @@ class StubNSQDConnection extends EventEmitter {
 }
 
 const createNSQDConnection = function (id) {
-  const conn = new StubNSQDConnection(`host${id}`, '4150', 'test', 'default', 60, 30)
+  const conn = new StubNSQDConnection(`host${id}`, '4150', 'test', 'default',
+    60, 30)
   conn.conn.localPort = id
   return conn
 }
@@ -71,7 +75,7 @@ describe('ConnectionRdy', () => {
     conn = createNSQDConnection(1)
     spy = sinon.spy(conn, 'setRdy')
     cRdy = new ConnectionRdy(conn)
-    return cRdy.start()
+    cRdy.start()
   })
 
   it('should register listeners on a connection', () => {
@@ -82,25 +86,25 @@ describe('ConnectionRdy', () => {
     mock.expects('on').withArgs(NSQDConnection.MESSAGE)
     mock.expects('on').withArgs(NSQDConnection.REQUEUED)
     mock.expects('on').withArgs(NSQDConnection.READY)
-
     cRdy = new ConnectionRdy(conn)
-    return mock.verify()
+    mock.verify()
   })
 
-  it('should have a connection RDY max of zero', () => cRdy.maxConnRdy.should.eql(0))
+  it('should have a connection RDY max of zero', () => {
+    should.equal(cRdy.maxConnRdy, 0)
+  })
 
   it('should not increase RDY when connection RDY max has not been set', () => {
     // This bump should be a no-op
     cRdy.bump()
-    cRdy.maxConnRdy.should.eql(0)
-    return spy.called.should.not.be.ok
+    should.equal(cRdy.maxConnRdy, 0)
+    should.equal(spy.called, false)
   })
 
   it('should not allow RDY counts to be negative', () => {
     cRdy.setConnectionRdyMax(10)
     cRdy.setRdy(-1)
-
-    return spy.notCalled.should.be.ok()
+    should.equal(spy.notCalled, true)
   })
 
   it('should not allow RDY counts to exceed the connection max', () => {
@@ -108,78 +112,65 @@ describe('ConnectionRdy', () => {
     cRdy.setRdy(9)
     cRdy.setRdy(10)
     cRdy.setRdy(20)
-
-    spy.calledTwice.should.be.ok()
-    spy.firstCall.args[0].should.eql(9)
-    return spy.secondCall.args[0].should.eql(10)
+    should.equal(spy.calledTwice, true)
+    should.equal(spy.firstCall.args[0], 9)
+    should.equal(spy.secondCall.args[0], 10)
   })
 
   it('should set RDY to max after initial bump', () => {
     cRdy.setConnectionRdyMax(3)
     cRdy.bump()
-
-    return spy.firstCall.args[0].should.eql(3)
+    should.equal(spy.firstCall.args[0], 3)
   })
 
   it('should keep RDY at max after 1+ bumps', () => {
-    let i
     cRdy.setConnectionRdyMax(3)
-    for (i = 1; i <= 3; i++) {
+    for (let i = 1; i <= 3; i++) {
       cRdy.bump()
     }
 
     cRdy.maxConnRdy.should.eql(3)
-    return (() => {
-      const result = []
-      for (i = 0, end = spy.callCount, asc = end >= 0; asc ? i < end : i > end; asc ? i++ : i--) {
-        var asc,
-          end
-        result.push(should.ok(spy.getCall(i).args[0] <= 3))
-      }
-      return result
-    })()
+    for (let i = 0; i < spy.callCount; i++) {
+      should.ok(spy.getCall(i).args[0] <= 3)
+    }
   })
 
   it('should set RDY to zero from after first bump and then backoff', () => {
     cRdy.setConnectionRdyMax(3)
     cRdy.bump()
     cRdy.backoff()
-
-    return spy.lastCall.args[0].should.eql(0)
+    should.equal(spy.lastCall.args[0], 0)
   })
 
   it('should set RDY to zero after 1+ bumps and then a backoff', () => {
     cRdy.setConnectionRdyMax(3)
     cRdy.bump()
     cRdy.backoff()
-
-    return spy.lastCall.args[0].should.eql(0)
+    should.equal(spy.lastCall.args[0], 0)
   })
 
   it('should raise RDY when new connection RDY max is lower', () => {
     cRdy.setConnectionRdyMax(3)
     cRdy.bump()
     cRdy.setConnectionRdyMax(5)
-
-    cRdy.maxConnRdy.should.eql(5)
-    return spy.lastCall.args[0].should.eql(5)
+    should.equal(cRdy.maxConnRdy, 5)
+    should.equal(spy.lastCall.args[0], 5)
   })
 
   it('should reduce RDY when new connection RDY max is higher', () => {
     cRdy.setConnectionRdyMax(3)
     cRdy.bump()
     cRdy.setConnectionRdyMax(2)
-
-    cRdy.maxConnRdy.should.eql(2)
-    return spy.lastCall.args[0].should.eql(2)
+    should.equal(cRdy.maxConnRdy, 2)
+    should.equal(spy.lastCall.args[0], 2)
   })
 
-  return it('should update RDY when 75% of previous RDY is consumed', () => {
+  it('should update RDY when 75% of previous RDY is consumed', () => {
     let msg
     cRdy.setConnectionRdyMax(10)
     cRdy.bump()
 
-    spy.firstCall.args[0].should.eql(10)
+    should.equal(spy.firstCall.args[0], 10)
 
     for (let i = 1; i <= 7; i++) {
       msg = conn.createMessage(`${i}`, Date.now(), 0, `Message ${i}`)
@@ -187,21 +178,23 @@ describe('ConnectionRdy', () => {
       cRdy.bump()
     }
 
-    spy.callCount.should.eql(1)
+    should.equal(spy.callCount, 1)
 
     msg = conn.createMessage('8', Date.now(), 0, 'Message 8')
     msg.finish()
     cRdy.bump()
 
-    spy.callCount.should.eql(2)
-    return spy.lastCall.args[0].should.eql(10)
+    should.equal(spy.callCount, 2)
+    should.equal(spy.lastCall.args[0], 10)
   })
 })
 
 describe('ReaderRdy', () => {
   let readerRdy = null
 
-  beforeEach(() => readerRdy = new ReaderRdy(1, 128, 'topic/channel'))
+  beforeEach(() => {
+    readerRdy = new ReaderRdy(1, 128, 'topic/channel')
+  })
 
   afterEach(() => readerRdy.close())
 
@@ -219,26 +212,24 @@ describe('ReaderRdy', () => {
     mock.expects('on').withArgs(NSQDConnection.BACKOFF)
 
     readerRdy.addConnection(conn)
-    return mock.verify()
+    mock.verify()
   })
 
   it('should be in the zero state until a new connection is READY', () => {
     const conn = createNSQDConnection(1)
-
     readerRdy.current_state_name.should.eql('ZERO')
     readerRdy.addConnection(conn)
     readerRdy.current_state_name.should.eql('ZERO')
     conn.emit(NSQDConnection.READY)
-    return readerRdy.current_state_name.should.eql('MAX')
+    readerRdy.current_state_name.should.eql('MAX')
   })
 
   it('should be in the zero state if it loses all connections', () => {
     const conn = createNSQDConnection(1)
-
     readerRdy.addConnection(conn)
     conn.emit(NSQDConnection.READY)
     conn.emit(NSQDConnection.CLOSED)
-    return readerRdy.current_state_name.should.eql('ZERO')
+    readerRdy.current_state_name.should.eql('ZERO')
   })
 
   it('should evenly distribute RDY count across connections', () => {
@@ -259,11 +250,11 @@ describe('ReaderRdy', () => {
     conn2.emit(NSQDConnection.READY)
 
     setRdyStub1.lastCall.args[0].should.eql(50)
-    return setRdyStub2.lastCall.args[0].should.eql(50)
+    setRdyStub2.lastCall.args[0].should.eql(50)
   })
 
   describe('low RDY conditions', () => {
-    const assertAlternatingRdyCounts = function (conn1, conn2) {
+    const assertAlternatingRdyCounts = (conn1, conn2) => {
       const minSize = Math.min(conn1.rdyCounts.length, conn2.rdyCounts.length)
 
       const zippedCounts = _.zip(conn1.rdyCounts.slice(-minSize),
@@ -272,44 +263,39 @@ describe('ReaderRdy', () => {
       // We expect the connection RDY counts to look like this:
       // conn 0: [1, 0, 1, 0]
       // conn 1: [0, 1, 0, 1]
-      return (() => {
-        const result = []
-        for (const [firstRdy, secondRdy] of Array.from(zippedCounts)) {
-          result.push(should.ok((firstRdy + secondRdy) === 1))
-        }
-        return result
-      })()
+      for (const [firstRdy, secondRdy] of Array.from(zippedCounts)) {
+        should.ok((firstRdy + secondRdy) === 1)
+      }
     }
 
-    it('should periodically redistribute RDY', (done) => {
+    it('should periodically redistribute RDY', done => {
       // Shortening the periodically `balance` calls to every 10ms.
       readerRdy = new ReaderRdy(1, 128, 'topic/channel', 0.01)
 
-      const connections = [1, 2].map(i =>
-        createNSQDConnection(i))
+      const connections = [1, 2].map(i => createNSQDConnection(i))
 
       // Add the connections and trigger the NSQDConnection event that tells
       // listeners that the connections are connected and ready for message flow.
-      for (const conn of Array.from(connections)) {
+      connections.forEach(conn => {
         readerRdy.addConnection(conn)
         conn.emit(NSQDConnection.READY)
-      }
+      })
 
       // Given the number of connections and the maxInFlight, we should be in low
       // RDY conditions.
-      readerRdy.isLowRdy().should.eql(true)
+      should.equal(readerRdy.isLowRdy(), true)
 
-      const checkRdyCounts = function () {
+      const checkRdyCounts = () => {
         assertAlternatingRdyCounts(...connections)
-        return done()
+        done()
       }
 
       // We have to wait a small period of time for log events to occur since the
       // `balance` call is invoked perdiocally.
-      return setTimeout(checkRdyCounts, 50)
+      setTimeout(checkRdyCounts, 50)
     })
 
-    it('should handle the transition from normal', (done) => {
+    it('should handle the transition from normal', done => {
       // Shortening the periodica `balance` calls to every 10ms.
       readerRdy = new ReaderRdy(1, 128, 'topic/channel', 0.01)
 
@@ -321,67 +307,65 @@ describe('ReaderRdy', () => {
       readerRdy.addConnection(conn1)
       conn1.emit(NSQDConnection.READY)
 
-      readerRdy.isLowRdy().should.eql(false)
+      should.equal(readerRdy.isLowRdy(), false)
 
-      const addConnection = function () {
+      const addConnection = () => {
         readerRdy.addConnection(conn2)
         conn2.emit(NSQDConnection.READY)
 
         // Given the number of connections and the maxInFlight, we should be in
         // low RDY conditions.
-        return readerRdy.isLowRdy().should.eql(true)
+        should.equal(readerRdy.isLowRdy(), true)
       }
 
       // Add the 2nd connections after some duration to simulate a new nsqd being
       // discovered and connected.
       setTimeout(addConnection, 20)
 
-      const checkRdyCounts = function () {
+      const checkRdyCounts = () => {
         assertAlternatingRdyCounts(conn1, conn2)
-        return done()
+        done()
       }
 
       // We have to wait a small period of time for log events to occur since the
       // `balance` call is invoked perdiocally.
-      return setTimeout(checkRdyCounts, 40)
+      setTimeout(checkRdyCounts, 40)
     })
 
-    it('should handle the transition to normal conditions', (done) => {
+    it('should handle the transition to normal conditions', done => {
       // Shortening the periodica `balance` calls to every 10ms.
       readerRdy = new ReaderRdy(1, 128, 'topic/channel', 0.01)
 
-      const connections = [1, 2].map(i =>
-        createNSQDConnection(i))
+      const connections = [1, 2].map(i => createNSQDConnection(i))
 
       // Add the connections and trigger the NSQDConnection event that tells
       // listeners that the connections are connected and ready for message flow.
-      for (const conn of Array.from(connections)) {
+      connections.forEach((conn) => {
         readerRdy.addConnection(conn)
         conn.emit(NSQDConnection.READY)
-      }
+      })
 
+      should.equal(readerRdy.isLowRdy(), true)
       readerRdy.isLowRdy().should.eql(true)
 
-      const removeConnection = function () {
-        connections[1].emit(NSQDConnection.CLOSED)
-
-        return setTimeout(checkNormal, 20)
+      const checkNormal = () => {
+        should.equal(readerRdy.isLowRdy(), false)
+        should.equal(readerRdy.balanceId, null)
+        should.equal(readerRdy.connections[0].lastRdySent, 1)
+        done()
       }
 
-      var checkNormal = function () {
-        readerRdy.isLowRdy().should.eql(false)
-        should.ok(readerRdy.balanceId === null)
-
-        readerRdy.connections[0].lastRdySent.should.eql(1)
-        return done()
+      const removeConnection = () => {
+        connections[1].emit(NSQDConnection.CLOSED)
+        setTimeout(checkNormal, 20)
       }
 
       // Remove a connection after some period of time to get back to normal
       // conditions.
-      return setTimeout(removeConnection, 20)
+      setTimeout(removeConnection, 20)
     })
 
-    it('should move to normal conditions with connections in backoff', (done) => {
+    it('should move to normal conditions with connections in backoff', done => {
       /*
       1. Create two nsqd connections
       2. Close the 2nd connection when the first connection is in the BACKOFF
@@ -392,102 +376,101 @@ describe('ReaderRdy', () => {
       // Shortening the periodica `balance` calls to every 10ms.
       readerRdy = new ReaderRdy(1, 128, 'topic/channel', 0.01)
 
-      const connections = [1, 2].map(i =>
-        createNSQDConnection(i))
+      const connections = [1, 2].map(i => createNSQDConnection(i))
 
-      for (const conn of Array.from(connections)) {
+      connections.forEach(conn => {
         readerRdy.addConnection(conn)
         conn.emit(NSQDConnection.READY)
-      }
+      })
 
-      readerRdy.isLowRdy().should.eql(true)
+      should.equal(readerRdy.isLowRdy(), true)
+
+      const checkNormal = () => {
+        should.equal(readerRdy.isLowRdy(), false)
+        should.equal(readerRdy.balanceId, null)
+        should.equal(readerRdy.connections[0].lastRdySent, 1)
+        done()
+      }
 
       const removeConnection = _.once(() => {
         connections[1].emit(NSQDConnection.CLOSED)
-        return setTimeout(checkNormal, 30)
+        setTimeout(checkNormal, 30)
       })
 
-      const removeOnBackoff = function () {
+      const removeOnBackoff = () => {
         const connRdy1 = readerRdy.connections[0]
-        return connRdy1.on(ConnectionRdy.STATE_CHANGE, () => {
+        connRdy1.on(ConnectionRdy.STATE_CHANGE, () => {
           if (connRdy1.statemachine.current_state_name === 'BACKOFF') {
             // If we don't do the connection CLOSED in the next tick, we remove
             // the connection immediately which leaves `@connections` within
             // `balance` in an inconsistent state which isn't possible normally.
-            return setTimeout(removeConnection, 0)
+            setTimeout(removeConnection, 0)
           }
         })
-      }
-
-      var checkNormal = function () {
-        readerRdy.isLowRdy().should.eql(false)
-        should.ok(readerRdy.balanceId === null)
-        readerRdy.connections[0].lastRdySent.should.eql(1)
-        return done()
       }
 
       // Remove a connection after some period of time to get back to normal
       // conditions.
-      return setTimeout(removeOnBackoff, 20)
+      setTimeout(removeOnBackoff, 20)
     })
 
-    it('should not exceed maxInFlight for long running message.', (done) => {
+    it('should not exceed maxInFlight for long running message.', done => {
       // Shortening the periodica `balance` calls to every 10ms.
       readerRdy = new ReaderRdy(1, 128, 'topic/channel', 0.01)
 
-      const connections = [1, 2].map(i =>
-        createNSQDConnection(i))
+      const connections = [1, 2].map(i => createNSQDConnection(i))
 
-      for (var conn of Array.from(connections)) {
+      connections.forEach(conn => {
         readerRdy.addConnection(conn)
         conn.emit(NSQDConnection.READY)
-      }
+      })
 
       // Handle the message but delay finishing the message so that several
       // balance calls happen and the check to ensure that RDY count is zero for
       // all connections.
-      const handleMessage = function (msg) {
-        const finish = function () {
+      const handleMessage = (msg) => {
+        const finish = () => {
           msg.finish()
-          return done()
+          done()
         }
-        return setTimeout(finish, 40)
+
+        setTimeout(finish, 40)
       }
 
-      for (conn of Array.from(connections)) {
+      connections.forEach(conn => {
         conn.on(NSQDConnection.MESSAGE, handleMessage)
+      })
+
+      // When the message is in-flight, balance cannot give a RDY count out to
+      // any of the connections.
+      const checkRdyCount = () => {
+        should.equal(readerRdy.isLowRdy(), true)
+        should.equal(readerRdy.connections[0].lastRdySent, 0)
+        should.equal(readerRdy.connections[1].lastRdySent, 0)
       }
 
       const sendMessageOnce = _.once(() => {
         connections[1].createMessage('1', Date.now(), new Buffer('test'))
-        return setTimeout(checkRdyCount, 20)
+        setTimeout(checkRdyCount, 20)
       })
 
       // Send a message on the 2nd connection when we can. Only send the message
       // once so that we don't violate the maxInFlight count.
-      const sendOnRdy = function () {
+      const sendOnRdy = () => {
         const connRdy2 = readerRdy.connections[1]
-        return connRdy2.on(ConnectionRdy.STATE_CHANGE, () => {
+        connRdy2.on(ConnectionRdy.STATE_CHANGE, () => {
           if (['ONE', 'MAX'].includes(connRdy2.statemachine.current_state_name)) {
-            return sendMessageOnce()
+            sendMessageOnce()
           }
         })
       }
 
-      // When the message is in-flight, balance cannot give a RDY count out to
-      // any of the connections.
-      var checkRdyCount = function () {
-        readerRdy.isLowRdy().should.eql(true)
-        readerRdy.connections[0].lastRdySent.should.eql(0)
-        return readerRdy.connections[1].lastRdySent.should.eql(0)
-      }
-
       // We have to wait a small period of time for log events to occur since the
       // `balance` call is invoked perdiocally.
-      return setTimeout(sendOnRdy, 20)
+      setTimeout(sendOnRdy, 20)
     })
 
-    return it('should recover losing a connection with a message in-flight', (done) => {
+    it('should recover losing a connection with a message in-flight', done => {
       /*
       Detailed description:
       1. Connect to 5 nsqds and add them to the ReaderRdy
@@ -503,66 +486,70 @@ describe('ReaderRdy', () => {
       // Shortening the periodica `balance` calls to every 10ms.
       readerRdy = new ReaderRdy(1, 128, 'topic/channel', 0.01)
 
-      const connections = [1, 2, 3, 4, 5].map(i =>
-        createNSQDConnection(i))
+      const connections = [1, 2, 3, 4, 5].map(i => createNSQDConnection(i))
 
       // Add the connections and trigger the NSQDConnection event that tells
       // listeners that the connections are connected and ready for message flow.
-      for (var conn of Array.from(connections)) {
+      connections.forEach(conn => {
         readerRdy.addConnection(conn)
         conn.emit(NSQDConnection.READY)
+      })
+
+      const closeConnection = _.once(() => {
+        connections[0].emit(NSQDConnection.CLOSED)
+      })
+
+      // When the message is in-flight, balance cannot give a RDY count out to
+      // any of the connections.
+      const checkRdyCount = () => {
+        should.equal(readerRdy.isLowRdy(), true)
+
+        const rdyCounts = Array
+          .from(readerRdy.connections)
+          .map(connRdy => connRdy.lastRdySent)
+
+        should.equal(readerRdy.connections.length, 4)
+        should.ok(Array.from(rdyCounts).includes(1))
       }
 
-      const handleMessage = function (msg) {
-        const delayFinish = function () {
+      const handleMessage = (msg) => {
+        const delayFinish = () => {
           msg.finish()
-          return done()
+          done()
         }
 
         setTimeout(closeConnection, 10)
         setTimeout(checkRdyCount, 30)
-        return setTimeout(delayFinish, 50)
+        setTimeout(delayFinish, 50)
       }
 
-      for (conn of Array.from(connections)) {
+      connections.forEach(conn => {
         conn.on(NSQDConnection.MESSAGE, handleMessage)
-      }
+      })
 
-      var closeConnection = _.once(() => connections[0].emit(NSQDConnection.CLOSED))
-
-      const sendMessageOnce = _.once(() => connections[0].createMessage('1', Date.now(), new Buffer('test')))
+      const sendMessageOnce = _.once(() => {
+        connections[0].createMessage('1', Date.now(), new Buffer('test'))
+      })
 
       // Send a message on the 2nd connection when we can. Only send the message
       // once so that we don't violate the maxInFlight count.
-      const sendOnRdy = function () {
+      const sendOnRdy = () => {
         const connRdy = readerRdy.connections[0]
-        return connRdy.on(ConnectionRdy.STATE_CHANGE, () => {
+        connRdy.on(ConnectionRdy.STATE_CHANGE, () => {
           if (['ONE', 'MAX'].includes(connRdy.statemachine.current_state_name)) {
-            return sendMessageOnce()
+            sendMessageOnce()
           }
         })
       }
 
-      // When the message is in-flight, balance cannot give a RDY count out to
-      // any of the connections.
-      var checkRdyCount = function () {
-        readerRdy.isLowRdy().should.eql(true)
-
-        const rdyCounts = Array.from(readerRdy.connections).map(connRdy =>
-          connRdy.lastRdySent)
-
-        readerRdy.connections.length.should.eql(4)
-        return should.ok(Array.from(rdyCounts).includes(1))
-      }
-
       // We have to wait a small period of time for log events to occur since the
       // `balance` call is invoked perdiocally.
-      return setTimeout(sendOnRdy, 10)
+      setTimeout(sendOnRdy, 10)
     })
   })
 
   describe('try', () => {
-    it('should on completion of backoff attempt a single connection', (done) => {
+    it('should on completion of backoff attempt a single connection', done => {
       /*
       Detailed description:
       1. Create ReaderRdy with connections to 5 nsqds.
@@ -576,59 +563,48 @@ describe('ReaderRdy', () => {
       // max backoff duration to 10 sec.
       readerRdy = new ReaderRdy(100, 10, 'topic/channel', 0.01)
 
-      const connections = [1, 2, 3, 4, 5].map(i =>
-        createNSQDConnection(i))
+      const connections = [1, 2, 3, 4, 5].map(i => createNSQDConnection(i))
 
-      for (const conn of Array.from(connections)) {
+      connections.forEach(conn => {
         readerRdy.addConnection(conn)
         conn.emit(NSQDConnection.READY)
+      })
+
+      connections[0]
+        .createMessage('1', Date.now(), 0, 'Message causing a backoff')
+        .requeue()
+
+      const checkInBackoff = () => {
+        readerRdy.connections.forEach(connRdy => {
+          connRdy.statemachine.current_state_name.should.eql('BACKOFF')
+        })
       }
 
-      const msg = connections[0].createMessage('1', Date.now(), 0,
-        'Message causing a backoff')
-      msg.requeue()
+      checkInBackoff()
 
-      const checkInBackoff = () =>
-        Array.from(readerRdy.connections).map(connRdy =>
-          connRdy.statemachine.current_state_name.should.eql('BACKOFF'))
+      const afterBackoff = () => {
+        const states = readerRdy.connections.map(connRdy => {
+          return connRdy.statemachine.current_state_name
+        })
 
-      setTimeout(checkInBackoff, 0)
+        const ones = states.filter(state => state === 'ONE')
+        const backoffs = states.filter(state => state === 'BACKOFF')
 
-      const afterBackoff = function () {
-        let s
-        const states = Array.from(readerRdy.connections).map(connRdy =>
-          connRdy.statemachine.current_state_name)
-
-        const ones = ((() => {
-          const result = []
-          for (s of Array.from(states)) {
-            if (s === 'ONE') {
-              result.push(s)
-            }
-          }
-          return result
-        })())
-        const backoffs = ((() => {
-          const result1 = []
-          for (s of Array.from(states)) {
-            if (s === 'BACKOFF') {
-              result1.push(s)
-            }
-          }
-          return result1
-        })())
-
-        ones.length.should.eql(1)
-        backoffs.length.should.eql(4)
-        return done()
+        should.equal(ones.length, 1)
+        should.equal(backoffs.length, 4)
+        done()
       }
 
       // Add 50ms to the delay so that we're confident that the event fired.
-      const delay = readerRdy.backoffTimer.getInterval().plus(0.05)
-      return setTimeout(afterBackoff, new Number(delay.valueOf()) * 1000)
+      const delay = readerRdy
+        .backoffTimer
+        .getInterval()
+        .plus(0.05)
+
+      setTimeout(afterBackoff, delay.valueOf() * 1000)
     })
 
-    return it('should after backoff with a successful message go to MAX', (done) => {
+    it('should after backoff with a successful message go to MAX', done => {
       /*
       Detailed description:
       1. Create ReaderRdy with connections to 5 nsqds.
@@ -642,93 +618,78 @@ describe('ReaderRdy', () => {
       // max backoff duration to 1 sec.
       readerRdy = new ReaderRdy(100, 1, 'topic/channel', 0.01)
 
-      const connections = [1, 2, 3, 4, 5].map(i =>
-        createNSQDConnection(i))
+      const connections = [1, 2, 3, 4, 5].map(i => createNSQDConnection(i))
 
-      for (const conn of Array.from(connections)) {
+      connections.forEach(conn => {
         readerRdy.addConnection(conn)
         conn.emit(NSQDConnection.READY)
-      }
+      })
 
       let msg = connections[0].createMessage('1', Date.now(), 0,
         'Message causing a backoff')
+
       msg.requeue()
 
-      const afterBackoff = function () {
-        var [connRdy] = Array.from((() => {
-          const result = []
-          for (connRdy of Array.from(readerRdy.connections)) {
-            let item
-            if (connRdy.statemachine.current_state_name === 'ONE') {
-              item = connRdy
-            }
-            result.push(item)
-          }
-          return result
-        })())
+      const afterBackoff = () => {
+        const [connRdy] = readerRdy.connections.filter(conn => {
+          return conn.statemachine.current_state_name === 'ONE'
+        })
 
         msg = connRdy.conn.createMessage('1', Date.now(), 0, 'Success')
         msg.finish()
 
-        const verifyMax = function () {
-          const states = (() => {
-            const result1 = []
-            for (connRdy of Array.from(readerRdy.connections)) {
-              result1.push(connRdy.statemachine.current_state_name)
-            }
-            return result1
-          })()
+        const verifyMax = () => {
+          const states = readerRdy.connections.map(conn => {
+            return conn.statemachine.current_state_name
+          })
 
-          const max = (Array.from(states).filter(s => ['ONE', 'MAX'].includes(s)).map(s => s))
+          const max = states.filter(s => ['ONE', 'MAX'].includes(s))
 
           max.length.should.eql(5)
-          should.ok(Array.from(states).includes('MAX'))
-          return done()
+          should.equal(max.length, 5)
+          should.ok(states.includes('MAX'))
+          done()
         }
 
-        return setTimeout(verifyMax, 0)
+        setTimeout(verifyMax, 0)
       }
 
       const delay = readerRdy.backoffTimer.getInterval() + 100
-      return setTimeout(afterBackoff, delay * 1000)
+      setTimeout(afterBackoff, delay * 1000)
     })
   })
 
-  return describe('pause / unpause', () => {
+  describe('pause / unpause', () => {
     beforeEach(() => {
       // Shortening the periodic `balance` calls to every 10ms. Changing the
       // max backoff duration to 1 sec.
       readerRdy = new ReaderRdy(100, 1, 'topic/channel', 0.01)
 
-      const connections = [1, 2, 3, 4, 5].map(i =>
-        createNSQDConnection(i))
+      const connections = [1, 2, 3, 4, 5].map(i => createNSQDConnection(i))
 
-      return Array.from(connections).map(conn =>
-        (readerRdy.addConnection(conn),
-        conn.emit(NSQDConnection.READY)))
+      connections.map(conn => {
+        readerRdy.addConnection(conn)
+        conn.emit(NSQDConnection.READY)
+      })
     })
 
     it('should drop ready count to zero on all connections when paused', () => {
       readerRdy.pause()
-      readerRdy.current_state_name.should.eql('PAUSE')
-
-      return Array.from(readerRdy.connections).map(conn =>
-        conn.lastRdySent.should.eql(0))
+      should.equal(readerRdy.current_state_name, 'PAUSE')
+      readerRdy.connections.forEach(conn => should.equal(conn.lastRdySent, 0))
     })
 
     it('should unpause by trying one', () => {
       readerRdy.pause()
       readerRdy.unpause()
-
-      return readerRdy.current_state_name.should.eql('TRY_ONE')
+      should.equal(readerRdy.current_state_name, 'TRY_ONE')
     })
 
-    return it('should update the value of @isPaused when paused', () => {
+    it('should update the value of @isPaused when paused', () => {
       readerRdy.pause()
-      readerRdy.isPaused().should.ok
-
+      should.equal(readerRdy.isPaused(), true)
       readerRdy.unpause()
-      return readerRdy.isPaused().should.eql(false)
+      should.equal(readerRdy.isPaused(), false)
     })
   })
 })

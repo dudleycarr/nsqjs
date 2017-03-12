@@ -7,11 +7,10 @@ export const FRAME_TYPE_RESPONSE = 0
 export const FRAME_TYPE_ERROR = 1
 export const FRAME_TYPE_MESSAGE = 2
 
-const JSON_stringify = function (obj, emit_unicode) {
+const jsonStringify = function (obj, emitUnicode) {
   const json = JSON.stringify(obj)
-  if (emit_unicode) {
-    return json
-  }
+  if (emitUnicode) return json
+
   return json.replace(/[\u007f-\uffff]/g, c => `\\u${(`0000${c.charCodeAt(0).toString(16)}`).slice(-4)}`)
 }
 
@@ -90,7 +89,7 @@ export function identify (data) {
     throw new Error(`Unexpected IDENTIFY keys: ${unexpectedKeys}`)
   }
 
-  return command('IDENTIFY', JSON_stringify(data))
+  return command('IDENTIFY', jsonStringify(data))
 }
 
 export function ready (count) {

@@ -9,7 +9,7 @@ describe('roundrobinlist', () => {
 
   beforeEach(() => {
     lst = [1, 2, 3]
-    return rrl = new RoundRobinList(lst)
+    rrl = new RoundRobinList(lst)
   })
 
   describe('constructor', () => {
