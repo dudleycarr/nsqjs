@@ -36,6 +36,7 @@
     "test": "mocha --compilers js:babel-core/register"
   },
   "standard": {
+    "parser": "babel-eslint",
     "env": {
       "mocha": true
     }

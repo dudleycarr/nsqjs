@@ -7,22 +7,11 @@ import { ReaderConfig } from './config'
 import { ReaderRdy } from './readerrdy'
 
 class Reader extends EventEmitter {
-  static initClass () {
-    // Responsibilities
-    // 1. Responsible for periodically querying the nsqlookupds
-    // 2. Connects and subscribes to discovered/configured nsqd
-    // 3. Consumes messages and triggers MESSAGE events
-    // 4. Starts the ReaderRdy instance
-    // 5. Hands nsqd connections to the ReaderRdy instance
-    // 6. Stores Reader configurations
-
-    // Reader events
-    this.ERROR = 'error'
-    this.MESSAGE = 'message'
-    this.DISCARD = 'discard'
-    this.NSQD_CONNECTED = 'nsqd_connected'
-    this.NSQD_CLOSED = 'nsqd_closed'
-  }
+  static ERROR = 'error'
+  static MESSAGE = 'message'
+  static DISCARD = 'discard'
+  static NSQD_CONNECTED = 'nsqd_connected'
+  static NSQD_CLOSED = 'nsqd_closed'
 
   constructor (topic, channel, options) {
     super(...arguments)
@@ -193,6 +182,5 @@ class Reader extends EventEmitter {
     )
   }
 }
-Reader.initClass()
 
 export default Reader
