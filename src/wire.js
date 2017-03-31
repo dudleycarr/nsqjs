@@ -7,7 +7,7 @@ export const FRAME_TYPE_RESPONSE = 0;
 export const FRAME_TYPE_ERROR = 1;
 export const FRAME_TYPE_MESSAGE = 2;
 
-const jsonStringify = function(obj, emitUnicode) {
+function jsonStringify(obj, emitUnicode) {
   const json = JSON.stringify(obj);
   if (emitUnicode) return json;
 
@@ -18,7 +18,7 @@ const jsonStringify = function(obj, emitUnicode) {
 };
 
 // Calculates the byte length for either a string or a Buffer.
-const byteLength = function(msg) {
+function byteLength(msg) {
   if (_.isString(msg)) {
     return Buffer.byteLength(msg);
   }
@@ -37,7 +37,7 @@ export function unpackMessage(data) {
   return [id, timestamp, attempts, body];
 }
 
-const command = function(cmd, body) {
+function command(cmd, body) {
   const buffers = [];
 
   // Turn optional args into parameters for the command
@@ -179,16 +179,28 @@ export function auth(token) {
   return command('AUTH', token);
 }
 
-var validTopicName = topic =>
-  topic &&
-  topic.length > 0 &&
-  topic.length < 65 &&
-  topic.match(/^[\w._-]+(?:#ephemeral)?$/) != null;
+/**
+ * Validate topic names. Topic names must be no longer than 
+ * 65 characters.
+ * 
+ * @param {String} topic.
+ */
+function validTopicName(topic) {
+  return topic &&
+    topic.length > 0 &&
+    topic.length < 65 &&
+    topic.match(/^[\w._-]+(?:#ephemeral)?$/) != null;
+}
 
-var validChannelName = function(channel) {
-  const channelRe = /^[\w._-]+(?:#ephemeral)?$/;
+/**
+ * Validate channel names. Follows the same restriction as
+ * topic names.
+ * 
+ * @param {String} topic.
+ */
+function validChannelName(channel) {
   return channel &&
     channel.length > 0 &&
     channel.length < 65 &&
-    channel.match(channelRe) != null;
+    channel.match(/^[\w._-]+(?:#ephemeral)?$/) != null;
 };
