@@ -1,26 +1,15 @@
 import decimal from 'bignumber.js';
 
-const min = function(a, b) {
-  if (a.lte(b)) {
-    return a;
-  }
-  return b;
-};
+const min = (a, b) => a.lte(b) ? a : b;
+const max = (a, b) => a.gte(b) ? a : b;
 
-const max = function(a, b) {
-  if (a.gte(b)) {
-    return a;
-  }
-  return b;
-};
-
-/*
-This is a timer that is smart about backing off exponentially when there
-are problems
-
-Ported from pynsq:
-  https://github.com/bitly/pynsq/blob/master/nsq/BackoffTimer.py
-*/
+/**
+ * This is a timer that is smart about backing off exponentially
+ * when there are problems.
+ * 
+ * Ported from pynsq:
+ *   https://github.com/bitly/pynsq/blob/master/nsq/BackoffTimer.py
+ */
 class BackoffTimer {
   constructor(
     minInterval,
@@ -34,8 +23,10 @@ class BackoffTimer {
 
     ratio = decimal(ratio);
     const intervalDelta = decimal(this.maxInterval - this.minInterval);
+
     // (maxInterval - minInterval) * ratio
     this.maxShortTimer = intervalDelta.times(ratio);
+
     // (maxInterval - minInterval) * (1 - ratio)
     this.maxLongTimer = intervalDelta.times(decimal(1).minus(ratio));
 
