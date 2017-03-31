@@ -1,16 +1,17 @@
 import _ from 'underscore';
 
-// From the NSQ protocol documentation:
-// http://bitly.github.io/nsq/clients/tcp_protocol_spec.html
-//
-// The Frame format:
-//
-//   [x][x][x][x][x][x][x][x][x][x][x][x]...
-//   |  (int32) ||  (int32) || (binary)
-//   |  4-byte  ||  4-byte  || N-byte
-//   ------------------------------------...
-//       size      frame ID     data
-
+/**
+ * From the NSQ protocol documentation:
+ *   http://bitly.github.io/nsq/clients/tcp_protocol_spec.html
+ *
+ * The Frame format:
+ * 
+ *   [x][x][x][x][x][x][x][x][x][x][x][x]...
+ *   | (int32) ||  (int32) || (binary)
+ *   |  4-byte  ||  4-byte  || N-byte
+ *   ------------------------------------...
+ *       size      frame ID     data
+ */
 class FrameBuffer {
   consume(raw) {
     this.buffer = Buffer.concat(_.compact([this.buffer, raw]));
@@ -34,29 +35,29 @@ class FrameBuffer {
     return frame;
   }
 
-  // Given an offset into a buffer, get the frame ID and data tuple.
-  pluckFrame(offset) {
-    if (offset == null) {
-      offset = 0;
-    }
+  /**
+   * Given an offset into a buffer, get the frame ID and data tuple.
+   */
+  pluckFrame(offset = 0) {
     const frame = this.buffer.slice(offset, offset + this.frameSize(offset));
     const frameId = frame.readInt32BE(4);
     return [frameId, frame.slice(8)];
   }
 
-  // Given the offset of the current frame in the buffer, find the offset
-  // of the next buffer.
-  nextOffset(offset) {
-    if (offset == null) {
-      offset = 0;
-    }
+  /**
+   * Given the offset of the current frame in the buffer, find the offset
+   * of the next buffer.
+   */
+  nextOffset(offset = 0) {
     const size = this.frameSize(offset);
     if (size) {
       return offset + size;
     }
   }
 
-  // Given the frame offset, return the frame size.
+  /** 
+   * Given the frame offset, return the frame size.
+   */
   frameSize(offset) {
     if (!this.buffer || !(this.buffer.length > 4)) {
       return;
