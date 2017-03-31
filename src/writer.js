@@ -25,12 +25,10 @@ import { WriterNSQDConnection } from './nsqdconnection';
  *    });
  */
 class Writer extends EventEmitter {
-  static initClass() {
-    // Writer events
-    this.READY = 'ready';
-    this.CLOSED = 'closed';
-    this.ERROR = 'error';
-  }
+  // Writer events
+  static READY = 'ready';
+  static CLOSED = 'closed';
+  static ERROR = 'error';
 
   constructor(nsqdHost, nsqdPort, options) {
     super();
@@ -57,43 +55,44 @@ class Writer extends EventEmitter {
       this.nsqdPort,
       this.config
     );
+
     this.debug('connect');
     this.conn.connect();
 
     this.conn.on(WriterNSQDConnection.READY, () => {
       this.debug('ready');
       this.ready = true;
-      return this.emit(Writer.READY);
+      this.emit(Writer.READY);
     });
 
     this.conn.on(WriterNSQDConnection.CLOSED, () => {
       this.debug('closed');
       this.ready = false;
-      return this.emit(Writer.CLOSED);
+      this.emit(Writer.CLOSED);
     });
 
     this.conn.on(WriterNSQDConnection.ERROR, err => {
       this.debug('error', err);
       this.ready = false;
-      return this.emit(Writer.ERROR, err);
+      this.emit(Writer.ERROR, err);
     });
 
     this.conn.on(WriterNSQDConnection.CONNECTION_ERROR, err => {
       this.debug('error', err);
       this.ready = false;
-      return this.emit(Writer.ERROR, err);
+      this.emit(Writer.ERROR, err);
     });
   }
 
-  /*
-  Publish a message or a list of messages to the connected nsqd. The contents
-  of the messages should either be strings or buffers with the payload encoded.
+  /**
+   * Publish a message or a list of messages to the connected nsqd. The contents
+   * of the messages should either be strings or buffers with the payload encoded.
 
-  Arguments:
-    topic: A valid nsqd topic.
-    msgs: A string, a buffer, a JSON serializable object, or
-      a list of string / buffers / JSON serializable objects.
-  */
+   * @param {String} topic
+   * @param {String|Buffer|Object|Array} msgs - A string, a buffer, a 
+   *   JSON serializable object, or a list of string / buffers / 
+   *   JSON serializable objects.
+   */
   publish(topic, msgs, callback) {
     let err;
     let connState = '';
@@ -162,6 +161,5 @@ class Writer extends EventEmitter {
     return this.conn.destroy();
   }
 }
-Writer.initClass();
 
 export default Writer;
