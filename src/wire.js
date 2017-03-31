@@ -15,7 +15,7 @@ function jsonStringify(obj, emitUnicode) {
     /[\u007f-\uffff]/g,
     c => `\\u${`0000${c.charCodeAt(0).toString(16)}`.slice(-4)}`
   );
-};
+}
 
 // Calculates the byte length for either a string or a Buffer.
 function byteLength(msg) {
@@ -23,7 +23,7 @@ function byteLength(msg) {
     return Buffer.byteLength(msg);
   }
   return msg.length;
-};
+}
 
 export function unpackMessage(data) {
   // Int64 to read the 64bit Int from the buffer
@@ -65,7 +65,7 @@ function command(cmd, body) {
   }
 
   return Buffer.concat(buffers);
-};
+}
 
 export function subscribe(topic, channel) {
   if (!validTopicName(topic)) {
@@ -203,4 +203,4 @@ function validChannelName(channel) {
     channel.length > 0 &&
     channel.length < 65 &&
     channel.match(/^[\w._-]+(?:#ephemeral)?$/) != null;
-};
+}
