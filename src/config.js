@@ -1,30 +1,27 @@
 import _ from 'underscore';
 import url from 'url';
 
-let isBareAddress;
 class ConnectionConfig {
-  static initClass() {
-    this.DEFAULTS = {
-      authSecret: null,
-      clientId: null,
-      deflate: false,
-      deflateLevel: 6,
-      heartbeatInterval: 30,
-      maxInFlight: 1,
-      messageTimeout: null,
-      outputBufferSize: null,
-      outputBufferTimeout: null,
-      requeueDelay: 90,
-      sampleRate: null,
-      snappy: false,
-      tls: false,
-      tlsVerification: true,
-    };
+  static DEFAULTS = {
+    authSecret: null,
+    clientId: null,
+    deflate: false,
+    deflateLevel: 6,
+    heartbeatInterval: 30,
+    maxInFlight: 1,
+    messageTimeout: null,
+    outputBufferSize: null,
+    outputBufferTimeout: null,
+    requeueDelay: 90,
+    sampleRate: null,
+    snappy: false,
+    tls: false,
+    tlsVerification: true,
+  };
 
-    isBareAddress = function(addr) {
-      const [host, port] = Array.from(addr.split(':'));
-      return host.length > 0 && port > 0;
-    };
+  static isBareAddress(addr) {
+    const [host, port] = addr.split(':');
+    return host.length > 0 && port > 0;
   }
 
   constructor(options) {
@@ -85,7 +82,7 @@ class ConnectionConfig {
   }
 
   isBareAddresses(option, value) {
-    if (!_.isArray(value) || !_.every(value, isBareAddress)) {
+    if (!_.isArray(value) || !_.every(value, ConnectionConfig.isBareAddress)) {
       throw new Error(`${option} must be a list of addresses 'host:port'`);
     }
   }
@@ -93,7 +90,7 @@ class ConnectionConfig {
   isLookupdHTTPAddresses(option, value) {
     const isAddr = function(addr) {
       if (addr.indexOf('://') === -1) {
-        return isBareAddress(addr);
+        return ConnectionConfig.isBareAddress(addr);
       }
       const parsedUrl = url.parse(addr);
       return ['http:', 'https:'].includes(parsedUrl.protocol) &&
@@ -160,20 +157,17 @@ HTTP/HTTPS URI`
     }
   }
 }
-ConnectionConfig.initClass();
 
 class ReaderConfig extends ConnectionConfig {
-  static initClass() {
-    this.DEFAULTS = _.extend({}, ConnectionConfig.DEFAULTS, {
-      lookupdHTTPAddresses: [],
-      lookupdPollInterval: 60,
-      lookupdPollJitter: 0.3,
-      name: null,
-      nsqdTCPAddresses: [],
-      maxAttempts: 0,
-      maxBackoffDuration: 128,
-    });
-  }
+  static DEFAULTS = _.extend({}, ConnectionConfig.DEFAULTS, {
+    lookupdHTTPAddresses: [],
+    lookupdPollInterval: 60,
+    lookupdPollJitter: 0.3,
+    name: null,
+    nsqdTCPAddresses: [],
+    maxAttempts: 0,
+    maxBackoffDuration: 128,
+  });
 
   conditions() {
     return _.extend({}, super.conditions(), {
@@ -210,6 +204,5 @@ class ReaderConfig extends ConnectionConfig {
     }
   }
 }
-ReaderConfig.initClass();
 
 export { ConnectionConfig, ReaderConfig };
