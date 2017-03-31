@@ -32,7 +32,7 @@
   ],
   "scripts": {
     "build": "babel src -d build",
-    "format": "prettier --single-quote --trailing-comma --write \"{src,test}/**/*.js\"",
+    "format": "prettier --single-quote --trailing-comma es5 --write \"{src,test}/**/*.js\"",
     "test": "mocha --compilers js:babel-core/register"
   },
   "standard": {
