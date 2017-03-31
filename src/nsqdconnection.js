@@ -14,62 +14,57 @@ import Message from './message';
 import version from './version';
 import { ConnectionConfig } from './config';
 
-/*
-NSQDConnection is a reader connection to a nsqd instance. It manages all
-aspects of the nsqd connection with the exception of the RDY count which
-needs to be managed across all nsqd connections for a given topic / channel
-pair.
-
-This shouldn't be used directly. Use a Reader instead.
-
-Usage:
-
-c = new NSQDConnection '127.0.0.1', 4150, 'test', 'default', 60, 30
-
-c.on NSQDConnection.MESSAGE, (msg) ->
-  console.log "Callback [message]: #{msg.attempts}, #{msg.body.toString()}"
-  console.log "Timeout of message is #{msg.timeUntilTimeout()}"
-  setTimeout (-> console.log "timeout = #{msg.timeUntilTimeout()}"), 5000
-  msg.finish()
-
-c.on NSQDConnection.FINISHED, ->
-  c.setRdy 1
-
-c.on NSQDConnection.READY, ->
-  console.log "Callback [ready]: Set RDY to 100"
-  c.setRdy 10
-
-c.on NSQDConnection.CLOSED, ->
-  console.log "Callback [closed]: Lost connection to nsqd"
-
-c.on NSQDConnection.ERROR, (err) ->
-  console.log "Callback [error]: #{err}"
-
-c.on NSQDConnection.BACKOFF, ->
-  console.log "Callback [backoff]: RDY 0"
-  c.setRdy 0
-  setTimeout (-> c.setRdy 100; console.log 'RDY 100'), 10 * 1000
-
-c.connect()
-*/
+/**
+ * NSQDConnection is a reader connection to a nsqd instance. It manages all
+ * aspects of the nsqd connection with the exception of the RDY count which
+ * needs to be managed across all nsqd connections for a given topic / channel
+ * pair.
+ * 
+ * This shouldn't be used directly. Use a Reader instead.
+ * 
+ * Usage:
+ * 
+ *   c = new NSQDConnection '127.0.0.1', 4150, 'test', 'default', 60, 30
+ *   
+ *   c.on NSQDConnection.MESSAGE, (msg) ->
+ *     console.log "Callback [message]: #{msg.attempts}, #{msg.body.toString()}"
+ *     console.log "Timeout of message is #{msg.timeUntilTimeout()}"
+ *     setTimeout (-> console.log "timeout = #{msg.timeUntilTimeout()}"), 5000
+ *     msg.finish()
+ *   
+ *   c.on NSQDConnection.FINISHED, ->
+ *     c.setRdy 1
+ *   
+ *   c.on NSQDConnection.READY, ->
+ *     console.log "Callback [ready]: Set RDY to 100"
+ *     c.setRdy 10
+ *   
+ *   c.on NSQDConnection.CLOSED, ->
+ *     console.log "Callback [closed]: Lost connection to nsqd"
+ *   
+ *   c.on NSQDConnection.ERROR, (err) ->
+ *     console.log "Callback [error]: #{err}"
+ *   
+ *   c.on NSQDConnection.BACKOFF, ->
+ *     console.log "Callback [backoff]: RDY 0"
+ *     c.setRdy 0
+ *     setTimeout (-> c.setRdy 100; console.log 'RDY 100'), 10 * 1000
+ *   
+ *   c.connect()
+ */
 class NSQDConnection extends EventEmitter {
-  static initClass() {
-    // Events emitted by NSQDConnection
-    this.BACKOFF = 'backoff';
-    this.CONNECTED = 'connected';
-    this.CLOSED = 'closed';
-    this.CONNECTION_ERROR = 'connection_error';
-    this.ERROR = 'error';
-    this.FINISHED = 'finished';
-    this.MESSAGE = 'message';
-    this.REQUEUED = 'requeued';
-    this.READY = 'ready';
-  }
+  // Events emitted by NSQDConnection
+  static BACKOFF = 'backoff';
+  static CONNECTED = 'connected';
+  static CLOSED = 'closed';
+  static CONNECTION_ERROR = 'connection_error';
+  static ERROR = 'error';
+  static FINISHED = 'finished';
+  static MESSAGE = 'message';
+  static REQUEUED = 'requeued';
+  static READY = 'ready';
 
-  constructor(nsqdHost, nsqdPort, topic, channel, options) {
-    if (options == null) {
-      options = {};
-    }
+  constructor(nsqdHost, nsqdPort, topic, channel, options = {}) {
     super(...arguments);
 
     this.nsqdHost = nsqdHost;
@@ -327,303 +322,8 @@ touch_count=${msg.touchCount}]`
     return this.conn.destroy();
   }
 }
-NSQDConnection.initClass();
 
 class ConnectionState extends NodeState {
-  static initClass() {
-    this.prototype.states = {
-      INIT: {
-        connecting() {
-          return this.goto('CONNECTING');
-        },
-      },
-
-      CONNECTING: {
-        connected() {
-          return this.goto('CONNECTED');
-        },
-      },
-
-      CONNECTED: {
-        Enter() {
-          return this.goto('SEND_MAGIC_IDENTIFIER');
-        },
-      },
-
-      SEND_MAGIC_IDENTIFIER: {
-        Enter() {
-          // Send the magic protocol identifier to the connection
-          this.conn.write(wire.MAGIC_V2);
-          return this.goto('IDENTIFY');
-        },
-      },
-
-      IDENTIFY: {
-        Enter() {
-          // Send configuration details
-          const identify = this.conn.identify();
-          this.conn.debug(identify);
-          this.conn.write(wire.identify(identify));
-          return this.goto('IDENTIFY_RESPONSE');
-        },
-      },
-
-      IDENTIFY_RESPONSE: {
-        response(data) {
-          if (data.toString() === 'OK') {
-            data = JSON.stringify({
-              max_rdy_count: 2500,
-              max_msg_timeout: 15 * 60 * 1000, // 15 minutes
-              msg_timeout: 60 * 1000,
-            }); //  1 minute
-          }
-
-          this.identifyResponse = JSON.parse(data);
-          this.conn.debug(this.identifyResponse);
-          this.conn.maxRdyCount = this.identifyResponse.max_rdy_count;
-          this.conn.maxMsgTimeout = this.identifyResponse.max_msg_timeout;
-          this.conn.msgTimeout = this.identifyResponse.msg_timeout;
-          this.conn.nsqdVersion = this.identifyResponse.version;
-          this.conn.clearIdentifyTimeout();
-
-          if (this.identifyResponse.tls_v1) {
-            return this.goto('TLS_START');
-          }
-          return this.goto('IDENTIFY_COMPRESSION_CHECK');
-        },
-      },
-
-      IDENTIFY_COMPRESSION_CHECK: {
-        Enter() {
-          const { deflate, snappy } = this.identifyResponse;
-
-          if (deflate) {
-            return this.goto(
-              'DEFLATE_START',
-              this.identifyResponse.deflate_level
-            );
-          }
-          if (snappy) {
-            return this.goto('SNAPPY_START');
-          }
-          return this.goto('AUTH');
-        },
-      },
-
-      TLS_START: {
-        Enter() {
-          this.conn.startTLS();
-          return this.goto('TLS_RESPONSE');
-        },
-      },
-
-      TLS_RESPONSE: {
-        response(data) {
-          if (data.toString() === 'OK') {
-            return this.goto('IDENTIFY_COMPRESSION_CHECK');
-          }
-          return this.goto('ERROR', new Error('TLS negotiate error with nsqd'));
-        },
-      },
-
-      DEFLATE_START: {
-        Enter(level) {
-          this.conn.startDeflate(level);
-          return this.goto('COMPRESSION_RESPONSE');
-        },
-      },
-
-      SNAPPY_START: {
-        Enter() {
-          this.conn.startSnappy();
-          return this.goto('COMPRESSION_RESPONSE');
-        },
-      },
-
-      COMPRESSION_RESPONSE: {
-        response(data) {
-          if (data.toString() === 'OK') {
-            return this.goto('AUTH');
-          }
-          return this.goto(
-            'ERROR',
-            new Error('Bad response when enabling compression')
-          );
-        },
-      },
-
-      AUTH: {
-        Enter() {
-          if (!this.conn.config.authSecret) {
-            return this.goto(this.afterIdentify());
-          }
-          this.conn.write(wire.auth(this.conn.config.authSecret));
-          return this.goto('AUTH_RESPONSE');
-        },
-      },
-
-      AUTH_RESPONSE: {
-        response(data) {
-          this.conn.auth = JSON.parse(data);
-          return this.goto(this.afterIdentify());
-        },
-      },
-
-      SUBSCRIBE: {
-        Enter() {
-          this.conn.write(wire.subscribe(this.conn.topic, this.conn.channel));
-          return this.goto('SUBSCRIBE_RESPONSE');
-        },
-      },
-
-      SUBSCRIBE_RESPONSE: {
-        response(data) {
-          if (data.toString() === 'OK') {
-            this.goto('READY_RECV');
-            // Notify listener that this nsqd connection has passed the subscribe
-            // phase. Do this only once for a connection.
-            return this.conn.emit(NSQDConnection.READY);
-          }
-        },
-      },
-
-      READY_RECV: {
-        consumeMessage(msg) {
-          return this.conn.emit(NSQDConnection.MESSAGE, msg);
-        },
-
-        response(data) {
-          if (data.toString() === '_heartbeat_') {
-            return this.conn.write(wire.nop());
-          }
-        },
-
-        ready(rdyCount) {
-          // RDY count for this nsqd cannot exceed the nsqd configured
-          // max rdy count.
-          if (rdyCount > this.conn.maxRdyCount) {
-            rdyCount = this.conn.maxRdyCount;
-          }
-          return this.conn.write(wire.ready(rdyCount));
-        },
-
-        close() {
-          return this.goto('CLOSED');
-        },
-      },
-
-      READY_SEND: {
-        Enter() {
-          // Notify listener that this nsqd connection is ready to send.
-          return this.conn.emit(NSQDConnection.READY);
-        },
-
-        produceMessages(data) {
-          const [topic, msgs, callback] = Array.from(data);
-          this.conn.messageCallbacks.push(callback);
-
-          if (!_.isArray(msgs)) {
-            throw new Error('Expect an array of messages to produceMessages');
-          }
-
-          if (msgs.length === 1) {
-            return this.conn.write(wire.pub(topic, msgs[0]));
-          }
-          return this.conn.write(wire.mpub(topic, msgs));
-        },
-
-        response(data) {
-          switch (data.toString()) {
-            case 'OK':
-              const cb = this.conn.messageCallbacks.shift();
-              return typeof cb === 'function' ? cb(null) : undefined;
-            case '_heartbeat_':
-              return this.conn.write(wire.nop());
-          }
-        },
-
-        close() {
-          return this.goto('CLOSED');
-        },
-      },
-
-      ERROR: {
-        Enter(err) {
-          // If there's a callback, pass it the error.
-          const cb = this.conn.messageCallbacks.shift();
-          if (typeof cb === 'function') {
-            cb(err);
-          }
-
-          this.conn.emit(NSQDConnection.ERROR, err);
-
-          // According to NSQ docs, the following errors are non-fatal and should
-          // not close the connection. See here for more info:
-          // http://nsq.io/clients/building_client_libraries.html
-          if (!_.isString(err)) {
-            err = err.toString();
-          }
-          const errorCode = __guard__(err.split(/\s+/), x => x[1]);
-          if (
-            ['E_REQ_FAILED', 'E_FIN_FAILED', 'E_TOUCH_FAILED'].includes(
-              errorCode
-            )
-          ) {
-            return this.goto('READY_RECV');
-          }
-          return this.goto('CLOSED');
-        },
-
-        close() {
-          return this.goto('CLOSED');
-        },
-      },
-
-      CLOSED: {
-        Enter() {
-          if (!this.conn) {
-            return;
-          }
-
-          // If there are callbacks, then let them error on the closed connection.
-          const err = new Error('nsqd connection closed');
-          for (const cb of Array.from(this.conn.messageCallbacks)) {
-            if (typeof cb === 'function') {
-              cb(err);
-            }
-          }
-          this.conn.messageCallbacks = [];
-
-          this.disable();
-          this.conn.destroy();
-          this.conn.emit(NSQDConnection.CLOSED);
-          return delete this.conn;
-        },
-
-        close() {},
-      },
-    };
-    // No-op. Once closed, subsequent calls should do nothing.
-
-    this.prototype.transitions = {
-      '*': {
-        '*': function(data, callback) {
-          this.log();
-          return callback(data);
-        },
-
-        CONNECTED(data, callback) {
-          this.log();
-          return callback(data);
-        },
-
-        ERROR(err, callback) {
-          this.log(`${err}`);
-          return callback(err);
-        },
-      },
-    };
-  }
   constructor(conn) {
     super({
       autostart: true,
@@ -632,7 +332,6 @@ class ConnectionState extends NodeState {
     });
 
     this.conn = conn;
-
     this.identifyResponse = null;
   }
 
@@ -649,28 +348,316 @@ class ConnectionState extends NodeState {
     return 'SUBSCRIBE';
   }
 }
-ConnectionState.initClass();
 
-/*
-c = new NSQDConnectionWriter '127.0.0.1', 4150, 30
-c.connect()
+ConnectionState.prototype.states = {
+  INIT: {
+    connecting() {
+      return this.goto('CONNECTING');
+    },
+  },
 
-c.on NSQDConnectionWriter.CLOSED, ->
-  console.log "Callback [closed]: Lost connection to nsqd"
+  CONNECTING: {
+    connected() {
+      return this.goto('CONNECTED');
+    },
+  },
 
-c.on NSQDConnectionWriter.ERROR, (err) ->
-  console.log "Callback [error]: #{err}"
+  CONNECTED: {
+    Enter() {
+      return this.goto('SEND_MAGIC_IDENTIFIER');
+    },
+  },
 
-c.on NSQDConnectionWriter.READY, ->
-  c.produceMessages 'sample_topic', ['first message']
-  c.produceMessages 'sample_topic', ['second message', 'third message']
-  c.destroy()
-*/
+  SEND_MAGIC_IDENTIFIER: {
+    Enter() {
+      // Send the magic protocol identifier to the connection
+      this.conn.write(wire.MAGIC_V2);
+      return this.goto('IDENTIFY');
+    },
+  },
+
+  IDENTIFY: {
+    Enter() {
+      // Send configuration details
+      const identify = this.conn.identify();
+      this.conn.debug(identify);
+      this.conn.write(wire.identify(identify));
+      return this.goto('IDENTIFY_RESPONSE');
+    },
+  },
+
+  IDENTIFY_RESPONSE: {
+    response(data) {
+      if (data.toString() === 'OK') {
+        data = JSON.stringify({
+          max_rdy_count: 2500,
+          max_msg_timeout: 15 * 60 * 1000, // 15 minutes
+          msg_timeout: 60 * 1000,
+        }); //  1 minute
+      }
+
+      this.identifyResponse = JSON.parse(data);
+      this.conn.debug(this.identifyResponse);
+      this.conn.maxRdyCount = this.identifyResponse.max_rdy_count;
+      this.conn.maxMsgTimeout = this.identifyResponse.max_msg_timeout;
+      this.conn.msgTimeout = this.identifyResponse.msg_timeout;
+      this.conn.nsqdVersion = this.identifyResponse.version;
+      this.conn.clearIdentifyTimeout();
+
+      if (this.identifyResponse.tls_v1) {
+        return this.goto('TLS_START');
+      }
+      return this.goto('IDENTIFY_COMPRESSION_CHECK');
+    },
+  },
+
+  IDENTIFY_COMPRESSION_CHECK: {
+    Enter() {
+      const { deflate, snappy } = this.identifyResponse;
+
+      if (deflate) {
+        return this.goto('DEFLATE_START', this.identifyResponse.deflate_level);
+      }
+      if (snappy) {
+        return this.goto('SNAPPY_START');
+      }
+      return this.goto('AUTH');
+    },
+  },
+
+  TLS_START: {
+    Enter() {
+      this.conn.startTLS();
+      return this.goto('TLS_RESPONSE');
+    },
+  },
+
+  TLS_RESPONSE: {
+    response(data) {
+      if (data.toString() === 'OK') {
+        return this.goto('IDENTIFY_COMPRESSION_CHECK');
+      }
+      return this.goto('ERROR', new Error('TLS negotiate error with nsqd'));
+    },
+  },
+
+  DEFLATE_START: {
+    Enter(level) {
+      this.conn.startDeflate(level);
+      return this.goto('COMPRESSION_RESPONSE');
+    },
+  },
+
+  SNAPPY_START: {
+    Enter() {
+      this.conn.startSnappy();
+      return this.goto('COMPRESSION_RESPONSE');
+    },
+  },
+
+  COMPRESSION_RESPONSE: {
+    response(data) {
+      if (data.toString() === 'OK') {
+        return this.goto('AUTH');
+      }
+      return this.goto(
+        'ERROR',
+        new Error('Bad response when enabling compression')
+      );
+    },
+  },
+
+  AUTH: {
+    Enter() {
+      if (!this.conn.config.authSecret) {
+        return this.goto(this.afterIdentify());
+      }
+      this.conn.write(wire.auth(this.conn.config.authSecret));
+      return this.goto('AUTH_RESPONSE');
+    },
+  },
+
+  AUTH_RESPONSE: {
+    response(data) {
+      this.conn.auth = JSON.parse(data);
+      return this.goto(this.afterIdentify());
+    },
+  },
+
+  SUBSCRIBE: {
+    Enter() {
+      this.conn.write(wire.subscribe(this.conn.topic, this.conn.channel));
+      return this.goto('SUBSCRIBE_RESPONSE');
+    },
+  },
+
+  SUBSCRIBE_RESPONSE: {
+    response(data) {
+      if (data.toString() === 'OK') {
+        this.goto('READY_RECV');
+        // Notify listener that this nsqd connection has passed the subscribe
+        // phase. Do this only once for a connection.
+        return this.conn.emit(NSQDConnection.READY);
+      }
+    },
+  },
+
+  READY_RECV: {
+    consumeMessage(msg) {
+      return this.conn.emit(NSQDConnection.MESSAGE, msg);
+    },
+
+    response(data) {
+      if (data.toString() === '_heartbeat_') {
+        return this.conn.write(wire.nop());
+      }
+    },
+
+    ready(rdyCount) {
+      // RDY count for this nsqd cannot exceed the nsqd configured
+      // max rdy count.
+      if (rdyCount > this.conn.maxRdyCount) {
+        rdyCount = this.conn.maxRdyCount;
+      }
+      return this.conn.write(wire.ready(rdyCount));
+    },
+
+    close() {
+      return this.goto('CLOSED');
+    },
+  },
+
+  READY_SEND: {
+    Enter() {
+      // Notify listener that this nsqd connection is ready to send.
+      return this.conn.emit(NSQDConnection.READY);
+    },
+
+    produceMessages(data) {
+      const [topic, msgs, callback] = Array.from(data);
+      this.conn.messageCallbacks.push(callback);
+
+      if (!_.isArray(msgs)) {
+        throw new Error('Expect an array of messages to produceMessages');
+      }
+
+      if (msgs.length === 1) {
+        return this.conn.write(wire.pub(topic, msgs[0]));
+      }
+      return this.conn.write(wire.mpub(topic, msgs));
+    },
+
+    response(data) {
+      switch (data.toString()) {
+        case 'OK':
+          const cb = this.conn.messageCallbacks.shift();
+          return typeof cb === 'function' ? cb(null) : undefined;
+        case '_heartbeat_':
+          return this.conn.write(wire.nop());
+      }
+    },
+
+    close() {
+      return this.goto('CLOSED');
+    },
+  },
+
+  ERROR: {
+    Enter(err) {
+      // If there's a callback, pass it the error.
+      const cb = this.conn.messageCallbacks.shift();
+      if (typeof cb === 'function') {
+        cb(err);
+      }
+
+      this.conn.emit(NSQDConnection.ERROR, err);
+
+      // According to NSQ docs, the following errors are non-fatal and should
+      // not close the connection. See here for more info:
+      // http://nsq.io/clients/building_client_libraries.html
+      if (!_.isString(err)) {
+        err = err.toString();
+      }
+      const [junk, errorCode] = err.split(/\s+/);
+
+      if (
+        ['E_REQ_FAILED', 'E_FIN_FAILED', 'E_TOUCH_FAILED'].includes(errorCode)
+      ) {
+        return this.goto('READY_RECV');
+      }
+      return this.goto('CLOSED');
+    },
+
+    close() {
+      return this.goto('CLOSED');
+    },
+  },
+
+  CLOSED: {
+    Enter() {
+      if (!this.conn) {
+        return;
+      }
+
+      // If there are callbacks, then let them error on the closed connection.
+      const err = new Error('nsqd connection closed');
+      for (const cb of this.conn.messageCallbacks) {
+        if (typeof cb === 'function') {
+          cb(err);
+        }
+      }
+
+      this.conn.messageCallbacks = [];
+      this.disable();
+      this.conn.destroy();
+      this.conn.emit(NSQDConnection.CLOSED);
+      return delete this.conn;
+    },
+
+    // No-op. Once closed, subsequent calls should do nothing.
+    close() {},
+  },
+};
+
+ConnectionState.prototype.transitions = {
+  '*': {
+    '*': function(data, callback) {
+      this.log();
+      return callback(data);
+    },
+
+    CONNECTED(data, callback) {
+      this.log();
+      return callback(data);
+    },
+
+    ERROR(err, callback) {
+      this.log(`${err}`);
+      return callback(err);
+    },
+  },
+};
+
+/**
+ * WriterConnectionState
+ * 
+ * Usage:
+ *   c = new NSQDConnectionWriter '127.0.0.1', 4150, 30 
+ *   c.connect()
+ *   
+ *   c.on NSQDConnectionWriter.CLOSED, ->
+ *     console.log "Callback [closed]: Lost connection to nsqd"
+ *   
+ *   c.on NSQDConnectionWriter.ERROR, (err) ->
+ *     console.log "Callback [error]: #{err}"
+ *   
+ *   c.on NSQDConnectionWriter.READY, ->
+ *     c.produceMessages 'sample_topic', ['first message']
+ *     c.produceMessages 'sample_topic', ['second message', 'third message']
+ *     c.destroy()
+ */
 class WriterNSQDConnection extends NSQDConnection {
-  constructor(nsqdHost, nsqdPort, options) {
-    if (options == null) {
-      options = {};
-    }
+  constructor(nsqdHost, nsqdPort, options = {}) {
     super(nsqdHost, nsqdPort, null, null, options);
     this.debug = Debug(`nsqjs:writer:conn:${nsqdHost}/${nsqdPort}`);
   }
@@ -696,9 +683,3 @@ export {
   WriterNSQDConnection,
   WriterConnectionState,
 };
-
-function __guard__(value, transform) {
-  return typeof value !== 'undefined' && value !== null
-    ? transform(value)
-    : undefined;
-}
