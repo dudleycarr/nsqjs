@@ -1,0 +1,16 @@
+{
+  "parser": "babel-eslint",
+  "extends": "airbnb-base",
+  "plugins": [
+    "import",
+    "mocha"
+  ],
+  "env": {
+    "mocha": true
+  },
+  "rules": {
+    "no-plusplus": ["error", { "allowForLoopAfterthoughts": true  }],
+    "consistent-return": ["warn"],
+    "no-shadow": ["off"]
+  }
+}
