@@ -24,10 +24,7 @@ class ConnectionConfig {
     return host.length > 0 && port > 0;
   }
 
-  constructor(options) {
-    if (options == null) {
-      options = {};
-    }
+  constructor(options = {}) {
     options = _.chain(options)
       .pick(_.keys(this.constructor.DEFAULTS))
       .defaults(this.constructor.DEFAULTS)
@@ -42,9 +39,6 @@ class ConnectionConfig {
   }
 
   isNumber(option, value, lower, upper) {
-    if (upper == null) {
-      upper = null;
-    }
     if (_.isNaN(value) || !_.isNumber(value)) {
       throw new Error(`${option}(${value}) is not a number`);
     }
@@ -59,9 +53,6 @@ class ConnectionConfig {
   }
 
   isNumberExclusive(option, value, lower, upper) {
-    if (upper == null) {
-      upper = null;
-    }
     if (_.isNaN(value) || !_.isNumber(value)) {
       throw new Error(`${option}(${value}) is not a number`);
     }
@@ -88,10 +79,11 @@ class ConnectionConfig {
   }
 
   isLookupdHTTPAddresses(option, value) {
-    const isAddr = function(addr) {
+    const isAddr = (addr) => {
       if (addr.indexOf('://') === -1) {
         return ConnectionConfig.isBareAddress(addr);
       }
+
       const parsedUrl = url.parse(addr);
       return ['http:', 'https:'].includes(parsedUrl.protocol) &&
         !!parsedUrl.host;
@@ -125,7 +117,7 @@ HTTP/HTTPS URI`
   }
 
   validateOption(option, value) {
-    const [fn, ...args] = Array.from(this.conditions()[option]);
+    const [fn, ...args] = this.conditions()[option];
     return fn(option, value, ...args);
   }
 
@@ -144,7 +136,7 @@ HTTP/HTTPS URI`
 
       // Disabled via -1
       const keys = ['outputBufferSize', 'outputBufferTimeout'];
-      if (Array.from(keys).includes(option) && value === -1) {
+      if (keys.includes(option) && value === -1) {
         continue;
       }
 
@@ -184,8 +176,10 @@ class ReaderConfig extends ConnectionConfig {
   validate() {
     const addresses = ['nsqdTCPAddresses', 'lookupdHTTPAddresses'];
 
-    // Either a string or list of strings can be provided. Ensure list of
-    // strings going forward.
+    /** 
+     * Either a string or list of strings can be provided. Ensure list of
+     * strings going forward.
+     */
     for (const key of Array.from(addresses)) {
       if (_.isString(this[key])) {
         this[key] = [this[key]];
