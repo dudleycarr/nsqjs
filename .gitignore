@@ -10,3 +10,4 @@ lib
 node_modules/
 share/man
 src/node-*
+build
