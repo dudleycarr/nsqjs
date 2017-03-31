@@ -3,14 +3,14 @@ import async from 'async';
 import request from 'request';
 import url from 'url';
 
-/*
-lookupdRequest returns the list of producers from a lookupd given a URL to
-query.
-
-The callback will not return an error since it's assumed that there might
-be transient issues with lookupds.
-*/
-const lookupdRequest = function(url, callback) {
+/**
+ * lookupdRequest returns the list of producers from a lookupd given a 
+ * URL to query.
+ * 
+ * The callback will not return an error since it's assumed that there might 
+ * be transient issues with lookupds.
+ */
+function lookupdRequest(url, callback) {
   // All responses are JSON
   const options = {
     url,
@@ -28,21 +28,21 @@ const lookupdRequest = function(url, callback) {
   });
 };
 
-/*
-Takes a list of responses from lookupds and dedupes the nsqd hosts based on
-host / port pair.
-
-Arguments:
-  results: list of lists of nsqd node objects.
-*/
-const dedupeOnHostPort = results =>
-  _.chain(results)
+/**
+ * Takes a list of responses from lookupds and dedupes the nsqd 
+ * hosts based on host / port pair.
+ * 
+ * @param {Array} results - list of lists of nsqd node objects.
+ */
+function dedupeOnHostPort(results) {
+  return _.chain(results)
     // Flatten list of lists of objects
     .flatten()
     // De-dupe nodes by hostname / port
     .indexBy(item => `${item.hostname}:${item.tcp_port}`)
     .values()
     .value();
+}
 
 const dedupedRequests = function(lookupdEndpoints, urlFn, callback) {
   // Ensure we have a list of endpoints for lookupds.
@@ -61,17 +61,17 @@ const dedupedRequests = function(lookupdEndpoints, urlFn, callback) {
   });
 };
 
-/*
-Queries lookupds for known nsqd nodes given a topic and returns a deduped list.
-
-Arguments:
-  lookupdEndpoints: a string or a list of strings of lookupd HTTP endpoints. eg.
-    ['127.0.0.1:4161']
-  topic: a string of the topic name.
-  callback: with signature `(err, nodes) ->`. `nodes` is a list of objects
-    return by lookupds and deduped.
-*/
-const lookup = function(lookupdEndpoints, topic, callback) {
+/**
+ * Queries lookupds for known nsqd nodes given a topic and returns 
+ * a deduped list. 
+ * 
+ * @param {String} lookupdEndpoints - a string or a list of strings of 
+ *   lookupd HTTP endpoints. eg. ['127.0.0.1:4161']
+ * @param {String} topic - a string of the topic name
+ * @param {Function} callback - with signature `(err, nodes) ->`. `nodes` 
+ *   is a list of objects return by lookupds and deduped.
+ */
+function lookup(lookupdEndpoints, topic, callback) {
   const endpointURL = function(endpoint) {
     if (endpoint.indexOf('://') === -1) {
       endpoint = `http://${endpoint}`;
