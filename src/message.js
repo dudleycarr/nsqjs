@@ -2,16 +2,14 @@ import * as wire from './wire';
 import { EventEmitter } from 'events';
 
 class Message extends EventEmitter {
-  static initClass() {
-    // Event types
-    this.BACKOFF = 'backoff';
-    this.RESPOND = 'respond';
+  // Event types
+  static BACKOFF = 'backoff';
+  static RESPOND = 'respond';
 
-    // Response types
-    this.FINISH = 0;
-    this.REQUEUE = 1;
-    this.TOUCH = 2;
-  }
+  // Response types
+  static FINISH = 0;
+  static REQUEUE = 1;
+  static TOUCH = 2;
 
   constructor(
     id,
@@ -22,7 +20,6 @@ class Message extends EventEmitter {
     msgTimeout,
     maxMsgTimeout
   ) {
-    let trackTimeout;
     super(...arguments);
     this.id = id;
     this.timestamp = timestamp;
@@ -39,7 +36,8 @@ class Message extends EventEmitter {
 
     // Keep track of when this message actually times out.
     this.timedOut = false;
-    (trackTimeout = () => {
+
+    const trackTimeout = () => {
       if (this.hasResponded) {
         return;
       }
@@ -53,7 +51,9 @@ class Message extends EventEmitter {
         clearTimeout(this.trackTimeoutId);
         this.trackTimeoutId = setTimeout(trackTimeout, Math.min(soft, hard));
       }
-    })();
+    };
+
+    trackTimeout();
   }
 
   json() {
@@ -72,10 +72,7 @@ class Message extends EventEmitter {
   // for a message. There are the soft timeouts that can be extended by touching
   // the message. There is the hard timeout that cannot be exceeded without
   // reconfiguring the nsqd.
-  timeUntilTimeout(hard) {
-    if (hard == null) {
-      hard = false;
-    }
+  timeUntilTimeout(hard = false) {
     if (this.hasResponded) {
       return null;
     }
@@ -94,13 +91,7 @@ class Message extends EventEmitter {
     return this.respond(Message.FINISH, wire.finish(this.id));
   }
 
-  requeue(delay, backoff) {
-    if (delay == null) {
-      delay = this.requeueDelay;
-    }
-    if (backoff == null) {
-      backoff = true;
-    }
+  requeue(delay = this.requeueDelay, backoff = true) {
     this.respond(Message.REQUEUE, wire.requeue(this.id, delay));
     if (backoff) {
       return this.emit(Message.BACKOFF);
@@ -132,6 +123,5 @@ class Message extends EventEmitter {
     });
   }
 }
-Message.initClass();
 
 export default Message;
