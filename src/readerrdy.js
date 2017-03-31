@@ -111,7 +111,7 @@ class ConnectionRdyState extends NodeState {
     super({
       autostart: false,
       initial_state: 'INIT',
-      sync_goto: true,
+      sync_goto: true
     });
 
     this.connRdy = connRdy;
@@ -134,7 +134,7 @@ ConnectionRdyState.prototype.states = {
       }
     },
     backoff() {}, // No-op
-    adjustMax() {},
+    adjustMax() {}
   }, // No-op
 
   BACKOFF: {
@@ -145,7 +145,7 @@ ConnectionRdyState.prototype.states = {
       if (this.connRdy.maxConnRdy > 0) return this.goto('ONE');
     },
     backoff() {}, // No-op
-    adjustMax() {},
+    adjustMax() {}
   }, // No-op
 
   ONE: {
@@ -158,7 +158,7 @@ ConnectionRdyState.prototype.states = {
     backoff() {
       return this.goto('BACKOFF');
     },
-    adjustMax() {},
+    adjustMax() {}
   }, // No-op
 
   MAX: {
@@ -182,8 +182,8 @@ ConnectionRdyState.prototype.states = {
     adjustMax() {
       this.log(`adjustMax RDY ${this.connRdy.maxConnRdy}`);
       return this.connRdy.setRdy(this.connRdy.maxConnRdy);
-    },
-  },
+    }
+  }
 };
 
 ConnectionRdyState.prototype.transitions = {
@@ -192,8 +192,8 @@ ConnectionRdyState.prototype.transitions = {
       this.log();
       callback(data);
       return this.connRdy.emit(ConnectionRdy.STATE_CHANGE);
-    },
-  },
+    }
+  }
 };
 
 /**
@@ -251,7 +251,7 @@ class ReaderRdy extends NodeState {
     super({
       autostart: true,
       initial_state: 'ZERO',
-      sync_goto: true,
+      sync_goto: true
     });
 
     this.maxInFlight = maxInFlight;
@@ -516,7 +516,7 @@ ReaderRdy.prototype.states = {
       // No-op
       return this.goto('PAUSE');
     },
-    unpause() {},
+    unpause() {}
   }, // No-op
 
   PAUSE: {
@@ -529,7 +529,7 @@ ReaderRdy.prototype.states = {
     pause() {}, // No-op
     unpause() {
       return this.goto('TRY_ONE');
-    },
+    }
   },
 
   TRY_ONE: {
@@ -548,7 +548,7 @@ ReaderRdy.prototype.states = {
     pause() {
       return this.goto('PAUSE');
     },
-    unpause() {},
+    unpause() {}
   }, // No-op
 
   MAX: {
@@ -567,7 +567,7 @@ ReaderRdy.prototype.states = {
     pause() {
       return this.goto('PAUSE');
     },
-    unpause() {},
+    unpause() {}
   }, // No-op
 
   BACKOFF: {
@@ -586,8 +586,8 @@ ReaderRdy.prototype.states = {
     pause() {
       return this.goto('PAUSE');
     },
-    unpause() {},
-  }, // No-op
+    unpause() {}
+  } // No-op
 };
 
 ReaderRdy.prototype.transitions = {
@@ -595,8 +595,8 @@ ReaderRdy.prototype.transitions = {
     '*': function(data, callback) {
       this.log();
       return callback(data);
-    },
-  },
+    }
+  }
 };
 
 export { ReaderRdy, ConnectionRdy };

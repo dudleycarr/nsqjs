@@ -92,7 +92,7 @@ export function identify(data) {
     'short_id',
     'snappy',
     'tls_v1',
-    'user_agent',
+    'user_agent'
   ];
   // Make sure there are no unexpected keys
   const unexpectedKeys = _.filter(

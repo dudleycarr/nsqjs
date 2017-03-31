@@ -16,7 +16,7 @@ function lookupdRequest(url, callback) {
     url,
     method: 'GET',
     json: true,
-    timeout: 2000,
+    timeout: 2000
   };
 
   request(options, (err, response, data = {}) => {

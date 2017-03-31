@@ -16,7 +16,7 @@ class ConnectionConfig {
     sampleRate: null,
     snappy: false,
     tls: false,
-    tlsVerification: true,
+    tlsVerification: true
   };
 
   static isBareAddress(addr) {
@@ -112,7 +112,7 @@ HTTP/HTTPS URI`
       sampleRate: [this.isNumber, 1, 99],
       snappy: [this.isBoolean],
       tls: [this.isBoolean],
-      tlsVerification: [this.isBoolean],
+      tlsVerification: [this.isBoolean]
     };
   }
 
@@ -158,7 +158,7 @@ class ReaderConfig extends ConnectionConfig {
     name: null,
     nsqdTCPAddresses: [],
     maxAttempts: 0,
-    maxBackoffDuration: 128,
+    maxBackoffDuration: 128
   });
 
   conditions() {
@@ -169,7 +169,7 @@ class ReaderConfig extends ConnectionConfig {
       name: [this.isNonEmptyString],
       nsqdTCPAddresses: [this.isBareAddresses],
       maxAttempts: [this.isNumber, 0],
-      maxBackoffDuration: [this.isNumber, 0],
+      maxBackoffDuration: [this.isNumber, 0]
     });
   }
 

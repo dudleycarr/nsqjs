@@ -7,14 +7,14 @@ import {
   ConnectionState,
   NSQDConnection,
   WriterNSQDConnection,
-  WriterConnectionState,
+  WriterConnectionState
 } from '../src/nsqdconnection';
 
 describe('Reader ConnectionState', () => {
   const state = {
     sent: [],
     connection: null,
-    statemachine: null,
+    statemachine: null
   };
 
   beforeEach(() => {
@@ -34,7 +34,7 @@ describe('Reader ConnectionState', () => {
     return _.extend(state, {
       sent,
       connection,
-      statemachine,
+      statemachine
     });
   });
 
@@ -67,7 +67,7 @@ describe('Reader ConnectionState', () => {
       JSON.stringify({
         max_rdy_count: 1000,
         max_msg_timeout: 10 * 60 * 1000,
-        msg_timeout: 2 * 60 * 1000,
+        msg_timeout: 2 * 60 * 1000
       })
     );
 
@@ -114,7 +114,7 @@ describe('Reader ConnectionState', () => {
       new Buffer(''),
       60,
       60,
-      120,
+      120
     ]);
 
     connection.on(NSQDConnection.MESSAGE, msg => {
@@ -162,7 +162,7 @@ describe('WriterConnectionState', () => {
   const state = {
     sent: [],
     connection: null,
-    statemachine: null,
+    statemachine: null
   };
 
   beforeEach(() => {
@@ -180,7 +180,7 @@ describe('WriterConnectionState', () => {
     _.extend(state, {
       sent,
       connection,
-      statemachine,
+      statemachine
     });
   });
 

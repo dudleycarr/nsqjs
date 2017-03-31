@@ -8,5 +8,5 @@ export default {
   Reader,
   Writer,
   NSQDConnection,
-  WriterNSQDConnection,
+  WriterNSQDConnection
 };

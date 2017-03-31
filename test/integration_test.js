@@ -17,7 +17,7 @@ const startNSQD = (dataPath, additionalOptions = {}, callback) => {
     'tcp-address': `127.0.0.1:${TCP_PORT}`,
     'data-path': dataPath,
     'tls-cert': './test/cert.pem',
-    'tls-key': './test/key.pem',
+    'tls-key': './test/key.pem'
   };
 
   _.extend(options, additionalOptions);
@@ -26,7 +26,7 @@ const startNSQD = (dataPath, additionalOptions = {}, callback) => {
   options = Object.keys(options).map(option => [`-${option}`, options[option]]);
 
   const process = child_process.spawn('nsqd', _.flatten(options), {
-    stdio: ['ignore', 'ignore', 'ignore'],
+    stdio: ['ignore', 'ignore', 'ignore']
   });
 
   setTimeout(() => callback(null, process), 500);
@@ -37,8 +37,8 @@ const topicOp = (op, topic, callback) => {
     method: 'POST',
     uri: `http://127.0.0.1:${HTTP_PORT}/${op}`,
     qs: {
-      topic,
-    },
+      topic
+    }
   };
 
   request(options, err => callback(err));
@@ -53,9 +53,9 @@ const publish = (topic, message, callback = () => {}) => {
     uri: `http://127.0.0.1:${HTTP_PORT}/pub`,
     method: 'POST',
     qs: {
-      topic,
+      topic
     },
-    body: message,
+    body: message
   };
 
   request(options, err => callback(err));
@@ -95,7 +95,7 @@ describe('integration', () => {
       { snappy: true },
       { tls: true, tlsVerification: false },
       { tls: true, tlsVerification: false, snappy: true },
-      { tls: true, tlsVerification: false, deflate: true },
+      { tls: true, tlsVerification: false, deflate: true }
     ];
 
     optionPermutations.forEach(options => {
@@ -171,7 +171,7 @@ describe('integration', () => {
       writer = new nsq.Writer('127.0.0.1', TCP_PORT);
       writer.on('ready', () => {
         reader = new nsq.Reader(topic, channel, {
-          nsqdTCPAddresses: tcpAddress,
+          nsqdTCPAddresses: tcpAddress
         });
         reader.connect();
         done();
@@ -369,7 +369,7 @@ describe('failures', () => {
                   callback();
                 }
               );
-            },
+            }
           ],
           done
         );

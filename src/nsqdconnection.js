@@ -146,7 +146,7 @@ class NSQDConnection extends EventEmitter {
 
     const options = {
       socket: this.conn,
-      rejectUnauthorized: this.config.tlsVerification,
+      rejectUnauthorized: this.config.tlsVerification
     };
     var tlsConn = tls.connect(options, () => {
       this.conn = tlsConn;
@@ -247,7 +247,7 @@ class NSQDConnection extends EventEmitter {
       short_id: shortName,
       snappy: this.config.snappy,
       tls_v1: this.config.tls,
-      user_agent: `nsqjs/${version}`,
+      user_agent: `nsqjs/${version}`
     };
 
     // Remove some keys when they're effectively not provided.
@@ -255,7 +255,7 @@ class NSQDConnection extends EventEmitter {
       'msg_timeout',
       'output_buffer_size',
       'output_buffer_timeout',
-      'sample_rate',
+      'sample_rate'
     ];
     for (const key of Array.from(removableKeys)) {
       if (identify[key] === null) {
@@ -328,7 +328,7 @@ class ConnectionState extends NodeState {
     super({
       autostart: true,
       initial_state: 'INIT',
-      sync_goto: true,
+      sync_goto: true
     });
 
     this.conn = conn;
@@ -353,19 +353,19 @@ ConnectionState.prototype.states = {
   INIT: {
     connecting() {
       return this.goto('CONNECTING');
-    },
+    }
   },
 
   CONNECTING: {
     connected() {
       return this.goto('CONNECTED');
-    },
+    }
   },
 
   CONNECTED: {
     Enter() {
       return this.goto('SEND_MAGIC_IDENTIFIER');
-    },
+    }
   },
 
   SEND_MAGIC_IDENTIFIER: {
@@ -373,7 +373,7 @@ ConnectionState.prototype.states = {
       // Send the magic protocol identifier to the connection
       this.conn.write(wire.MAGIC_V2);
       return this.goto('IDENTIFY');
-    },
+    }
   },
 
   IDENTIFY: {
@@ -383,7 +383,7 @@ ConnectionState.prototype.states = {
       this.conn.debug(identify);
       this.conn.write(wire.identify(identify));
       return this.goto('IDENTIFY_RESPONSE');
-    },
+    }
   },
 
   IDENTIFY_RESPONSE: {
@@ -392,7 +392,7 @@ ConnectionState.prototype.states = {
         data = JSON.stringify({
           max_rdy_count: 2500,
           max_msg_timeout: 15 * 60 * 1000, // 15 minutes
-          msg_timeout: 60 * 1000,
+          msg_timeout: 60 * 1000
         }); //  1 minute
       }
 
@@ -408,7 +408,7 @@ ConnectionState.prototype.states = {
         return this.goto('TLS_START');
       }
       return this.goto('IDENTIFY_COMPRESSION_CHECK');
-    },
+    }
   },
 
   IDENTIFY_COMPRESSION_CHECK: {
@@ -422,14 +422,14 @@ ConnectionState.prototype.states = {
         return this.goto('SNAPPY_START');
       }
       return this.goto('AUTH');
-    },
+    }
   },
 
   TLS_START: {
     Enter() {
       this.conn.startTLS();
       return this.goto('TLS_RESPONSE');
-    },
+    }
   },
 
   TLS_RESPONSE: {
@@ -438,21 +438,21 @@ ConnectionState.prototype.states = {
         return this.goto('IDENTIFY_COMPRESSION_CHECK');
       }
       return this.goto('ERROR', new Error('TLS negotiate error with nsqd'));
-    },
+    }
   },
 
   DEFLATE_START: {
     Enter(level) {
       this.conn.startDeflate(level);
       return this.goto('COMPRESSION_RESPONSE');
-    },
+    }
   },
 
   SNAPPY_START: {
     Enter() {
       this.conn.startSnappy();
       return this.goto('COMPRESSION_RESPONSE');
-    },
+    }
   },
 
   COMPRESSION_RESPONSE: {
@@ -464,7 +464,7 @@ ConnectionState.prototype.states = {
         'ERROR',
         new Error('Bad response when enabling compression')
       );
-    },
+    }
   },
 
   AUTH: {
@@ -474,21 +474,21 @@ ConnectionState.prototype.states = {
       }
       this.conn.write(wire.auth(this.conn.config.authSecret));
       return this.goto('AUTH_RESPONSE');
-    },
+    }
   },
 
   AUTH_RESPONSE: {
     response(data) {
       this.conn.auth = JSON.parse(data);
       return this.goto(this.afterIdentify());
-    },
+    }
   },
 
   SUBSCRIBE: {
     Enter() {
       this.conn.write(wire.subscribe(this.conn.topic, this.conn.channel));
       return this.goto('SUBSCRIBE_RESPONSE');
-    },
+    }
   },
 
   SUBSCRIBE_RESPONSE: {
@@ -499,7 +499,7 @@ ConnectionState.prototype.states = {
         // phase. Do this only once for a connection.
         return this.conn.emit(NSQDConnection.READY);
       }
-    },
+    }
   },
 
   READY_RECV: {
@@ -524,7 +524,7 @@ ConnectionState.prototype.states = {
 
     close() {
       return this.goto('CLOSED');
-    },
+    }
   },
 
   READY_SEND: {
@@ -559,7 +559,7 @@ ConnectionState.prototype.states = {
 
     close() {
       return this.goto('CLOSED');
-    },
+    }
   },
 
   ERROR: {
@@ -590,7 +590,7 @@ ConnectionState.prototype.states = {
 
     close() {
       return this.goto('CLOSED');
-    },
+    }
   },
 
   CLOSED: {
@@ -615,8 +615,8 @@ ConnectionState.prototype.states = {
     },
 
     // No-op. Once closed, subsequent calls should do nothing.
-    close() {},
-  },
+    close() {}
+  }
 };
 
 ConnectionState.prototype.transitions = {
@@ -634,8 +634,8 @@ ConnectionState.prototype.transitions = {
     ERROR(err, callback) {
       this.log(`${err}`);
       return callback(err);
-    },
-  },
+    }
+  }
 };
 
 /**
@@ -681,5 +681,5 @@ export {
   NSQDConnection,
   ConnectionState,
   WriterNSQDConnection,
-  WriterConnectionState,
+  WriterConnectionState
 };
