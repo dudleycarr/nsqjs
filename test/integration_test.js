@@ -199,9 +199,9 @@ describe('integration', () => {
       reader.on('error', () => {});
 
       reader.on('message', (readMsg) => {
-        readMsg.body.forEach((readByte, i) => {
-          should.equal(readByte, message[i]);
-        });
+        for (let i = 0; i < readMsg.body.length; i++) {
+          should.equal(readMsg.body[i], message[i]);
+        }
         readMsg.finish();
         done();
       });

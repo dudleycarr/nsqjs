@@ -1,7 +1,7 @@
-import _ from 'underscore'
-import async from 'async'
-import request from 'request'
-import url from 'url'
+import _ from 'underscore';
+import async from 'async';
+import request from 'request';
+import url from 'url';
 
 /*
 lookupdRequest returns the list of producers from a lookupd given a URL to
@@ -16,17 +16,17 @@ const lookupdRequest = function (url, callback) {
     url,
     method: 'GET',
     json: true,
-    timeout: 2000
-  }
+    timeout: 2000,
+  };
 
   request(options, (err, response, data = {}) => {
     if (err || data.status_code !== 200) {
-      return callback(err, [])
+      return callback(err, []);
     }
 
-    callback(null, data.data.producers)
-  })
-}
+    callback(null, data.data.producers);
+  });
+};
 
 /*
 Takes a list of responses from lookupds and dedupes the nsqd hosts based on
@@ -41,22 +41,22 @@ const dedupeOnHostPort = results =>
     .flatten()
     // De-dupe nodes by hostname / port
     .indexBy(item => `${item.hostname}:${item.tcp_port}`).values()
-    .value()
+    .value();
 
 const dedupedRequests = function (lookupdEndpoints, urlFn, callback) {
   // Ensure we have a list of endpoints for lookupds.
-  if (_.isString(lookupdEndpoints)) { lookupdEndpoints = [lookupdEndpoints] }
+  if (_.isString(lookupdEndpoints)) { lookupdEndpoints = [lookupdEndpoints]; }
 
   // URLs for querying `nodes` on each of the lookupds.
-  const urls = (Array.from(lookupdEndpoints).map(endpoint => urlFn(endpoint)))
+  const urls = (Array.from(lookupdEndpoints).map(endpoint => urlFn(endpoint)));
 
   return async.map(urls, lookupdRequest, (err, results) => {
     if (err) {
-      return callback(err, null)
+      return callback(err, null);
     }
-    return callback(null, dedupeOnHostPort(results))
-  })
-}
+    return callback(null, dedupeOnHostPort(results));
+  });
+};
 
 /*
 Queries lookupds for known nsqd nodes given a topic and returns a deduped list.
@@ -70,17 +70,17 @@ Arguments:
 */
 const lookup = function (lookupdEndpoints, topic, callback) {
   const endpointURL = function (endpoint) {
-    if (endpoint.indexOf('://') === -1) { endpoint = `http://${endpoint}` }
-    const parsedUrl = url.parse(endpoint, true)
+    if (endpoint.indexOf('://') === -1) { endpoint = `http://${endpoint}`; }
+    const parsedUrl = url.parse(endpoint, true);
 
     if ((!parsedUrl.pathname) || (parsedUrl.pathname === '/')) {
-      parsedUrl.pathname = '/lookup'
+      parsedUrl.pathname = '/lookup';
     }
-    parsedUrl.query.topic = topic
-    delete parsedUrl.search
-    return url.format(parsedUrl)
-  }
-  return dedupedRequests(lookupdEndpoints, endpointURL, callback)
-}
+    parsedUrl.query.topic = topic;
+    delete parsedUrl.search;
+    return url.format(parsedUrl);
+  };
+  return dedupedRequests(lookupdEndpoints, endpointURL, callback);
+};
 
-export default lookup
+export default lookup;
