@@ -26,7 +26,7 @@ function lookupdRequest(url, callback) {
 
     callback(null, data.data.producers);
   });
-};
+}
 
 /**
  * Takes a list of responses from lookupds and dedupes the nsqd 
@@ -35,13 +35,15 @@ function lookupdRequest(url, callback) {
  * @param {Array} results - list of lists of nsqd node objects.
  */
 function dedupeOnHostPort(results) {
-  return _.chain(results)
-    // Flatten list of lists of objects
-    .flatten()
-    // De-dupe nodes by hostname / port
-    .indexBy(item => `${item.hostname}:${item.tcp_port}`)
-    .values()
-    .value();
+  return (
+    _.chain(results)
+      // Flatten list of lists of objects
+      .flatten()
+      // De-dupe nodes by hostname / port
+      .indexBy(item => `${item.hostname}:${item.tcp_port}`)
+      .values()
+      .value()
+  );
 }
 
 const dedupedRequests = function(lookupdEndpoints, urlFn, callback) {
@@ -86,6 +88,6 @@ function lookup(lookupdEndpoints, topic, callback) {
     return url.format(parsedUrl);
   };
   return dedupedRequests(lookupdEndpoints, endpointURL, callback);
-};
+}
 
 export default lookup;

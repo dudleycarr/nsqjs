@@ -79,7 +79,7 @@ class ConnectionConfig {
   }
 
   isLookupdHTTPAddresses(option, value) {
-    const isAddr = (addr) => {
+    const isAddr = addr => {
       if (addr.indexOf('://') === -1) {
         return ConnectionConfig.isBareAddress(addr);
       }
