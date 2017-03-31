@@ -1,15 +1,15 @@
-/*
-Takes a list and cycles through the elements in the list repeatedly and
-in-order. Adding and removing to the list does not perturb the order.
-
-Usage:
-  lst = RoundRobinList [1, 2, 3]
-  lst.next()                      # Returns [1]
-  lst.next 2                      # Returns [2, 3]
-  lst.next 2                      # Returns [1, 2]
-  lst.add 5
-  lst.next 2                      # Retunrs [3, 5]
-*/
+/**
+ * Takes a list and cycles through the elements in the list repeatedly and
+ * in-order. Adding and removing to the list does not perturb the order.
+ * 
+ * Usage:
+ *   const list = RoundRobinList([1, 2, 3]);
+ *   list.next() ==> [1]
+ *   list.next(2) ==> [2, 3]
+ *   list.next(2) ==> [1, 2]
+ *   list.add(5) ==> 5
+ *   list.next(2) ==> [3, 5]
+ */
 class RoundRobinList {
   constructor(lst) {
     this.lst = lst.slice();
@@ -35,10 +35,7 @@ class RoundRobinList {
     return this.lst.splice(itemIndex, 1);
   }
 
-  next(count) {
-    if (count == null) {
-      count = 1;
-    }
+  next(count = 1) {
     const { index } = this;
     this.index = (this.index + count) % this.lst.length;
     return this.lst.slice(index, index + count);
