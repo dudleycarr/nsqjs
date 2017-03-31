@@ -17,20 +17,28 @@ class FrameBuffer {
   }
 
   nextFrame() {
-    if (!this.buffer) { return; }
-    if (!this.frameSize(0) || !(this.frameSize(0) <= this.buffer.length)) { return; }
+    if (!this.buffer) {
+      return;
+    }
+    if (!this.frameSize(0) || !(this.frameSize(0) <= this.buffer.length)) {
+      return;
+    }
     const frame = this.pluckFrame();
 
     const nextOffset = this.nextOffset();
     this.buffer = this.buffer.slice(nextOffset);
-    if (!this.buffer.length) { delete this.buffer; }
+    if (!this.buffer.length) {
+      delete this.buffer;
+    }
 
     return frame;
   }
 
   // Given an offset into a buffer, get the frame ID and data tuple.
   pluckFrame(offset) {
-    if (offset == null) { offset = 0; }
+    if (offset == null) {
+      offset = 0;
+    }
     const frame = this.buffer.slice(offset, offset + this.frameSize(offset));
     const frameId = frame.readInt32BE(4);
     return [frameId, frame.slice(8)];
@@ -39,15 +47,23 @@ class FrameBuffer {
   // Given the offset of the current frame in the buffer, find the offset
   // of the next buffer.
   nextOffset(offset) {
-    if (offset == null) { offset = 0; }
+    if (offset == null) {
+      offset = 0;
+    }
     const size = this.frameSize(offset);
-    if (size) { return offset + size; }
+    if (size) {
+      return offset + size;
+    }
   }
 
   // Given the frame offset, return the frame size.
   frameSize(offset) {
-    if (!this.buffer || !(this.buffer.length > 4)) { return; }
-    if ((offset + 4) <= this.buffer.length) { return 4 + this.buffer.readInt32BE(offset); }
+    if (!this.buffer || !(this.buffer.length > 4)) {
+      return;
+    }
+    if (offset + 4 <= this.buffer.length) {
+      return 4 + this.buffer.readInt32BE(offset);
+    }
   }
 }
 

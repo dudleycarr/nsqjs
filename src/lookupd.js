@@ -10,7 +10,7 @@ query.
 The callback will not return an error since it's assumed that there might
 be transient issues with lookupds.
 */
-const lookupdRequest = function (url, callback) {
+const lookupdRequest = function(url, callback) {
   // All responses are JSON
   const options = {
     url,
@@ -40,15 +40,18 @@ const dedupeOnHostPort = results =>
     // Flatten list of lists of objects
     .flatten()
     // De-dupe nodes by hostname / port
-    .indexBy(item => `${item.hostname}:${item.tcp_port}`).values()
+    .indexBy(item => `${item.hostname}:${item.tcp_port}`)
+    .values()
     .value();
 
-const dedupedRequests = function (lookupdEndpoints, urlFn, callback) {
+const dedupedRequests = function(lookupdEndpoints, urlFn, callback) {
   // Ensure we have a list of endpoints for lookupds.
-  if (_.isString(lookupdEndpoints)) { lookupdEndpoints = [lookupdEndpoints]; }
+  if (_.isString(lookupdEndpoints)) {
+    lookupdEndpoints = [lookupdEndpoints];
+  }
 
   // URLs for querying `nodes` on each of the lookupds.
-  const urls = (Array.from(lookupdEndpoints).map(endpoint => urlFn(endpoint)));
+  const urls = Array.from(lookupdEndpoints).map(endpoint => urlFn(endpoint));
 
   return async.map(urls, lookupdRequest, (err, results) => {
     if (err) {
@@ -68,12 +71,14 @@ Arguments:
   callback: with signature `(err, nodes) ->`. `nodes` is a list of objects
     return by lookupds and deduped.
 */
-const lookup = function (lookupdEndpoints, topic, callback) {
-  const endpointURL = function (endpoint) {
-    if (endpoint.indexOf('://') === -1) { endpoint = `http://${endpoint}`; }
+const lookup = function(lookupdEndpoints, topic, callback) {
+  const endpointURL = function(endpoint) {
+    if (endpoint.indexOf('://') === -1) {
+      endpoint = `http://${endpoint}`;
+    }
     const parsedUrl = url.parse(endpoint, true);
 
-    if ((!parsedUrl.pathname) || (parsedUrl.pathname === '/')) {
+    if (!parsedUrl.pathname || parsedUrl.pathname === '/') {
       parsedUrl.pathname = '/lookup';
     }
     parsedUrl.query.topic = topic;

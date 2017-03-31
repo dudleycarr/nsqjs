@@ -7,11 +7,11 @@ import { ReaderConfig } from './config';
 import { ReaderRdy } from './readerrdy';
 
 class Reader extends EventEmitter {
-  static ERROR = 'error'
-  static MESSAGE = 'message'
-  static DISCARD = 'discard'
-  static NSQD_CONNECTED = 'nsqd_connected'
-  static NSQD_CLOSED = 'nsqd_closed'
+  static ERROR = 'error';
+  static MESSAGE = 'message';
+  static DISCARD = 'discard';
+  static NSQD_CONNECTED = 'nsqd_connected';
+  static NSQD_CLOSED = 'nsqd_closed';
 
   constructor(topic, channel, options) {
     super(...arguments);
@@ -24,9 +24,14 @@ class Reader extends EventEmitter {
     this.debug('Configuration');
     this.debug(this.config);
 
-    this.roundrobinLookupd = new RoundRobinList(this.config.lookupdHTTPAddresses);
-    this.readerRdy = new ReaderRdy(this.config.maxInFlight, this.config.maxBackoffDuration,
-      `${this.topic}/${this.channel}`);
+    this.roundrobinLookupd = new RoundRobinList(
+      this.config.lookupdHTTPAddresses
+    );
+    this.readerRdy = new ReaderRdy(
+      this.config.maxInFlight,
+      this.config.maxBackoffDuration,
+      `${this.topic}/${this.channel}`
+    );
     this.connectIntervalId = null;
     this.connectionIds = [];
   }
@@ -43,7 +48,7 @@ class Reader extends EventEmitter {
         if (this.isPaused()) return;
 
         if (this.connectionIds.length < this.config.nsqdTCPAddresses.length) {
-          return this.config.nsqdTCPAddresses.forEach((addr) => {
+          return this.config.nsqdTCPAddresses.forEach(addr => {
             const [address, port] = addr.split(':');
             this.connectToNSQD(address, Number(port));
           });
@@ -51,7 +56,10 @@ class Reader extends EventEmitter {
       };
 
       delayedStart = () => {
-        this.connectIntervalId = setInterval(directConnect.bind(this), interval);
+        this.connectIntervalId = setInterval(
+          directConnect.bind(this),
+          interval
+        );
       };
 
       // Connect immediately.
@@ -62,10 +70,13 @@ class Reader extends EventEmitter {
     }
 
     delayedStart = () => {
-      this.connectIntervalId = setInterval(this.queryLookupd.bind(this), interval);
+      this.connectIntervalId = setInterval(
+        this.queryLookupd.bind(this),
+        interval
+      );
     };
 
-      // Connect immediately.
+    // Connect immediately.
     this.queryLookupd();
 
     // Start interval for querying lookupd after delay.
@@ -94,28 +105,40 @@ class Reader extends EventEmitter {
 
   queryLookupd() {
     // Don't establish new connections while the Reader is paused.
-    if (this.isPaused()) { return; }
+    if (this.isPaused()) {
+      return;
+    }
 
     // Trigger a query of the configured ``lookupdHTTPAddresses``
     const endpoint = this.roundrobinLookupd.next();
-    return lookup(endpoint, this.topic, (err, nodes) => (() => {
-      const result = [];
-      for (const n of Array.from(nodes)) {
-        let item;
-        if (!err) { item = this.connectToNSQD(n.broadcast_address, n.tcp_port); }
-        result.push(item);
-      }
-      return result;
-    })(),
-    );
+    return lookup(endpoint, this.topic, (err, nodes) =>
+      (() => {
+        const result = [];
+        for (const n of Array.from(nodes)) {
+          let item;
+          if (!err) {
+            item = this.connectToNSQD(n.broadcast_address, n.tcp_port);
+          }
+          result.push(item);
+        }
+        return result;
+      })());
   }
 
   connectToNSQD(host, port) {
     this.debug(`discovered ${host}:${port} for ${this.topic} topic`);
-    const conn = new NSQDConnection(host, port, this.topic, this.channel, this.config);
+    const conn = new NSQDConnection(
+      host,
+      port,
+      this.topic,
+      this.channel,
+      this.config
+    );
 
     // Ensure a connection doesn't already exist to this nsqd instance.
-    if (this.connectionIds.indexOf(conn.id()) !== -1) { return; }
+    if (this.connectionIds.indexOf(conn.id()) !== -1) {
+      return;
+    }
     this.debug(`connecting to ${host}:${port}`);
     this.connectionIds.push(conn.id());
 
@@ -129,57 +152,57 @@ class Reader extends EventEmitter {
     conn.on(NSQDConnection.CONNECTED, () => {
       this.debug(Reader.NSQD_CONNECTED);
       return this.emit(Reader.NSQD_CONNECTED, conn.nsqdHost, conn.nsqdPort);
-    },
-    );
+    });
 
-    conn.on(NSQDConnection.ERROR, (err) => {
+    conn.on(NSQDConnection.ERROR, err => {
       this.debug(Reader.ERROR);
       this.debug(err);
       return this.emit(Reader.ERROR, err);
-    },
-    );
+    });
 
-    conn.on(NSQDConnection.CONNECTION_ERROR, (err) => {
+    conn.on(NSQDConnection.CONNECTION_ERROR, err => {
       this.debug(Reader.ERROR);
       this.debug(err);
       return this.emit(Reader.ERROR, err);
-    },
-    );
+    });
 
     // On close, remove the connection id from this reader.
     conn.on(NSQDConnection.CLOSED, () => {
       this.debug(Reader.NSQD_CLOSED);
 
       const index = this.connectionIds.indexOf(conn.id());
-      if (index === -1) { return; }
+      if (index === -1) {
+        return;
+      }
       this.connectionIds.splice(index, 1);
 
       return this.emit(Reader.NSQD_CLOSED, conn.nsqdHost, conn.nsqdPort);
-    },
-    );
+    });
 
     // On message, send either a message or discard event depending on the
     // number of attempts.
-    return conn.on(NSQDConnection.MESSAGE, message => this.handleMessage(message),
-    );
+    return conn.on(NSQDConnection.MESSAGE, message =>
+      this.handleMessage(message));
   }
 
   handleMessage(message) {
     // Give the internal event listeners a chance at the events before clients
     // of the Reader.
     return process.nextTick(() => {
-      const autoFinishMessage = this.config.maxAttempts > 0 && this.config.maxAttempts <= message.attempts;
+      const autoFinishMessage = this.config.maxAttempts > 0 &&
+        this.config.maxAttempts <= message.attempts;
       const numDiscardListeners = this.listeners(Reader.DISCARD).length;
 
-      if (autoFinishMessage && (numDiscardListeners > 0)) {
+      if (autoFinishMessage && numDiscardListeners > 0) {
         this.emit(Reader.DISCARD, message);
       } else {
         this.emit(Reader.MESSAGE, message);
       }
 
-      if (autoFinishMessage) { return message.finish(); }
-    },
-    );
+      if (autoFinishMessage) {
+        return message.finish();
+      }
+    });
   }
 }
 

@@ -7,21 +7,27 @@ export const FRAME_TYPE_RESPONSE = 0;
 export const FRAME_TYPE_ERROR = 1;
 export const FRAME_TYPE_MESSAGE = 2;
 
-const jsonStringify = function (obj, emitUnicode) {
+const jsonStringify = function(obj, emitUnicode) {
   const json = JSON.stringify(obj);
   if (emitUnicode) return json;
 
-  return json.replace(/[\u007f-\uffff]/g, c => `\\u${(`0000${c.charCodeAt(0).toString(16)}`).slice(-4)}`);
+  return json.replace(
+    /[\u007f-\uffff]/g,
+    c => `\\u${`0000${c.charCodeAt(0).toString(16)}`.slice(-4)}`
+  );
 };
 
 // Calculates the byte length for either a string or a Buffer.
-const byteLength = function (msg) {
-  if (_.isString(msg)) { return Buffer.byteLength(msg); } return msg.length;
+const byteLength = function(msg) {
+  if (_.isString(msg)) {
+    return Buffer.byteLength(msg);
+  }
+  return msg.length;
 };
 
 export function unpackMessage(data) {
   // Int64 to read the 64bit Int from the buffer
-  let timestamp = (new Int64(data, 0)).toOctetString();
+  let timestamp = new Int64(data, 0).toOctetString();
   // BigNumber to represent the timestamp in a workable way.
   timestamp = new BigNumber(timestamp, 16);
 
@@ -31,12 +37,14 @@ export function unpackMessage(data) {
   return [id, timestamp, attempts, body];
 }
 
-const command = function (cmd, body) {
+const command = function(cmd, body) {
   const buffers = [];
 
   // Turn optional args into parameters for the command
   const parameters = _.toArray(arguments).slice(2);
-  if (parameters.length > 0) { parameters.unshift(''); }
+  if (parameters.length > 0) {
+    parameters.unshift('');
+  }
   const parametersStr = parameters.join(' ');
   const header = `${cmd + parametersStr}\n`;
 
@@ -60,8 +68,12 @@ const command = function (cmd, body) {
 };
 
 export function subscribe(topic, channel) {
-  if (!validTopicName(topic)) { throw new Error(`Invalid topic: ${topic}`); }
-  if (!validChannelName(channel)) { throw new Error(`Invalid channel: ${channel}`); }
+  if (!validTopicName(topic)) {
+    throw new Error(`Invalid topic: ${topic}`);
+  }
+  if (!validChannelName(channel)) {
+    throw new Error(`Invalid channel: ${channel}`);
+  }
   return command('SUB', null, topic, channel);
 }
 
@@ -83,7 +95,10 @@ export function identify(data) {
     'user_agent',
   ];
   // Make sure there are no unexpected keys
-  const unexpectedKeys = _.filter(_.keys(data), k => !Array.from(validIdentifyKeys).includes(k));
+  const unexpectedKeys = _.filter(
+    _.keys(data),
+    k => !Array.from(validIdentifyKeys).includes(k)
+  );
 
   if (unexpectedKeys.length) {
     throw new Error(`Unexpected IDENTIFY keys: ${unexpectedKeys}`);
@@ -93,18 +108,26 @@ export function identify(data) {
 }
 
 export function ready(count) {
-  if (!_.isNumber(count)) { throw new Error(`RDY count (${count}) is not a number`); }
-  if (!(count >= 0)) { throw new Error(`RDY count (${count}) is not positive`); }
+  if (!_.isNumber(count)) {
+    throw new Error(`RDY count (${count}) is not a number`);
+  }
+  if (!(count >= 0)) {
+    throw new Error(`RDY count (${count}) is not positive`);
+  }
   return command('RDY', null, count.toString());
 }
 
 export function finish(id) {
-  if (!(Buffer.byteLength(id) <= 16)) { throw new Error(`FINISH invalid id (${id})`); }
+  if (!(Buffer.byteLength(id) <= 16)) {
+    throw new Error(`FINISH invalid id (${id})`);
+  }
   return command('FIN', null, id);
 }
 
 export function requeue(id, timeMs) {
-  if (timeMs == null) { timeMs = 0; }
+  if (timeMs == null) {
+    timeMs = 0;
+  }
   if (!(Buffer.byteLength(id) <= 16)) {
     throw new Error(`REQUEUE invalid id (${id})`);
   }
@@ -129,8 +152,10 @@ export function pub(topic, data) {
 }
 
 export function mpub(topic, data) {
-  if (!_.isArray(data)) { throw new Error('MPUB requires an array of message'); }
-  const messages = _.map(data, (message) => {
+  if (!_.isArray(data)) {
+    throw new Error('MPUB requires an array of message');
+  }
+  const messages = _.map(data, message => {
     const buffer = new Buffer(4 + byteLength(message));
     buffer.writeInt32BE(byteLength(message), 0);
 
@@ -154,9 +179,16 @@ export function auth(token) {
   return command('AUTH', token);
 }
 
-var validTopicName = topic => (topic && topic.length > 0 && topic.length < 65) && (topic.match(/^[\w._-]+(?:#ephemeral)?$/) != null);
+var validTopicName = topic =>
+  topic &&
+  topic.length > 0 &&
+  topic.length < 65 &&
+  topic.match(/^[\w._-]+(?:#ephemeral)?$/) != null;
 
-var validChannelName = function (channel) {
+var validChannelName = function(channel) {
   const channelRe = /^[\w._-]+(?:#ephemeral)?$/;
-  return (channel && channel.length > 0 && channel.length < 65) && (channel.match(channelRe) != null);
+  return channel &&
+    channel.length > 0 &&
+    channel.length < 65 &&
+    channel.match(channelRe) != null;
 };

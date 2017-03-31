@@ -1,11 +1,17 @@
 import decimal from 'bignumber.js';
 
-const min = function (a, b) {
-  if (a.lte(b)) { return a; } return b;
+const min = function(a, b) {
+  if (a.lte(b)) {
+    return a;
+  }
+  return b;
 };
 
-const max = function (a, b) {
-  if (a.gte(b)) { return a; } return b;
+const max = function(a, b) {
+  if (a.gte(b)) {
+    return a;
+  }
+  return b;
 };
 
 /*
@@ -16,11 +22,13 @@ Ported from pynsq:
   https://github.com/bitly/pynsq/blob/master/nsq/BackoffTimer.py
 */
 class BackoffTimer {
-  constructor(minInterval, maxInterval, ratio, shortLength,
-    longLength) {
-    if (ratio == null) { ratio = 0.25; }
-    if (shortLength == null) { shortLength = 10; }
-    if (longLength == null) { longLength = 250; }
+  constructor(
+    minInterval,
+    maxInterval,
+    ratio = 0.25,
+    shortLength = 10,
+    longLength = 250
+  ) {
     this.minInterval = decimal(minInterval);
     this.maxInterval = decimal(maxInterval);
 

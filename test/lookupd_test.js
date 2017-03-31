@@ -50,7 +50,7 @@ const LOOKUPD_2 = '127.0.0.1:5161';
 const LOOKUPD_3 = 'http://127.0.0.1:6161/';
 const LOOKUPD_4 = 'http://127.0.0.1:7161/path/lookup';
 
-const nockUrlSplit = (url) => {
+const nockUrlSplit = url => {
   const match = url.match(/^(https?:\/\/[^/]+)(\/.*$)/i);
   return {
     baseUrl: match[1],
@@ -59,10 +59,10 @@ const nockUrlSplit = (url) => {
 };
 
 const registerWithLookupd = (lookupdAddress, nsqd) => {
-  const producers = (nsqd != null) ? [nsqd] : [];
+  const producers = nsqd != null ? [nsqd] : [];
 
   if (nsqd != null) {
-    nsqd.topics.forEach((topic) => {
+    nsqd.topics.forEach(topic => {
       if (lookupdAddress.indexOf('://') === -1) {
         nock(`http://${lookupdAddress}`)
           .get(`/lookup?topic=${topic}`)
@@ -77,39 +77,34 @@ const registerWithLookupd = (lookupdAddress, nsqd) => {
         const params = nockUrlSplit(lookupdAddress);
         const { baseUrl } = params;
         let { path } = params;
-        if (!path || (path === '/')) {
+        if (!path || path === '/') {
           path = '/lookup';
         }
 
-        nock(baseUrl)
-          .get(`${path}?topic=${topic}`)
-          .reply(200, {
-            status_code: 200,
-            status_txt: 'OK',
-            data: {
-              producers,
-            },
-          });
+        nock(baseUrl).get(`${path}?topic=${topic}`).reply(200, {
+          status_code: 200,
+          status_txt: 'OK',
+          data: {
+            producers,
+          },
+        });
       }
     });
   }
 };
 
 const setFailedTopicReply = (lookupdAddress, topic) =>
-  nock(`http://${lookupdAddress}`)
-    .get(`/lookup?topic=${topic}`)
-    .reply(200, {
-      status_code: 500,
-      status_txt: 'INVALID_ARG_TOPIC',
-      data: null,
-    },
-  );
+  nock(`http://${lookupdAddress}`).get(`/lookup?topic=${topic}`).reply(200, {
+    status_code: 500,
+    status_txt: 'INVALID_ARG_TOPIC',
+    data: null,
+  });
 
 describe('lookupd.lookup', () => {
   afterEach(() => nock.cleanAll());
 
   describe('querying a single lookupd for a topic', () => {
-    it('should return an empty list if no nsqd nodes', (done) => {
+    it('should return an empty list if no nsqd nodes', done => {
       setFailedTopicReply(LOOKUPD_1, 'sample_topic');
 
       lookup(LOOKUPD_1, 'sample_topic', (err, nodes) => {
@@ -118,12 +113,17 @@ describe('lookupd.lookup', () => {
       });
     });
 
-    it('should return a list of nsqd nodes for a success reply', (done) => {
+    it('should return a list of nsqd nodes for a success reply', done => {
       registerWithLookupd(LOOKUPD_1, NSQD_1);
 
       lookup(LOOKUPD_1, 'sample_topic', (err, nodes) => {
         nodes.should.have.length(1);
-        ['address', 'broadcast_address', 'tcp_port', 'http_port'].forEach((key) => {
+        [
+          'address',
+          'broadcast_address',
+          'tcp_port',
+          'http_port',
+        ].forEach(key => {
           should.ok(_.keys(nodes[0]).includes(key));
         });
         done(err);
@@ -132,7 +132,7 @@ describe('lookupd.lookup', () => {
   });
 
   describe('querying a multiple lookupd', () => {
-    it('should combine results from multiple lookupds', (done) => {
+    it('should combine results from multiple lookupds', done => {
       registerWithLookupd(LOOKUPD_1, NSQD_1);
       registerWithLookupd(LOOKUPD_2, NSQD_2);
       registerWithLookupd(LOOKUPD_3, NSQD_3);
@@ -144,12 +144,13 @@ describe('lookupd.lookup', () => {
         _.chain(nodes)
           .pluck('tcp_port')
           .sort()
-          .value().should.be.eql([4150, 5150, 6150, 7150]);
+          .value()
+          .should.be.eql([4150, 5150, 6150, 7150]);
         done(err);
       });
     });
 
-    it('should dedupe combined results', (done) => {
+    it('should dedupe combined results', done => {
       registerWithLookupd(LOOKUPD_1, NSQD_1);
       registerWithLookupd(LOOKUPD_2, NSQD_1);
       registerWithLookupd(LOOKUPD_3, NSQD_1);
@@ -162,11 +163,9 @@ describe('lookupd.lookup', () => {
       });
     });
 
-    return it('should succeed inspite of failures to query a lookupd', (done) => {
+    return it('should succeed inspite of failures to query a lookupd', done => {
       registerWithLookupd(LOOKUPD_1, NSQD_1);
-      nock(`http://${LOOKUPD_2}`)
-        .get('/lookup?topic=sample_topic')
-        .reply(500);
+      nock(`http://${LOOKUPD_2}`).get('/lookup?topic=sample_topic').reply(500);
 
       const lookupdAddresses = [LOOKUPD_1, LOOKUPD_2];
       lookup(lookupdAddresses, 'sample_topic', (err, nodes) => {

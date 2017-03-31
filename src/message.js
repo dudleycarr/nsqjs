@@ -13,8 +13,15 @@ class Message extends EventEmitter {
     this.TOUCH = 2;
   }
 
-  constructor(id, timestamp, attempts, body, requeueDelay, msgTimeout,
-    maxMsgTimeout) {
+  constructor(
+    id,
+    timestamp,
+    attempts,
+    body,
+    requeueDelay,
+    msgTimeout,
+    maxMsgTimeout
+  ) {
     let trackTimeout;
     super(...arguments);
     this.id = id;
@@ -33,7 +40,9 @@ class Message extends EventEmitter {
     // Keep track of when this message actually times out.
     this.timedOut = false;
     (trackTimeout = () => {
-      if (this.hasResponded) { return; }
+      if (this.hasResponded) {
+        return;
+      }
 
       const soft = this.timeUntilTimeout();
       const hard = this.timeUntilTimeout(true);
@@ -64,14 +73,21 @@ class Message extends EventEmitter {
   // the message. There is the hard timeout that cannot be exceeded without
   // reconfiguring the nsqd.
   timeUntilTimeout(hard) {
-    if (hard == null) { hard = false; }
-    if (this.hasResponded) { return null; }
+    if (hard == null) {
+      hard = false;
+    }
+    if (this.hasResponded) {
+      return null;
+    }
 
     const delta = hard
-      ? (this.receivedOn + this.maxMsgTimeout) - Date.now()
-    : (this.lastTouched + this.msgTimeout) - Date.now();
+      ? this.receivedOn + this.maxMsgTimeout - Date.now()
+      : this.lastTouched + this.msgTimeout - Date.now();
 
-    if (delta > 0) { return delta; } return null;
+    if (delta > 0) {
+      return delta;
+    }
+    return null;
   }
 
   finish() {
@@ -79,10 +95,16 @@ class Message extends EventEmitter {
   }
 
   requeue(delay, backoff) {
-    if (delay == null) { delay = this.requeueDelay; }
-    if (backoff == null) { backoff = true; }
+    if (delay == null) {
+      delay = this.requeueDelay;
+    }
+    if (backoff == null) {
+      backoff = true;
+    }
     this.respond(Message.REQUEUE, wire.requeue(this.id, delay));
-    if (backoff) { return this.emit(Message.BACKOFF); }
+    if (backoff) {
+      return this.emit(Message.BACKOFF);
+    }
   }
 
   touch() {
@@ -93,7 +115,9 @@ class Message extends EventEmitter {
 
   respond(responseType, wireData) {
     // TODO: Add a debug/warn when we moved to debug.js
-    if (this.hasResponded) { return; }
+    if (this.hasResponded) {
+      return;
+    }
 
     return process.nextTick(() => {
       if (responseType !== Message.TOUCH) {
@@ -105,8 +129,7 @@ class Message extends EventEmitter {
       }
 
       return this.emit(Message.RESPOND, responseType, wireData);
-    },
-    );
+    });
   }
 }
 Message.initClass();

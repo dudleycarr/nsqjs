@@ -12,7 +12,7 @@ describe('reader', () => {
 
   describe('max attempts', () =>
     describe('exceeded', () => {
-      it('should finish after exceeding specified max attempts', (done) => {
+      it('should finish after exceeding specified max attempts', done => {
         const maxAttempts = 2;
         const reader = readerWithAttempts(maxAttempts);
 
@@ -30,7 +30,7 @@ describe('reader', () => {
         });
       });
 
-      it('should call the DISCARD message hanlder if registered', (done) => {
+      it('should call the DISCARD message hanlder if registered', done => {
         const maxAttempts = 2;
         const reader = readerWithAttempts(maxAttempts);
 
@@ -43,7 +43,7 @@ describe('reader', () => {
         reader.handleMessage(message);
       });
 
-      it('should call the MESSAGE handler by default', (done) => {
+      it('should call the MESSAGE handler by default', done => {
         const maxAttempts = 2;
         const reader = readerWithAttempts(maxAttempts);
 
@@ -55,11 +55,10 @@ describe('reader', () => {
         reader.on(nsq.Reader.MESSAGE, () => done());
         reader.handleMessage(message);
       });
-    }),
-  );
+    }));
 
   describe('off by default', () =>
-    it('should not finish the message', (done) => {
+    it('should not finish the message', done => {
       const reader = readerWithAttempts(0);
 
       const message = {
@@ -82,6 +81,5 @@ describe('reader', () => {
         should.equal(message.finish.called, false);
         done();
       });
-    }),
-  );
+    }));
 });

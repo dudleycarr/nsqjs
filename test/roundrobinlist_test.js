@@ -14,9 +14,11 @@ describe('roundrobinlist', () => {
   });
 
   describe('constructor', () => {
-    it('should have @lst eq to passed in list', () => assert(_.isEqual(rrl.lst, lst)));
+    it('should have @lst eq to passed in list', () =>
+      assert(_.isEqual(rrl.lst, lst)));
 
-    it('should have made a copy of the list argument', () => assert(rrl.lst !== lst));
+    it('should have made a copy of the list argument', () =>
+      assert(rrl.lst !== lst));
 
     return it('should have @index eq to 0', () => rrl.index.should.eql(0));
   });
@@ -25,8 +27,7 @@ describe('roundrobinlist', () => {
     it('@lst should include the item', () => {
       rrl.add(10);
       return should.ok(Array.from(rrl.lst).includes(10));
-    }),
-  );
+    }));
 
   describe('next', () => {
     it('should return a list of 1 item by default', () => {

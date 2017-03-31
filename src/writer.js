@@ -52,7 +52,11 @@ class Writer extends EventEmitter {
   }
 
   connect() {
-    this.conn = new WriterNSQDConnection(this.nsqdHost, this.nsqdPort, this.config);
+    this.conn = new WriterNSQDConnection(
+      this.nsqdHost,
+      this.nsqdPort,
+      this.config
+    );
     this.debug('connect');
     this.conn.connect();
 
@@ -68,13 +72,13 @@ class Writer extends EventEmitter {
       return this.emit(Writer.CLOSED);
     });
 
-    this.conn.on(WriterNSQDConnection.ERROR, (err) => {
+    this.conn.on(WriterNSQDConnection.ERROR, err => {
       this.debug('error', err);
       this.ready = false;
       return this.emit(Writer.ERROR, err);
     });
 
-    this.conn.on(WriterNSQDConnection.CONNECTION_ERROR, (err) => {
+    this.conn.on(WriterNSQDConnection.CONNECTION_ERROR, err => {
       this.debug('error', err);
       this.ready = false;
       return this.emit(Writer.ERROR, err);
@@ -107,7 +111,9 @@ class Writer extends EventEmitter {
     }
 
     if (err) {
-      if (callback) { return callback(err); }
+      if (callback) {
+        return callback(err);
+      }
       throw err;
     }
 
@@ -118,8 +124,10 @@ class Writer extends EventEmitter {
         this.publish(topic, msgs, callback);
       };
 
-      const failed = function (err) {
-        if (!err) { err = new Error('Connection closed!'); }
+      const failed = function(err) {
+        if (!err) {
+          err = new Error('Connection closed!');
+        }
         remove();
         callback(err);
       };
@@ -135,10 +143,12 @@ class Writer extends EventEmitter {
       this.on(Writer.CLOSED, failed);
     }
 
-    if (!_.isArray(msgs)) { msgs = [msgs]; }
+    if (!_.isArray(msgs)) {
+      msgs = [msgs];
+    }
 
     // Automatically serialize as JSON if the message isn't a String or a Buffer
-    msgs = msgs.map((msg) => {
+    msgs = msgs.map(msg => {
       if (_.isString(msg) || Buffer.isBuffer(msg)) {
         return msg;
       }

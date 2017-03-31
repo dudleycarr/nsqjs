@@ -20,8 +20,12 @@ describe('Reader ConnectionState', () => {
   beforeEach(() => {
     const sent = [];
 
-    const connection = new NSQDConnection('127.0.0.1', 4150, 'topic_test',
-      'channel_test');
+    const connection = new NSQDConnection(
+      '127.0.0.1',
+      4150,
+      'topic_test',
+      'channel_test'
+    );
     sinon.stub(connection, 'write', data => sent.push(data.toString()));
     sinon.stub(connection, 'destroy', () => {});
 
@@ -31,8 +35,7 @@ describe('Reader ConnectionState', () => {
       sent,
       connection,
       statemachine,
-    },
-    );
+    });
   });
 
   it('handle initial handshake', () => {
@@ -59,18 +62,21 @@ describe('Reader ConnectionState', () => {
     statemachine.raise('connecting');
     statemachine.raise('connected');
 
-    statemachine.raise('response', JSON.stringify({
-      max_rdy_count: 1000,
-      max_msg_timeout: 10 * 60 * 1000,
-      msg_timeout: 2 * 60 * 1000,
-    }));
+    statemachine.raise(
+      'response',
+      JSON.stringify({
+        max_rdy_count: 1000,
+        max_msg_timeout: 10 * 60 * 1000,
+        msg_timeout: 2 * 60 * 1000,
+      })
+    );
 
     should.equal(connection.maxRdyCount, 1000);
     should.equal(connection.maxMsgTimeout, 600000);
     should.equal(connection.msgTimeout, 120000);
   });
 
-  it('create a subscription', (done) => {
+  it('create a subscription', done => {
     const { sent, statemachine, connection } = state;
 
     // Subscribe notification
@@ -84,7 +90,7 @@ describe('Reader ConnectionState', () => {
     statemachine.raise('response', 'OK');
   });
 
-  it('handle a message', (done) => {
+  it('handle a message', done => {
     const { statemachine, connection } = state;
     connection.on(NSQDConnection.MESSAGE, () => done());
 
@@ -99,11 +105,19 @@ describe('Reader ConnectionState', () => {
     should.equal(statemachine.current_state_name, 'READY_RECV');
   });
 
-  it('handle a message finish after a disconnect', (done) => {
+  it('handle a message finish after a disconnect', done => {
     const { statemachine, connection } = state;
-    sinon.stub(wire, 'unpackMessage', () => ['1', 0, 0, new Buffer(''), 60, 60, 120]);
+    sinon.stub(wire, 'unpackMessage', () => [
+      '1',
+      0,
+      0,
+      new Buffer(''),
+      60,
+      60,
+      120,
+    ]);
 
-    connection.on(NSQDConnection.MESSAGE, (msg) => {
+    connection.on(NSQDConnection.MESSAGE, msg => {
       const fin = () => {
         msg.finish();
         done();
@@ -129,7 +143,7 @@ describe('Reader ConnectionState', () => {
     wire.unpackMessage.restore();
   });
 
-  it('handles non-fatal errors', (done) => {
+  it('handles non-fatal errors', done => {
     const { connection, statemachine } = state;
 
     // Note: we still want an error event raised, just not a closed connection
@@ -156,7 +170,7 @@ describe('WriterConnectionState', () => {
     const connection = new WriterNSQDConnection('127.0.0.1', 4150);
     sinon.stub(connection, 'destroy');
 
-    sinon.stub(connection, 'write', (data) => {
+    sinon.stub(connection, 'write', data => {
       sent.push(data.toString());
     });
 
@@ -170,7 +184,7 @@ describe('WriterConnectionState', () => {
     });
   });
 
-  it('should generate a READY event after IDENTIFY', (done) => {
+  it('should generate a READY event after IDENTIFY', done => {
     const { statemachine, connection } = state;
 
     connection.on(WriterNSQDConnection.READY, () => {
@@ -183,7 +197,7 @@ describe('WriterConnectionState', () => {
     statemachine.raise('response', 'OK');
   });
 
-  it('should use PUB when sending a single message', (done) => {
+  it('should use PUB when sending a single message', done => {
     const { statemachine, connection, sent } = state;
 
     connection.on(WriterNSQDConnection.READY, () => {
@@ -197,7 +211,7 @@ describe('WriterConnectionState', () => {
     statemachine.raise('response', 'OK');
   });
 
-  it('should use MPUB when sending multiplie messages', (done) => {
+  it('should use MPUB when sending multiplie messages', done => {
     const { statemachine, connection, sent } = state;
 
     connection.on(WriterNSQDConnection.READY, () => {
@@ -211,7 +225,7 @@ describe('WriterConnectionState', () => {
     statemachine.raise('response', 'OK');
   });
 
-  it('should call the callback when supplied on publishing a message', (done) => {
+  it('should call the callback when supplied on publishing a message', done => {
     const { statemachine, connection } = state;
 
     connection.on(WriterNSQDConnection.READY, () => {
@@ -224,7 +238,7 @@ describe('WriterConnectionState', () => {
     statemachine.raise('response', 'OK');
   });
 
-  it('should call the the right callback on several messages', (done) => {
+  it('should call the the right callback on several messages', done => {
     const { statemachine, connection } = state;
 
     connection.on(WriterNSQDConnection.READY, () => {
@@ -244,7 +258,7 @@ describe('WriterConnectionState', () => {
     statemachine.raise('response', 'OK');
   });
 
-  it('should call all callbacks on nsqd disconnect', (done) => {
+  it('should call all callbacks on nsqd disconnect', done => {
     const { statemachine, connection } = state;
 
     const firstCb = sinon.spy();

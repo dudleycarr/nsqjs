@@ -3,12 +3,19 @@ import sinon from 'sinon';
 import Message from '../src/message';
 
 const createMessage = (body, requeueDelay, timeout, maxTimeout) =>
-  new Message('1', Date.now(), 0, new Buffer(body), requeueDelay, timeout,
-    maxTimeout);
+  new Message(
+    '1',
+    Date.now(),
+    0,
+    new Buffer(body),
+    requeueDelay,
+    timeout,
+    maxTimeout
+  );
 
 describe('Message', () =>
   describe('timeout', () => {
-    it('should not allow finishing a message twice', (done) => {
+    it('should not allow finishing a message twice', done => {
       const msg = createMessage('body', 90, 50, 100);
 
       const firstFinish = () => msg.finish();
@@ -21,7 +28,7 @@ describe('Message', () =>
       setTimeout(secondFinish, 20);
     });
 
-    it('should not allow requeue after finish', (done) => {
+    it('should not allow requeue after finish', done => {
       const msg = createMessage('body', 90, 50, 100);
 
       const responseSpy = sinon.spy();
@@ -40,7 +47,7 @@ describe('Message', () =>
       setTimeout(check, 20);
     });
 
-    it('should allow touch and then finish post first timeout', (done) => {
+    it('should allow touch and then finish post first timeout', done => {
       const touchIn = 15;
       const timeoutIn = 20;
       const finishIn = 25;
@@ -67,7 +74,7 @@ describe('Message', () =>
       return setTimeout(check, checkIn);
     });
 
-    return it('should clear timeout on finish', (done) => {
+    return it('should clear timeout on finish', done => {
       const msg = createMessage('body', 10, 60, 120);
       msg.finish();
 
@@ -76,5 +83,4 @@ describe('Message', () =>
         return done();
       });
     });
-  }),
-);
+  }));

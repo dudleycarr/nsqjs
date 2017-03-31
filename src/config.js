@@ -21,14 +21,16 @@ class ConnectionConfig {
       tlsVerification: true,
     };
 
-    isBareAddress = function (addr) {
+    isBareAddress = function(addr) {
       const [host, port] = Array.from(addr.split(':'));
-      return (host.length > 0) && (port > 0);
+      return host.length > 0 && port > 0;
     };
   }
 
   constructor(options) {
-    if (options == null) { options = {}; }
+    if (options == null) {
+      options = {};
+    }
     options = _.chain(options)
       .pick(_.keys(this.constructor.DEFAULTS))
       .defaults(this.constructor.DEFAULTS)
@@ -43,7 +45,9 @@ class ConnectionConfig {
   }
 
   isNumber(option, value, lower, upper) {
-    if (upper == null) { upper = null; }
+    if (upper == null) {
+      upper = null;
+    }
     if (_.isNaN(value) || !_.isNumber(value)) {
       throw new Error(`${option}(${value}) is not a number`);
     }
@@ -58,7 +62,9 @@ class ConnectionConfig {
   }
 
   isNumberExclusive(option, value, lower, upper) {
-    if (upper == null) { upper = null; }
+    if (upper == null) {
+      upper = null;
+    }
     if (_.isNaN(value) || !_.isNumber(value)) {
       throw new Error(`${option}(${value}) is not a number`);
     }
@@ -85,15 +91,19 @@ class ConnectionConfig {
   }
 
   isLookupdHTTPAddresses(option, value) {
-    const isAddr = function (addr) {
-      if (addr.indexOf('://') === -1) { return isBareAddress(addr); }
+    const isAddr = function(addr) {
+      if (addr.indexOf('://') === -1) {
+        return isBareAddress(addr);
+      }
       const parsedUrl = url.parse(addr);
-      return ['http:', 'https:'].includes(parsedUrl.protocol) && !!parsedUrl.host;
+      return ['http:', 'https:'].includes(parsedUrl.protocol) &&
+        !!parsedUrl.host;
     };
 
     if (!_.isArray(value) || !_.every(value, isAddr)) {
-      throw new Error(`${option} must be a list of addresses 'host:port' or \
-HTTP/HTTPS URI`,
+      throw new Error(
+        `${option} must be a list of addresses 'host:port' or \
+HTTP/HTTPS URI`
       );
     }
   }
@@ -126,16 +136,18 @@ HTTP/HTTPS URI`,
     for (const option in this) {
       // dont validate our methods
       const value = this[option];
-      if (_.isFunction(value)) { continue; }
+      if (_.isFunction(value)) {
+        continue;
+      }
 
       // Skip options that default to null
-      if (_.isNull(value) && (this.constructor.DEFAULTS[option] === null)) {
+      if (_.isNull(value) && this.constructor.DEFAULTS[option] === null) {
         continue;
       }
 
       // Disabled via -1
       const keys = ['outputBufferSize', 'outputBufferTimeout'];
-      if (Array.from(keys).includes(option) && (value === -1)) {
+      if (Array.from(keys).includes(option) && value === -1) {
         continue;
       }
 
@@ -160,8 +172,7 @@ class ReaderConfig extends ConnectionConfig {
       nsqdTCPAddresses: [],
       maxAttempts: 0,
       maxBackoffDuration: 128,
-    },
-    );
+    });
   }
 
   conditions() {
@@ -182,13 +193,16 @@ class ReaderConfig extends ConnectionConfig {
     // Either a string or list of strings can be provided. Ensure list of
     // strings going forward.
     for (const key of Array.from(addresses)) {
-      if (_.isString(this[key])) { this[key] = [this[key]]; }
+      if (_.isString(this[key])) {
+        this[key] = [this[key]];
+      }
     }
 
     super.validate(...arguments);
 
     const pass = _.chain(addresses)
-      .map(key => this[key].length).any(_.identity)
+      .map(key => this[key].length)
+      .any(_.identity)
       .value();
 
     if (!pass) {

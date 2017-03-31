@@ -8,8 +8,14 @@ import { NSQDConnection } from '../src/nsqdconnection';
 import { ReaderRdy, ConnectionRdy } from '../src/readerrdy';
 
 class StubNSQDConnection extends EventEmitter {
-  constructor(nsqdHost, nsqdPort, topic, channel, requeueDelay,
-    heartbeatInterval) {
+  constructor(
+    nsqdHost,
+    nsqdPort,
+    topic,
+    channel,
+    requeueDelay,
+    heartbeatInterval
+  ) {
     super();
     this.nsqdHost = nsqdHost;
     this.nsqdPort = nsqdPort;
@@ -29,10 +35,10 @@ class StubNSQDConnection extends EventEmitter {
   }
 
   // Empty
-  connect = () => {}
+  connect = () => {};
 
   // Empty
-  destroy = () => {}
+  destroy = () => {};
 
   // Empty
   setRdy(rdyCount) {
@@ -48,7 +54,7 @@ class StubNSQDConnection extends EventEmitter {
     ]);
     const msg = new Message(...msgArgs);
 
-    msg.on(Message.RESPOND, (responseType) => {
+    msg.on(Message.RESPOND, responseType => {
       if (responseType === Message.FINISH) {
         this.emit(NSQDConnection.FINISHED);
       } else if (responseType === Message.REQUEUE) {
@@ -63,9 +69,15 @@ class StubNSQDConnection extends EventEmitter {
   }
 }
 
-const createNSQDConnection = (id) => {
-  const conn = new StubNSQDConnection(`host${id}`, '4150', 'test', 'default',
-    60, 30);
+const createNSQDConnection = id => {
+  const conn = new StubNSQDConnection(
+    `host${id}`,
+    '4150',
+    'test',
+    'default',
+    60,
+    30
+  );
   conn.conn.localPort = id;
   return conn;
 };
@@ -204,7 +216,7 @@ describe('ReaderRdy', () => {
     // Stub out creation of ConnectionRdy to ignore the events registered by
     // ConnectionRdy.
     sinon.stub(readerRdy, 'createConnectionRdy', () => ({ on() {} }));
-        // Empty
+    // Empty
 
     const conn = createNSQDConnection(1);
     const mock = sinon.mock(conn);
@@ -259,18 +271,20 @@ describe('ReaderRdy', () => {
     const assertAlternatingRdyCounts = (conn1, conn2) => {
       const minSize = Math.min(conn1.rdyCounts.length, conn2.rdyCounts.length);
 
-      const zippedCounts = _.zip(conn1.rdyCounts.slice(-minSize),
-        conn2.rdyCounts.slice(-minSize));
+      const zippedCounts = _.zip(
+        conn1.rdyCounts.slice(-minSize),
+        conn2.rdyCounts.slice(-minSize)
+      );
 
       // We expect the connection RDY counts to look like this:
       // conn 0: [1, 0, 1, 0]
       // conn 1: [0, 1, 0, 1]
       zippedCounts.forEach(([firstRdy, secondRdy]) => {
-        should.ok((firstRdy + secondRdy) === 1);
+        should.ok(firstRdy + secondRdy === 1);
       });
     };
 
-    it('should periodically redistribute RDY', (done) => {
+    it('should periodically redistribute RDY', done => {
       // Shortening the periodically `balance` calls to every 10ms.
       readerRdy = new ReaderRdy(1, 128, 'topic/channel', 0.01);
 
@@ -278,7 +292,7 @@ describe('ReaderRdy', () => {
 
       // Add the connections and trigger the NSQDConnection event that tells
       // listeners that the connections are connected and ready for message flow.
-      connections.forEach((conn) => {
+      connections.forEach(conn => {
         readerRdy.addConnection(conn);
         conn.emit(NSQDConnection.READY);
       });
@@ -297,7 +311,7 @@ describe('ReaderRdy', () => {
       setTimeout(checkRdyCounts, 50);
     });
 
-    it('should handle the transition from normal', (done) => {
+    it('should handle the transition from normal', done => {
       // Shortening the periodica `balance` calls to every 10ms.
       readerRdy = new ReaderRdy(1, 128, 'topic/channel', 0.01);
 
@@ -334,7 +348,7 @@ describe('ReaderRdy', () => {
       setTimeout(checkRdyCounts, 40);
     });
 
-    it('should handle the transition to normal conditions', (done) => {
+    it('should handle the transition to normal conditions', done => {
       // Shortening the periodica `balance` calls to every 10ms.
       readerRdy = new ReaderRdy(1, 128, 'topic/channel', 0.01);
 
@@ -342,7 +356,7 @@ describe('ReaderRdy', () => {
 
       // Add the connections and trigger the NSQDConnection event that tells
       // listeners that the connections are connected and ready for message flow.
-      connections.forEach((conn) => {
+      connections.forEach(conn => {
         readerRdy.addConnection(conn);
         conn.emit(NSQDConnection.READY);
       });
@@ -367,7 +381,7 @@ describe('ReaderRdy', () => {
       setTimeout(removeConnection, 20);
     });
 
-    it('should move to normal conditions with connections in backoff', (done) => {
+    it('should move to normal conditions with connections in backoff', done => {
       /*
       1. Create two nsqd connections
       2. Close the 2nd connection when the first connection is in the BACKOFF
@@ -380,7 +394,7 @@ describe('ReaderRdy', () => {
 
       const connections = [1, 2].map(i => createNSQDConnection(i));
 
-      connections.forEach((conn) => {
+      connections.forEach(conn => {
         readerRdy.addConnection(conn);
         conn.emit(NSQDConnection.READY);
       });
@@ -416,13 +430,13 @@ describe('ReaderRdy', () => {
       setTimeout(removeOnBackoff, 20);
     });
 
-    it('should not exceed maxInFlight for long running message.', (done) => {
+    it('should not exceed maxInFlight for long running message.', done => {
       // Shortening the periodica `balance` calls to every 10ms.
       readerRdy = new ReaderRdy(1, 128, 'topic/channel', 0.01);
 
       const connections = [1, 2].map(i => createNSQDConnection(i));
 
-      connections.forEach((conn) => {
+      connections.forEach(conn => {
         readerRdy.addConnection(conn);
         conn.emit(NSQDConnection.READY);
       });
@@ -430,7 +444,7 @@ describe('ReaderRdy', () => {
       // Handle the message but delay finishing the message so that several
       // balance calls happen and the check to ensure that RDY count is zero for
       // all connections.
-      const handleMessage = (msg) => {
+      const handleMessage = msg => {
         const finish = () => {
           msg.finish();
           done();
@@ -439,7 +453,7 @@ describe('ReaderRdy', () => {
         setTimeout(finish, 40);
       };
 
-      connections.forEach((conn) => {
+      connections.forEach(conn => {
         conn.on(NSQDConnection.MESSAGE, handleMessage);
       });
 
@@ -461,7 +475,9 @@ describe('ReaderRdy', () => {
       const sendOnRdy = () => {
         const connRdy2 = readerRdy.connections[1];
         connRdy2.on(ConnectionRdy.STATE_CHANGE, () => {
-          if (['ONE', 'MAX'].includes(connRdy2.statemachine.current_state_name)) {
+          if (
+            ['ONE', 'MAX'].includes(connRdy2.statemachine.current_state_name)
+          ) {
             sendMessageOnce();
           }
         });
@@ -472,7 +488,7 @@ describe('ReaderRdy', () => {
       setTimeout(sendOnRdy, 20);
     });
 
-    it('should recover losing a connection with a message in-flight', (done) => {
+    it('should recover losing a connection with a message in-flight', done => {
       /*
       Detailed description:
       1. Connect to 5 nsqds and add them to the ReaderRdy
@@ -492,7 +508,7 @@ describe('ReaderRdy', () => {
 
       // Add the connections and trigger the NSQDConnection event that tells
       // listeners that the connections are connected and ready for message flow.
-      connections.forEach((conn) => {
+      connections.forEach(conn => {
         readerRdy.addConnection(conn);
         conn.emit(NSQDConnection.READY);
       });
@@ -506,15 +522,15 @@ describe('ReaderRdy', () => {
       const checkRdyCount = () => {
         should.equal(readerRdy.isLowRdy(), true);
 
-        const rdyCounts = Array
-          .from(readerRdy.connections)
-          .map(connRdy => connRdy.lastRdySent);
+        const rdyCounts = Array.from(readerRdy.connections).map(
+          connRdy => connRdy.lastRdySent
+        );
 
         should.equal(readerRdy.connections.length, 4);
         should.ok(Array.from(rdyCounts).includes(1));
       };
 
-      const handleMessage = (msg) => {
+      const handleMessage = msg => {
         const delayFinish = () => {
           msg.finish();
           done();
@@ -525,7 +541,7 @@ describe('ReaderRdy', () => {
         setTimeout(delayFinish, 50);
       };
 
-      connections.forEach((conn) => {
+      connections.forEach(conn => {
         conn.on(NSQDConnection.MESSAGE, handleMessage);
       });
 
@@ -538,7 +554,9 @@ describe('ReaderRdy', () => {
       const sendOnRdy = () => {
         const connRdy = readerRdy.connections[0];
         connRdy.on(ConnectionRdy.STATE_CHANGE, () => {
-          if (['ONE', 'MAX'].includes(connRdy.statemachine.current_state_name)) {
+          if (
+            ['ONE', 'MAX'].includes(connRdy.statemachine.current_state_name)
+          ) {
             sendMessageOnce();
           }
         });
@@ -551,7 +569,7 @@ describe('ReaderRdy', () => {
   });
 
   describe('try', () => {
-    it('should on completion of backoff attempt a single connection', (done) => {
+    it('should on completion of backoff attempt a single connection', done => {
       /*
       Detailed description:
       1. Create ReaderRdy with connections to 5 nsqds.
@@ -567,7 +585,7 @@ describe('ReaderRdy', () => {
 
       const connections = [1, 2, 3, 4, 5].map(i => createNSQDConnection(i));
 
-      connections.forEach((conn) => {
+      connections.forEach(conn => {
         readerRdy.addConnection(conn);
         conn.emit(NSQDConnection.READY);
       });
@@ -577,7 +595,7 @@ describe('ReaderRdy', () => {
         .requeue();
 
       const checkInBackoff = () => {
-        readerRdy.connections.forEach((connRdy) => {
+        readerRdy.connections.forEach(connRdy => {
           connRdy.statemachine.current_state_name.should.eql('BACKOFF');
         });
       };
@@ -585,9 +603,9 @@ describe('ReaderRdy', () => {
       checkInBackoff();
 
       const afterBackoff = () => {
-        const states = readerRdy
-          .connections
-          .map(connRdy => connRdy.statemachine.current_state_name);
+        const states = readerRdy.connections.map(
+          connRdy => connRdy.statemachine.current_state_name
+        );
 
         const ones = states.filter(state => state === 'ONE');
         const backoffs = states.filter(state => state === 'BACKOFF');
@@ -598,15 +616,12 @@ describe('ReaderRdy', () => {
       };
 
       // Add 50ms to the delay so that we're confident that the event fired.
-      const delay = readerRdy
-        .backoffTimer
-        .getInterval()
-        .plus(0.05);
+      const delay = readerRdy.backoffTimer.getInterval().plus(0.05);
 
       setTimeout(afterBackoff, delay.valueOf() * 1000);
     });
 
-    it('should after backoff with a successful message go to MAX', (done) => {
+    it('should after backoff with a successful message go to MAX', done => {
       /*
       Detailed description:
       1. Create ReaderRdy with connections to 5 nsqds.
@@ -622,24 +637,32 @@ describe('ReaderRdy', () => {
 
       const connections = [1, 2, 3, 4, 5].map(i => createNSQDConnection(i));
 
-      connections.forEach((conn) => {
+      connections.forEach(conn => {
         readerRdy.addConnection(conn);
         conn.emit(NSQDConnection.READY);
       });
 
-      let msg = connections[0].createMessage('1', Date.now(), 0,
-        'Message causing a backoff');
+      let msg = connections[0].createMessage(
+        '1',
+        Date.now(),
+        0,
+        'Message causing a backoff'
+      );
 
       msg.requeue();
 
       const afterBackoff = () => {
-        const [connRdy] = readerRdy.connections.filter(conn => conn.statemachine.current_state_name === 'ONE');
+        const [connRdy] = readerRdy.connections.filter(
+          conn => conn.statemachine.current_state_name === 'ONE'
+        );
 
         msg = connRdy.conn.createMessage('1', Date.now(), 0, 'Success');
         msg.finish();
 
         const verifyMax = () => {
-          const states = readerRdy.connections.map(conn => conn.statemachine.current_state_name);
+          const states = readerRdy.connections.map(
+            conn => conn.statemachine.current_state_name
+          );
 
           const max = states.filter(s => ['ONE', 'MAX'].includes(s));
 
@@ -665,7 +688,7 @@ describe('ReaderRdy', () => {
 
       const connections = [1, 2, 3, 4, 5].map(i => createNSQDConnection(i));
 
-      connections.forEach((conn) => {
+      connections.forEach(conn => {
         readerRdy.addConnection(conn);
         conn.emit(NSQDConnection.READY);
       });

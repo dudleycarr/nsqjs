@@ -26,8 +26,10 @@ describe('FrameBuffer', () => {
     const frameBuffer = new FrameBuffer();
 
     const firstFrame = createFrame(wire.FRAME_TYPE_RESPONSE, 'OK');
-    const secondFrame = createFrame(wire.FRAME_TYPE_ERROR,
-      JSON.stringify({ shortname: 'localhost' }));
+    const secondFrame = createFrame(
+      wire.FRAME_TYPE_ERROR,
+      JSON.stringify({ shortname: 'localhost' })
+    );
 
     frameBuffer.consume(Buffer.concat([firstFrame, secondFrame]));
     const frames = [frameBuffer.nextFrame(), frameBuffer.nextFrame()];

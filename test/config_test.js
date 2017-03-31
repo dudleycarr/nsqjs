@@ -126,7 +126,8 @@ describe('ConnectionConfig', () => {
 
   describe('isBareAddresses', () => {
     it('should validate against a validate address list of 1', () => {
-      const check = () => config.isBareAddresses('nsqdTCPAddresses', ['127.0.0.1:4150']);
+      const check = () =>
+        config.isBareAddresses('nsqdTCPAddresses', ['127.0.0.1:4150']);
       check.should.not.throw();
     });
 
@@ -139,14 +140,18 @@ describe('ConnectionConfig', () => {
     });
 
     it('should not validate non-numeric port', () => {
-      const check = () => config.isBareAddresses('nsqdTCPAddresses', ['localhost']);
+      const check = () =>
+        config.isBareAddresses('nsqdTCPAddresses', ['localhost']);
       check.should.throw();
     });
   });
 
   describe('isLookupdHTTPAddresses', () => {
     it('should validate against a validate address list of 1', () => {
-      const check = () => config.isLookupdHTTPAddresses('lookupdHTTPAddresses', ['127.0.0.1:4150']);
+      const check = () =>
+        config.isLookupdHTTPAddresses('lookupdHTTPAddresses', [
+          '127.0.0.1:4150',
+        ]);
       check.should.not.throw();
     });
 
@@ -164,12 +169,14 @@ describe('ConnectionConfig', () => {
     });
 
     it('should not validate non-numeric port', () => {
-      const check = () => config.isLookupdHTTPAddresses('lookupdHTTPAddresses', ['localhost']);
+      const check = () =>
+        config.isLookupdHTTPAddresses('lookupdHTTPAddresses', ['localhost']);
       check.should.throw();
     });
 
     it('should not validate non-HTTP/HTTPs address', () => {
-      const check = () => config.isLookupdHTTPAddresses('lookupdHTTPAddresses', ['localhost']);
+      const check = () =>
+        config.isLookupdHTTPAddresses('lookupdHTTPAddresses', ['localhost']);
       check.should.throw();
     });
   });

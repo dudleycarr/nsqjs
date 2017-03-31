@@ -26,13 +26,19 @@ class RoundRobinList {
 
   remove(item) {
     const itemIndex = this.lst.indexOf(item);
-    if (itemIndex === -1) { return; }
-    if (this.index > itemIndex) { this.index -= 1; }
+    if (itemIndex === -1) {
+      return;
+    }
+    if (this.index > itemIndex) {
+      this.index -= 1;
+    }
     return this.lst.splice(itemIndex, 1);
   }
 
   next(count) {
-    if (count == null) { count = 1; }
+    if (count == null) {
+      count = 1;
+    }
     const { index } = this;
     this.index = (this.index + count) % this.lst.length;
     return this.lst.slice(index, index + count);
