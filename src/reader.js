@@ -111,18 +111,11 @@ class Reader extends EventEmitter {
 
     // Trigger a query of the configured ``lookupdHTTPAddresses``
     const endpoint = this.roundrobinLookupd.next();
-    return lookup(endpoint, this.topic, (err, nodes) =>
-      (() => {
-        const result = [];
-        for (const n of Array.from(nodes)) {
-          let item;
-          if (!err) {
-            item = this.connectToNSQD(n.broadcast_address, n.tcp_port);
-          }
-          result.push(item);
-        }
-        return result;
-      })());
+    lookup(endpoint, this.topic, (err, nodes = []) => {
+      return nodes.map(n => {
+        return this.connectToNSQD(n.broadcast_address, n.tcp_port);
+      });
+    });
   }
 
   connectToNSQD(host, port) {
@@ -151,19 +144,19 @@ class Reader extends EventEmitter {
   registerConnectionListeners(conn) {
     conn.on(NSQDConnection.CONNECTED, () => {
       this.debug(Reader.NSQD_CONNECTED);
-      return this.emit(Reader.NSQD_CONNECTED, conn.nsqdHost, conn.nsqdPort);
+      this.emit(Reader.NSQD_CONNECTED, conn.nsqdHost, conn.nsqdPort);
     });
 
     conn.on(NSQDConnection.ERROR, err => {
       this.debug(Reader.ERROR);
       this.debug(err);
-      return this.emit(Reader.ERROR, err);
+      this.emit(Reader.ERROR, err);
     });
 
     conn.on(NSQDConnection.CONNECTION_ERROR, err => {
       this.debug(Reader.ERROR);
       this.debug(err);
-      return this.emit(Reader.ERROR, err);
+      this.emit(Reader.ERROR, err);
     });
 
     // On close, remove the connection id from this reader.
@@ -176,18 +169,23 @@ class Reader extends EventEmitter {
       }
       this.connectionIds.splice(index, 1);
 
-      return this.emit(Reader.NSQD_CLOSED, conn.nsqdHost, conn.nsqdPort);
+      this.emit(Reader.NSQD_CLOSED, conn.nsqdHost, conn.nsqdPort);
     });
 
-    // On message, send either a message or discard event depending on the
-    // number of attempts.
-    return conn.on(NSQDConnection.MESSAGE, message =>
-      this.handleMessage(message));
+    /**
+     * On message, send either a message or discard event depending on the
+     * number of attempts.
+     */
+    conn.on(NSQDConnection.MESSAGE, message => {
+      this.handleMessage(message);
+    });
   }
 
   handleMessage(message) {
-    // Give the internal event listeners a chance at the events before clients
-    // of the Reader.
+    /**
+     * Give the internal event listeners a chance at the events 
+     * before clients of the Reader.
+     */
     return process.nextTick(() => {
       const autoFinishMessage = this.config.maxAttempts > 0 &&
         this.config.maxAttempts <= message.attempts;
