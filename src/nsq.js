@@ -4,7 +4,7 @@ import { NSQDConnection, WriterNSQDConnection } from './nsqdconnection';
 import Reader from './reader';
 import Writer from './writer';
 
-export default {
+module.exports = {
   Reader,
   Writer,
   NSQDConnection,
