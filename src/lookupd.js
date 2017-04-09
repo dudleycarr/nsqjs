@@ -1,7 +1,8 @@
+import url from 'url';
+
 import _ from 'underscore';
 import async from 'async';
 import request from 'request';
-import url from 'url';
 
 /**
  * lookupdRequest returns the list of producers from a lookupd given a

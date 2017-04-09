@@ -1,9 +1,11 @@
-import BackoffTimer from './backofftimer';
-import debug from 'debug';
-import NodeState from 'node-state';
-import RoundRobinList from './roundrobinlist';
-import _ from 'underscore';
 import { EventEmitter } from 'events';
+
+import NodeState from 'node-state';
+import debug from 'debug';
+import _ from 'underscore';
+
+import BackoffTimer from './backofftimer';
+import RoundRobinList from './roundrobinlist';
 import { NSQDConnection } from './nsqdconnection';
 
 /**

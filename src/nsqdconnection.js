@@ -1,11 +1,12 @@
-import debug from 'debug';
-import NodeState from 'node-state';
-import _ from 'underscore';
+import { EventEmitter } from 'events';
 import net from 'net';
 import os from 'os';
 import tls from 'tls';
 import zlib from 'zlib';
-import { EventEmitter } from 'events';
+
+import NodeState from 'node-state';
+import _ from 'underscore';
+import debug from 'debug';
 import { SnappyStream, UnsnappyStream } from 'snappystream';
 
 import * as wire from './wire';

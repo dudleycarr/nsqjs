@@ -1,5 +1,6 @@
-import _ from 'underscore';
 import url from 'url';
+
+import _ from 'underscore';
 
 /**
  * Responsible for configuring the official defaults for nsqd connections.

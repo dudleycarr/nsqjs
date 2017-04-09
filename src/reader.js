@@ -1,7 +1,9 @@
+import { EventEmitter } from 'events';
+
 import debug from 'debug';
+
 import RoundRobinList from './roundrobinlist';
 import lookup from './lookupd';
-import { EventEmitter } from 'events';
 import { NSQDConnection } from './nsqdconnection';
 import { ReaderConfig } from './config';
 import { ReaderRdy } from './readerrdy';

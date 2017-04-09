@@ -1,7 +1,8 @@
-import debug from 'debug';
 import { EventEmitter } from 'events';
 
 import _ from 'underscore';
+import debug from 'debug';
+
 import { ConnectionConfig } from './config';
 import { WriterNSQDConnection } from './nsqdconnection';
 

@@ -2,6 +2,17 @@
   "parser": "babel-eslint",
   "extends": [
     "google",
+    "plugin:import/errors",
+    "plugin:import/warnings",
     "prettier"
-  ]
+  ],
+  "plugins": [
+    "import"
+  ],
+  "rules": {
+    'import/order': ['error', {
+      groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+      'newlines-between': 'always',
+    }],
+  }
 }

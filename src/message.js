@@ -1,5 +1,6 @@
-import * as wire from './wire';
 import { EventEmitter } from 'events';
+
+import * as wire from './wire';
 
 /**
  * Message - a high-level message object, which exposes stateful methods
