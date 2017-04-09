@@ -35,7 +35,8 @@
     "format": "prettier --single-quote --trailing-comma --es5 --write \"{src,test}/**/*.js\"",
     "lint": "eslint src",
     "test": "mocha --compilers js:babel-core/register",
-    "install": "npm run build"
+    "prepublish": "npm run build",
+    "postpublish": "rm -rf build"
   },
   "main": "build/nsq",
   "engines": {
