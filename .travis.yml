@@ -25,4 +25,4 @@ install:
   - wget "https://s3.amazonaws.com/bitly-downloads/nsq/nsq-0.3.5.linux-amd64.go1.4.2.tar.gz"
   - tar zvxf "nsq-0.3.5.linux-amd64.go1.4.2.tar.gz"
   - export PATH="$PATH:./nsq-0.3.5.linux-amd64.go1.4.2/bin"
-script: npm run lint && npm test
+script: npm test
