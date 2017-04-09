@@ -1,5 +1,6 @@
-import _ from 'underscore';
 import assert from 'assert';
+
+import _ from 'underscore';
 import should from 'should';
 
 import RoundRobinList from '../src/roundrobinlist';

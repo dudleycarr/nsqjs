@@ -1,4 +1,5 @@
 import should from 'should';
+
 import * as wire from '../src/wire';
 
 const matchCommand = (commandFn, args, expected) => {

@@ -1,6 +1,7 @@
 import should from 'should';
 import sinon from 'sinon';
-import nsq from '../src/nsq';
+
+const nsq = require('../src/nsq');
 
 describe('writer', () => {
   let writer = null;

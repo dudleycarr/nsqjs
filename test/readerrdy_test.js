@@ -1,7 +1,8 @@
+import { EventEmitter } from 'events';
+
 import _ from 'underscore';
 import should from 'should';
 import sinon from 'sinon';
-import { EventEmitter } from 'events';
 
 import Message from '../src/message';
 import { NSQDConnection } from '../src/nsqdconnection';
