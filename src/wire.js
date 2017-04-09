@@ -7,6 +7,13 @@ export const FRAME_TYPE_RESPONSE = 0;
 export const FRAME_TYPE_ERROR = 1;
 export const FRAME_TYPE_MESSAGE = 2;
 
+/**
+ * Stringifies an object. Supports unicode.
+ *
+ * @param  {Object} obj
+ * @param  {Boolean} emitUnicode
+ * @return {String}
+ */
 function jsonStringify(obj, emitUnicode) {
   const json = JSON.stringify(obj);
   if (emitUnicode) return json;
@@ -17,14 +24,25 @@ function jsonStringify(obj, emitUnicode) {
   );
 }
 
-// Calculates the byte length for either a string or a Buffer.
+/**
+ * Compute the byte length of an nsq message.
+ *
+ * @param  {String|Array} msg
+ * @return {Number}
+ */
 function byteLength(msg) {
-  if (_.isString(msg)) {
-    return Buffer.byteLength(msg);
-  }
+  if (_.isString(msg)) return Buffer.byteLength(msg);
+
   return msg.length;
 }
 
+/**
+ * Unpack a message payload. The message is returned as an array in the format
+ * [id, timestamp, attempts, body].
+ *
+ * @param  {Object} data
+ * @return {Array}
+ */
 export function unpackMessage(data) {
   // Int64 to read the 64bit Int from the buffer
   let timestamp = new Int64(data, 0).toOctetString();
@@ -37,14 +55,20 @@ export function unpackMessage(data) {
   return [id, timestamp, attempts, body];
 }
 
-function command(cmd, body) {
+/**
+ * Performs the requested command on the buffer.
+ *
+ * @param  {String} cmd
+ * @param  {String} body
+ * @return {Array}
+ */
+function command(cmd, body, ...parameters) {
   const buffers = [];
 
-  // Turn optional args into parameters for the command
-  const parameters = _.toArray(arguments).slice(2);
   if (parameters.length > 0) {
     parameters.unshift('');
   }
+
   const parametersStr = parameters.join(' ');
   const header = `${cmd + parametersStr}\n`;
 
@@ -67,16 +91,31 @@ function command(cmd, body) {
   return Buffer.concat(buffers);
 }
 
+/**
+ * Emit a `SUB` command.
+ *
+ * @param  {String} topic
+ * @param  {String} channel
+ * @return {Array}
+ */
 export function subscribe(topic, channel) {
   if (!validTopicName(topic)) {
     throw new Error(`Invalid topic: ${topic}`);
   }
+
   if (!validChannelName(channel)) {
     throw new Error(`Invalid channel: ${channel}`);
   }
+
   return command('SUB', null, topic, channel);
 }
 
+/**
+ * Emit an `INDENTIFY` command.
+ *
+ * @param  {Object} data
+ * @return {Array}
+ */
 export function identify(data) {
   const validIdentifyKeys = [
     'client_id',
@@ -92,8 +131,9 @@ export function identify(data) {
     'short_id',
     'snappy',
     'tls_v1',
-    'user_agent'
+    'user_agent',
   ];
+
   // Make sure there are no unexpected keys
   const unexpectedKeys = _.filter(
     _.keys(data),
@@ -107,16 +147,30 @@ export function identify(data) {
   return command('IDENTIFY', jsonStringify(data));
 }
 
+/**
+ * Emit a `RDY` command.
+ *
+ * @param  {Number} count
+ * @return {Array}
+ */
 export function ready(count) {
   if (!_.isNumber(count)) {
     throw new Error(`RDY count (${count}) is not a number`);
   }
+
   if (!(count >= 0)) {
     throw new Error(`RDY count (${count}) is not positive`);
   }
+
   return command('RDY', null, count.toString());
 }
 
+/**
+ * Emit a `FIN` command.
+ *
+ * @param  {String} id
+ * @return {Array}
+ */
 export function finish(id) {
   if (!(Buffer.byteLength(id) <= 16)) {
     throw new Error(`FINISH invalid id (${id})`);
@@ -124,13 +178,18 @@ export function finish(id) {
   return command('FIN', null, id);
 }
 
-export function requeue(id, timeMs) {
-  if (timeMs == null) {
-    timeMs = 0;
-  }
+/**
+ * Emit a requeue command.
+ *
+ * @param  {String} id
+ * @param  {Number} timeMs
+ * @return {Array}
+ */
+export function requeue(id, timeMs = 0) {
   if (!(Buffer.byteLength(id) <= 16)) {
     throw new Error(`REQUEUE invalid id (${id})`);
   }
+
   if (!_.isNumber(timeMs)) {
     throw new Error(`REQUEUE delay time is invalid (${timeMs})`);
   }
@@ -139,18 +198,43 @@ export function requeue(id, timeMs) {
   return command(...parameters);
 }
 
+/**
+ * Emit a `TOUCH` command.
+ *
+ * @param  {String} id
+ * @return {Array}
+ */
 export function touch(id) {
   return command('TOUCH', null, id);
 }
 
+/**
+ * Emit a `NOP` command.
+ *
+ * @return {Array}
+ */
 export function nop() {
   return command('NOP', null);
 }
 
+/**
+ * Emit a `PUB` command.
+ *
+ * @param  {String} topic
+ * @param  {Object} data
+ * @return {Array}
+ */
 export function pub(topic, data) {
   return command('PUB', data, topic);
 }
 
+/**
+ * Emit an `MPUB` command.
+ *
+ * @param  {String} topic
+ * @param  {Object} data
+ * @return {Array}
+ */
 export function mpub(topic, data) {
   if (!_.isArray(data)) {
     throw new Error('MPUB requires an array of message');
@@ -168,22 +252,29 @@ export function mpub(topic, data) {
     return buffer;
   });
 
-  const numMessagesBuffer = Buffer(4);
+  const numMessagesBuffer = new Buffer(4);
   numMessagesBuffer.writeInt32BE(messages.length, 0);
   messages.unshift(numMessagesBuffer);
 
   return command('MPUB', Buffer.concat(messages), topic);
 }
 
+/**
+ * Emit an `AUTH` command.
+ *
+ * @param  {String} token
+ * @return {Array}
+ */
 export function auth(token) {
   return command('AUTH', token);
 }
 
 /**
- * Validate topic names. Topic names must be no longer than 
+ * Validate topic names. Topic names must be no longer than
  * 65 characters.
- * 
- * @param {String} topic.
+ *
+ * @param {String} topic
+ * @return {Boolean}
  */
 function validTopicName(topic) {
   return topic &&
@@ -195,8 +286,9 @@ function validTopicName(topic) {
 /**
  * Validate channel names. Follows the same restriction as
  * topic names.
- * 
- * @param {String} topic.
+ *
+ * @param {String} channel
+ * @return {Boolean}
  */
 function validChannelName(channel) {
   return channel &&

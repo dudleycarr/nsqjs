@@ -150,7 +150,7 @@ describe('ConnectionConfig', () => {
     it('should validate against a validate address list of 1', () => {
       const check = () =>
         config.isLookupdHTTPAddresses('lookupdHTTPAddresses', [
-          '127.0.0.1:4150'
+          '127.0.0.1:4150',
         ]);
       check.should.not.throw();
     });
@@ -161,7 +161,7 @@ describe('ConnectionConfig', () => {
           '127.0.0.1:4150',
           'localhost:4150',
           'http://localhost/nsq/lookup',
-          'https://localhost/nsq/lookup'
+          'https://localhost/nsq/lookup',
         ];
         config.isLookupdHTTPAddresses('lookupdHTTPAddresses', addrs);
       };

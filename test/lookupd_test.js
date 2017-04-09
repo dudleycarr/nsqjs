@@ -12,7 +12,7 @@ const NSQD_1 = {
   remote_address: 'localhost:12345',
   tcp_port: 4150,
   topics: ['sample_topic'],
-  version: '0.2.23'
+  version: '0.2.23',
 };
 const NSQD_2 = {
   address: 'localhost',
@@ -22,7 +22,7 @@ const NSQD_2 = {
   remote_address: 'localhost:56789',
   tcp_port: 5150,
   topics: ['sample_topic'],
-  version: '0.2.23'
+  version: '0.2.23',
 };
 const NSQD_3 = {
   address: 'localhost',
@@ -32,7 +32,7 @@ const NSQD_3 = {
   remote_address: 'localhost:23456',
   tcp_port: 6150,
   topics: ['sample_topic'],
-  version: '0.2.23'
+  version: '0.2.23',
 };
 const NSQD_4 = {
   address: 'localhost',
@@ -42,7 +42,7 @@ const NSQD_4 = {
   remote_address: 'localhost:34567',
   tcp_port: 7150,
   topics: ['sample_topic'],
-  version: '0.2.23'
+  version: '0.2.23',
 };
 
 const LOOKUPD_1 = '127.0.0.1:4161';
@@ -54,7 +54,7 @@ const nockUrlSplit = url => {
   const match = url.match(/^(https?:\/\/[^/]+)(\/.*$)/i);
   return {
     baseUrl: match[1],
-    path: match[2]
+    path: match[2],
   };
 };
 
@@ -70,8 +70,8 @@ const registerWithLookupd = (lookupdAddress, nsqd) => {
             status_code: 200,
             status_txt: 'OK',
             data: {
-              producers
-            }
+              producers,
+            },
           });
       } else {
         const params = nockUrlSplit(lookupdAddress);
@@ -85,8 +85,8 @@ const registerWithLookupd = (lookupdAddress, nsqd) => {
           status_code: 200,
           status_txt: 'OK',
           data: {
-            producers
-          }
+            producers,
+          },
         });
       }
     });
@@ -97,7 +97,7 @@ const setFailedTopicReply = (lookupdAddress, topic) =>
   nock(`http://${lookupdAddress}`).get(`/lookup?topic=${topic}`).reply(200, {
     status_code: 500,
     status_txt: 'INVALID_ARG_TOPIC',
-    data: null
+    data: null,
   });
 
 describe('lookupd.lookup', () => {
@@ -122,7 +122,7 @@ describe('lookupd.lookup', () => {
           'address',
           'broadcast_address',
           'tcp_port',
-          'http_port'
+          'http_port',
         ].forEach(key => {
           should.ok(_.keys(nodes[0]).includes(key));
         });

@@ -8,5 +8,5 @@ module.exports = {
   Reader,
   Writer,
   NSQDConnection,
-  WriterNSQDConnection
+  WriterNSQDConnection,
 };

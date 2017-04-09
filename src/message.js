@@ -1,6 +1,12 @@
 import * as wire from './wire';
 import { EventEmitter } from 'events';
 
+/**
+ * Message - a high-level message object, which exposes stateful methods
+ * for responding to nsqd (FIN, REQ, TOUCH, etc.) as well as metadata
+ * such as attempts and timestamp.
+ * @type {String}
+ */
 class Message extends EventEmitter {
   // Event types
   static BACKOFF = 'backoff';
@@ -11,6 +17,17 @@ class Message extends EventEmitter {
   static REQUEUE = 1;
   static TOUCH = 2;
 
+  /**
+   * Instantiates a new instance of a Message.
+   * @constructor
+   * @param  {String} id
+   * @param  {String|Number} timestamp
+   * @param  {Number} attempts
+   * @param  {String} body
+   * @param  {Number} requeueDelay
+   * @param  {Number} msgTimeout
+   * @param  {Number} maxMsgTimeout
+   */
   constructor(
     id,
     timestamp,
@@ -20,7 +37,7 @@ class Message extends EventEmitter {
     msgTimeout,
     maxMsgTimeout
   ) {
-    super(...arguments);
+    super(...arguments); // eslint-disable-line prefer-rest-params
     this.id = id;
     this.timestamp = timestamp;
     this.attempts = attempts;
@@ -38,9 +55,7 @@ class Message extends EventEmitter {
     this.timedOut = false;
 
     const trackTimeout = () => {
-      if (this.hasResponded) {
-        return;
-      }
+      if (this.hasResponded) return;
 
       const soft = this.timeUntilTimeout();
       const hard = this.timeUntilTimeout(true);
@@ -56,6 +71,11 @@ class Message extends EventEmitter {
     trackTimeout();
   }
 
+  /**
+   * Safely parse the body into JSON.
+   *
+   * @return {Object}
+   */
   json() {
     if (this.parsed == null) {
       try {
@@ -64,53 +84,81 @@ class Message extends EventEmitter {
         throw new Error('Invalid JSON in Message');
       }
     }
+
     return this.parsed;
   }
 
-  // Returns in milliseconds the time until this message expires. Returns
-  // null if that time has already ellapsed. There are two different timeouts
-  // for a message. There are the soft timeouts that can be extended by touching
-  // the message. There is the hard timeout that cannot be exceeded without
-  // reconfiguring the nsqd.
+  /**
+   * Returns in milliseconds the time until this message expires. Returns
+   * null if that time has already ellapsed. There are two different timeouts
+   * for a message. There are the soft timeouts that can be extended by touching
+   * the message. There is the hard timeout that cannot be exceeded without
+   * reconfiguring the nsqd.
+   *
+   * @param  {Boolean} [hard=false]
+   * @return {Number|null}
+   */
   timeUntilTimeout(hard = false) {
-    if (this.hasResponded) {
-      return null;
-    }
+    if (this.hasResponded) return null;
 
-    const delta = hard
-      ? this.receivedOn + this.maxMsgTimeout - Date.now()
-      : this.lastTouched + this.msgTimeout - Date.now();
+    let delta;
+    if (hard) {
+      delta = this.receivedOn + this.maxMsgTimeout - Date.now();
+    } else {
+      delta = this.lastTouched + this.msgTimeout - Date.now();
+    }
 
     if (delta > 0) {
       return delta;
     }
+
     return null;
   }
 
+  /**
+   * Respond with a `FINISH` event.
+   */
   finish() {
-    return this.respond(Message.FINISH, wire.finish(this.id));
+    this.respond(Message.FINISH, wire.finish(this.id));
   }
 
+  /**
+   * Requeue the message with the specified amount of delay. If backoff is
+   * specifed, then the subscribed Readers will backoff.
+   *
+   * @param  {Number}  [delay=this.requeueDelay]
+   * @param  {Boolean} [backoff=true]            [description]
+   */
   requeue(delay = this.requeueDelay, backoff = true) {
     this.respond(Message.REQUEUE, wire.requeue(this.id, delay));
     if (backoff) {
-      return this.emit(Message.BACKOFF);
+      this.emit(Message.BACKOFF);
     }
   }
 
+  /**
+   * Emit a `TOUCH` command. `TOUCH` command can be used to reset the timer
+   * on the nsqd side. This can be done repeatedly until the message
+   * is either FIN or REQ, up to the sending nsqd’s configured max_msg_timeout.
+   */
   touch() {
     this.touchCount += 1;
     this.lastTouched = Date.now();
-    return this.respond(Message.TOUCH, wire.touch(this.id));
+    this.respond(Message.TOUCH, wire.touch(this.id));
   }
 
+  /**
+   * Emit a `RESPOND` event.
+   *
+   * @param  {String} responseType
+   * @param  {String} wireData
+   * @return {undefined}
+   */
   respond(responseType, wireData) {
     // TODO: Add a debug/warn when we moved to debug.js
-    if (this.hasResponded) {
-      return;
-    }
+    if (this.hasResponded) return;
 
-    return process.nextTick(() => {
+    process.nextTick(() => {
       if (responseType !== Message.TOUCH) {
         this.hasResponded = true;
         clearTimeout(this.trackTimeoutId);
@@ -119,7 +167,7 @@ class Message extends EventEmitter {
         this.lastTouched = Date.now();
       }
 
-      return this.emit(Message.RESPOND, responseType, wireData);
+      this.emit(Message.RESPOND, responseType, wireData);
     });
   }
 }

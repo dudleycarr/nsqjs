@@ -1,4 +1,4 @@
-import Debug from 'debug';
+import debug from 'debug';
 import NodeState from 'node-state';
 import _ from 'underscore';
 import net from 'net';
@@ -19,37 +19,43 @@ import { ConnectionConfig } from './config';
  * aspects of the nsqd connection with the exception of the RDY count which
  * needs to be managed across all nsqd connections for a given topic / channel
  * pair.
- * 
+ *
  * This shouldn't be used directly. Use a Reader instead.
- * 
+ *
  * Usage:
- * 
- *   c = new NSQDConnection '127.0.0.1', 4150, 'test', 'default', 60, 30
- *   
- *   c.on NSQDConnection.MESSAGE, (msg) ->
- *     console.log "Callback [message]: #{msg.attempts}, #{msg.body.toString()}"
- *     console.log "Timeout of message is #{msg.timeUntilTimeout()}"
- *     setTimeout (-> console.log "timeout = #{msg.timeUntilTimeout()}"), 5000
+ *   const c = new NSQDConnection('127.0.0.1', 4150, 'test', 'default', 60, 30)
+ *
+ *   c.on(NSQDConnection.MESSAGE, (msg) => {
+ *     console.log(`[message]: ${msg.attempts}, ${msg.body.toString()}`)
+ *     console.log(`Timeout of message is ${msg.timeUntilTimeout()}`)
+ *     setTimeout(() => console.log(`${msg.timeUntilTimeout()}`), 5000)
  *     msg.finish()
- *   
- *   c.on NSQDConnection.FINISHED, ->
- *     c.setRdy 1
- *   
- *   c.on NSQDConnection.READY, ->
- *     console.log "Callback [ready]: Set RDY to 100"
- *     c.setRdy 10
- *   
- *   c.on NSQDConnection.CLOSED, ->
- *     console.log "Callback [closed]: Lost connection to nsqd"
- *   
- *   c.on NSQDConnection.ERROR, (err) ->
- *     console.log "Callback [error]: #{err}"
- *   
- *   c.on NSQDConnection.BACKOFF, ->
- *     console.log "Callback [backoff]: RDY 0"
- *     c.setRdy 0
- *     setTimeout (-> c.setRdy 100; console.log 'RDY 100'), 10 * 1000
- *   
+ *   })
+ *
+ *   c.on(NSQDConnection.FINISHED, () =>  c.setRdy(1))
+ *
+ *   c.on(NSQDConnection.READY, () => {
+ *     console.log('Callback [ready]: Set RDY to 100')
+ *     c.setRdy(10)
+ *   })
+ *
+ *   c.on(NSQDConnection.CLOSED, () => {
+ *     console.log('Callback [closed]: Lost connection to nsqd')
+ *   })
+ *
+ *   c.on(NSQDConnection.ERROR, (err) => {
+ *     console.log(`Callback [error]: ${err}`)
+ *   })
+ *
+ *   c.on(NSQDConnection.BACKOFF, () => {
+ *     console.log('Callback [backoff]: RDY 0')
+ *     c.setRdy(0)
+ *     setTimeout(() => {
+ *       c.setRdy 100;
+ *       console.log('RDY 100')
+ *     }, 10 * 1000)
+ *   })
+ *
  *   c.connect()
  */
 class NSQDConnection extends EventEmitter {
@@ -64,15 +70,25 @@ class NSQDConnection extends EventEmitter {
   static REQUEUED = 'requeued';
   static READY = 'ready';
 
+  /**
+   * Instantiates a new NSQDConnection.
+   *
+   * @constructor
+   * @param  {String} nsqdHost
+   * @param  {String|Number} nsqdPort
+   * @param  {String} topic
+   * @param  {String} channel
+   * @param  {Object} [options={}]
+   */
   constructor(nsqdHost, nsqdPort, topic, channel, options = {}) {
-    super(...arguments);
+    super(nsqdHost, nsqdPort, topic, channel, options);
 
     this.nsqdHost = nsqdHost;
     this.nsqdPort = nsqdPort;
     this.topic = topic;
     this.channel = channel;
     const connId = this.id().replace(':', '/');
-    this.debug = Debug(
+    this.debug = debug(
       `nsqjs:reader:${this.topic}/${this.channel}:conn:${connId}`
     );
 
@@ -93,20 +109,33 @@ class NSQDConnection extends EventEmitter {
     this.messageCallbacks = []; // Callbacks on message sent responses
   }
 
+  /**
+   * The nsqd host:port pair.
+   *
+   * @return {[type]} [description]
+   */
   id() {
     return `${this.nsqdHost}:${this.nsqdPort}`;
   }
 
+  /**
+   * Instantiates or returns a new ConnectionState.
+   *
+   * @return {ConnectionState}
+   */
   connectionState() {
     return this.statemachine || new ConnectionState(this);
   }
 
+  /**
+   * Creates a new nsqd connection.
+   */
   connect() {
     this.statemachine.raise('connecting');
 
     // Using nextTick so that clients of Reader can register event listeners
     // right after calling connect.
-    return process.nextTick(() => {
+    process.nextTick(() => {
       this.conn = net.connect(
         { port: this.nsqdPort, host: this.nsqdHost },
         () => {
@@ -122,23 +151,33 @@ class NSQDConnection extends EventEmitter {
             500
           );
 
-          return this.identifyTimeoutId;
+          this.identifyTimeoutId;
         }
       );
 
-      return this.registerStreamListeners(this.conn);
+      this.registerStreamListeners(this.conn);
     });
   }
 
+  /**
+   * Register event handlers for the nsqd connection.
+   *
+   * @param  {Object} conn
+   */
   registerStreamListeners(conn) {
     conn.on('data', data => this.receiveRawData(data));
     conn.on('end', err => {
       this.statemachine.goto('CLOSED');
-      return this.emit('connection_error', err);
+      this.emit('connection_error', err);
     });
-    return conn.on('close', () => this.statemachine.raise('close'));
+    conn.on('close', () => this.statemachine.raise('close'));
   }
 
+  /**
+   * Connect via tls.
+   *
+   * @param  {Function} callback
+   */
   startTLS(callback) {
     for (const event of ['data', 'error', 'close']) {
       this.conn.removeAllListeners(event);
@@ -146,89 +185,113 @@ class NSQDConnection extends EventEmitter {
 
     const options = {
       socket: this.conn,
-      rejectUnauthorized: this.config.tlsVerification
+      rejectUnauthorized: this.config.tlsVerification,
     };
-    var tlsConn = tls.connect(options, () => {
+
+    let tlsConn = tls.connect(options, () => {
       this.conn = tlsConn;
-      return typeof callback === 'function' ? callback() : undefined;
+      typeof callback === 'function' ? callback() : undefined;
     });
 
-    return this.registerStreamListeners(tlsConn);
+    this.registerStreamListeners(tlsConn);
   }
 
+  /**
+   * Begin deflating the frame buffer. Actualy deflating is handled by
+   * zlib.
+   *
+   * @param  {Number} level
+   */
   startDeflate(level) {
     this.inflater = zlib.createInflateRaw({ flush: zlib.Z_SYNC_FLUSH });
     this.deflater = zlib.createDeflateRaw({ level, flush: zlib.Z_SYNC_FLUSH });
-    return this.reconsumeFrameBuffer();
+    this.reconsumeFrameBuffer();
   }
 
+  /**
+   * Create a snappy stream.
+   */
   startSnappy() {
     this.inflater = new UnsnappyStream();
     this.deflater = new SnappyStream();
-    return this.reconsumeFrameBuffer();
+    this.reconsumeFrameBuffer();
   }
 
+  /**
+   * Consume the raw data from the frame buffer.
+   */
   reconsumeFrameBuffer() {
     if (this.frameBuffer.buffer && this.frameBuffer.buffer.length) {
       const data = this.frameBuffer.buffer;
       delete this.frameBuffer.buffer;
-      return this.receiveRawData(data);
+      this.receiveRawData(data);
     }
   }
 
+  /**
+   * Raise a `READY` event with the specified count.
+   *
+   * @param {Number} rdyCount
+   */
   setRdy(rdyCount) {
-    return this.statemachine.raise('ready', rdyCount);
+    this.statemachine.raise('ready', rdyCount);
   }
 
+  /**
+   * Handles reading the uncompressed payload from the inflater.
+   *
+   * @param  {Object} data
+   * @return {undefined}
+   */
   receiveRawData(data) {
-    if (!this.inflater) {
-      return this.receiveData(data);
-    }
-    return this.inflater.write(data, () => {
+    if (!this.inflater) return this.receiveData(data);
+
+    this.inflater.write(data, () => {
       const uncompressedData = this.inflater.read();
       if (uncompressedData) {
-        return this.receiveData(uncompressedData);
+        this.receiveData(uncompressedData);
       }
     });
   }
 
+  /**
+   * Handle receiveing the message payload frame by frame.
+   *
+   * @param  {Object} data
+   */
   receiveData(data) {
     this.lastReceivedTimestamp = Date.now();
     this.frameBuffer.consume(data);
 
-    return (() => {
-      let frame = this.frameBuffer.nextFrame();
-      const result = [];
+    let frame = this.frameBuffer.nextFrame();
 
-      while (frame) {
-        let item;
-        const [frameId, payload] = Array.from(frame);
-        switch (frameId) {
-          case wire.FRAME_TYPE_RESPONSE:
-            item = this.statemachine.raise('response', payload);
-            break;
-          case wire.FRAME_TYPE_ERROR:
-            item = this.statemachine.goto(
-              'ERROR',
-              new Error(payload.toString())
-            );
-            break;
-          case wire.FRAME_TYPE_MESSAGE:
-            this.lastMessageTimestamp = this.lastReceivedTimestamp;
-            item = this.statemachine.raise(
-              'consumeMessage',
-              this.createMessage(payload)
-            );
-            break;
-        }
-
-        result.push(item);
-        frame = this.frameBuffer.nextFrame();
+    while (frame) {
+      const [frameId, payload] = Array.from(frame);
+      switch (frameId) {
+        case wire.FRAME_TYPE_RESPONSE:
+          this.statemachine.raise('response', payload);
+          break;
+        case wire.FRAME_TYPE_ERROR:
+          this.statemachine.goto('ERROR', new Error(payload.toString()));
+          break;
+        case wire.FRAME_TYPE_MESSAGE:
+          this.lastMessageTimestamp = this.lastReceivedTimestamp;
+          this.statemachine.raise(
+            'consumeMessage',
+            this.createMessage(payload)
+          );
+          break;
       }
-      return result;
-    })();
+
+      frame = this.frameBuffer.nextFrame();
+    }
   }
 
+  /**
+   * Generates client metadata so that nsqd can identify connections.
+   *
+   * @return {Object} The connection metadata.
+   */
   identify() {
     const longName = os.hostname();
     const shortName = longName.split('.')[0];
@@ -247,7 +310,7 @@ class NSQDConnection extends EventEmitter {
       short_id: shortName,
       snappy: this.config.snappy,
       tls_v1: this.config.tls,
-      user_agent: `nsqjs/${version}`
+      user_agent: `nsqjs/${version}`,
     };
 
     // Remove some keys when they're effectively not provided.
@@ -255,29 +318,42 @@ class NSQDConnection extends EventEmitter {
       'msg_timeout',
       'output_buffer_size',
       'output_buffer_timeout',
-      'sample_rate'
+      'sample_rate',
     ];
-    for (const key of Array.from(removableKeys)) {
+
+    removableKeys.forEach(key => {
       if (identify[key] === null) {
         delete identify[key];
       }
-    }
+    });
+
     return identify;
   }
 
+  /**
+   * Throws an error if the connection timed out while identifying the nsqd.
+   */
   identifyTimeout() {
-    return this.statemachine.goto(
+    this.statemachine.goto(
       'ERROR',
       new Error('Timed out identifying with nsqd')
     );
   }
 
+  /**
+   * Clears an identify timeout. Useful for retries.
+   */
   clearIdentifyTimeout() {
     clearTimeout(this.identifyTimeoutId);
     this.identifyTimeoutId = null;
   }
 
-  // Create a Message object from the message payload received from nsqd.
+  /**
+   * Create a new message from the payload.
+   *
+   * @param  {Buffer} msgPayload
+   * @return {Message}
+   */
   createMessage(msgPayload) {
     const msgComponents = wire.unpackMessage(msgPayload);
     const msg = new Message(
@@ -298,10 +374,10 @@ class NSQDConnection extends EventEmitter {
 elapsed=${Date.now() - msg.receivedOn}ms, \
 touch_count=${msg.touchCount}]`
         );
-        return this.emit(NSQDConnection.FINISHED);
+        this.emit(NSQDConnection.FINISHED);
       } else if (responseType === Message.REQUEUE) {
         this.debug(`Requeued message [${msg.id}]`);
-        return this.emit(NSQDConnection.REQUEUED);
+        this.emit(NSQDConnection.REQUEUED);
       }
     });
 
@@ -310,40 +386,63 @@ touch_count=${msg.touchCount}]`
     return msg;
   }
 
+  /**
+   * Write a message to the connection. Deflate it if necessary.
+   * @param  {Object} data
+   */
   write(data) {
     if (this.deflater) {
-      return this.deflater.write(data, () =>
-        this.conn.write(this.deflater.read()));
+      this.deflater.write(data, () => this.conn.write(this.deflater.read()));
+    } else {
+      this.conn.write(data);
     }
-    return this.conn.write(data);
   }
 
+  /**
+   * Destroy the nsqd connection.
+   */
   destroy() {
-    return this.conn.destroy();
+    this.conn.destroy();
   }
 }
 
+/**
+ * A statemachine modeling the connection state of an nsqd connection.
+ * @type {ConnectionState}
+ */
 class ConnectionState extends NodeState {
+  /**
+   * Instantiates a new instance of ConnectionState.
+   *
+   * @constructor
+   * @param  {Object} conn
+   */
   constructor(conn) {
     super({
       autostart: true,
       initial_state: 'INIT',
-      sync_goto: true
+      sync_goto: true,
     });
 
     this.conn = conn;
     this.identifyResponse = null;
   }
 
+  /**
+   * @param  {*} message
+   */
   log(message) {
     if (this.current_state_name !== 'INIT') {
       this.conn.debug(`${this.current_state_name}`);
     }
     if (message) {
-      return this.conn.debug(message);
+      this.conn.debug(message);
     }
   }
 
+  /**
+   * @return {String}
+   */
   afterIdentify() {
     return 'SUBSCRIBE';
   }
@@ -353,19 +452,19 @@ ConnectionState.prototype.states = {
   INIT: {
     connecting() {
       return this.goto('CONNECTING');
-    }
+    },
   },
 
   CONNECTING: {
     connected() {
       return this.goto('CONNECTED');
-    }
+    },
   },
 
   CONNECTED: {
     Enter() {
       return this.goto('SEND_MAGIC_IDENTIFIER');
-    }
+    },
   },
 
   SEND_MAGIC_IDENTIFIER: {
@@ -373,7 +472,7 @@ ConnectionState.prototype.states = {
       // Send the magic protocol identifier to the connection
       this.conn.write(wire.MAGIC_V2);
       return this.goto('IDENTIFY');
-    }
+    },
   },
 
   IDENTIFY: {
@@ -383,7 +482,7 @@ ConnectionState.prototype.states = {
       this.conn.debug(identify);
       this.conn.write(wire.identify(identify));
       return this.goto('IDENTIFY_RESPONSE');
-    }
+    },
   },
 
   IDENTIFY_RESPONSE: {
@@ -392,7 +491,7 @@ ConnectionState.prototype.states = {
         data = JSON.stringify({
           max_rdy_count: 2500,
           max_msg_timeout: 15 * 60 * 1000, // 15 minutes
-          msg_timeout: 60 * 1000
+          msg_timeout: 60 * 1000,
         }); //  1 minute
       }
 
@@ -408,7 +507,7 @@ ConnectionState.prototype.states = {
         return this.goto('TLS_START');
       }
       return this.goto('IDENTIFY_COMPRESSION_CHECK');
-    }
+    },
   },
 
   IDENTIFY_COMPRESSION_CHECK: {
@@ -422,14 +521,14 @@ ConnectionState.prototype.states = {
         return this.goto('SNAPPY_START');
       }
       return this.goto('AUTH');
-    }
+    },
   },
 
   TLS_START: {
     Enter() {
       this.conn.startTLS();
       return this.goto('TLS_RESPONSE');
-    }
+    },
   },
 
   TLS_RESPONSE: {
@@ -438,21 +537,21 @@ ConnectionState.prototype.states = {
         return this.goto('IDENTIFY_COMPRESSION_CHECK');
       }
       return this.goto('ERROR', new Error('TLS negotiate error with nsqd'));
-    }
+    },
   },
 
   DEFLATE_START: {
     Enter(level) {
       this.conn.startDeflate(level);
       return this.goto('COMPRESSION_RESPONSE');
-    }
+    },
   },
 
   SNAPPY_START: {
     Enter() {
       this.conn.startSnappy();
       return this.goto('COMPRESSION_RESPONSE');
-    }
+    },
   },
 
   COMPRESSION_RESPONSE: {
@@ -464,7 +563,7 @@ ConnectionState.prototype.states = {
         'ERROR',
         new Error('Bad response when enabling compression')
       );
-    }
+    },
   },
 
   AUTH: {
@@ -474,21 +573,21 @@ ConnectionState.prototype.states = {
       }
       this.conn.write(wire.auth(this.conn.config.authSecret));
       return this.goto('AUTH_RESPONSE');
-    }
+    },
   },
 
   AUTH_RESPONSE: {
     response(data) {
       this.conn.auth = JSON.parse(data);
       return this.goto(this.afterIdentify());
-    }
+    },
   },
 
   SUBSCRIBE: {
     Enter() {
       this.conn.write(wire.subscribe(this.conn.topic, this.conn.channel));
       return this.goto('SUBSCRIBE_RESPONSE');
-    }
+    },
   },
 
   SUBSCRIBE_RESPONSE: {
@@ -499,7 +598,7 @@ ConnectionState.prototype.states = {
         // phase. Do this only once for a connection.
         return this.conn.emit(NSQDConnection.READY);
       }
-    }
+    },
   },
 
   READY_RECV: {
@@ -524,7 +623,7 @@ ConnectionState.prototype.states = {
 
     close() {
       return this.goto('CLOSED');
-    }
+    },
   },
 
   READY_SEND: {
@@ -559,7 +658,7 @@ ConnectionState.prototype.states = {
 
     close() {
       return this.goto('CLOSED');
-    }
+    },
   },
 
   ERROR: {
@@ -578,7 +677,7 @@ ConnectionState.prototype.states = {
       if (!_.isString(err)) {
         err = err.toString();
       }
-      const [junk, errorCode] = err.split(/\s+/);
+      const errorCode = err.split(/\s+/)[1];
 
       if (
         ['E_REQ_FAILED', 'E_FIN_FAILED', 'E_TOUCH_FAILED'].includes(errorCode)
@@ -590,7 +689,7 @@ ConnectionState.prototype.states = {
 
     close() {
       return this.goto('CLOSED');
-    }
+    },
   },
 
   CLOSED: {
@@ -615,8 +714,8 @@ ConnectionState.prototype.states = {
     },
 
     // No-op. Once closed, subsequent calls should do nothing.
-    close() {}
-  }
+    close() {},
+  },
 };
 
 ConnectionState.prototype.transitions = {
@@ -634,44 +733,72 @@ ConnectionState.prototype.transitions = {
     ERROR(err, callback) {
       this.log(`${err}`);
       return callback(err);
-    }
-  }
+    },
+  },
 };
 
 /**
  * WriterConnectionState
- * 
+ *
  * Usage:
- *   c = new NSQDConnectionWriter '127.0.0.1', 4150, 30 
+ *   c = new NSQDConnectionWriter '127.0.0.1', 4150, 30
  *   c.connect()
- *   
+ *
  *   c.on NSQDConnectionWriter.CLOSED, ->
  *     console.log "Callback [closed]: Lost connection to nsqd"
- *   
+ *
  *   c.on NSQDConnectionWriter.ERROR, (err) ->
  *     console.log "Callback [error]: #{err}"
- *   
+ *
  *   c.on NSQDConnectionWriter.READY, ->
  *     c.produceMessages 'sample_topic', ['first message']
  *     c.produceMessages 'sample_topic', ['second message', 'third message']
  *     c.destroy()
  */
 class WriterNSQDConnection extends NSQDConnection {
+  /**
+   * @constructor
+   * @param  {String} nsqdHost
+   * @param  {String|Number} nsqdPort
+   * @param  {Object} [options={}]
+   */
   constructor(nsqdHost, nsqdPort, options = {}) {
     super(nsqdHost, nsqdPort, null, null, options);
-    this.debug = Debug(`nsqjs:writer:conn:${nsqdHost}/${nsqdPort}`);
+    this.debug = debug(`nsqjs:writer:conn:${nsqdHost}/${nsqdPort}`);
   }
 
+  /**
+   * Instantiates a new instance of WriterConnectionState or returns an
+   * existing one.
+   *
+   * @return {WriterConnectionState}
+   */
   connectionState() {
     return this.statemachine || new WriterConnectionState(this);
   }
 
+  /**
+   * Emits a `produceMessages` event with the specified topic, msgs and a
+   * callback.
+   *
+   * @param  {String}   topic
+   * @param  {Array}    msgs
+   * @param  {Function} callback
+   */
   produceMessages(topic, msgs, callback) {
-    return this.statemachine.raise('produceMessages', [topic, msgs, callback]);
+    this.statemachine.raise('produceMessages', [topic, msgs, callback]);
   }
 }
 
+/**
+ * A statemachine modeling the various states a writer connection can be in.
+ */
 class WriterConnectionState extends ConnectionState {
+  /**
+   * Returned when the connection is ready to send messages.
+   *
+   * @return {String}
+   */
   afterIdentify() {
     return 'READY_SEND';
   }
@@ -681,5 +808,5 @@ export {
   NSQDConnection,
   ConnectionState,
   WriterNSQDConnection,
-  WriterConnectionState
+  WriterConnectionState,
 };

@@ -1,6 +1,10 @@
 import _ from 'underscore';
 import url from 'url';
 
+/**
+ * Responsible for configuring the official defaults for nsqd connections.
+ * @type {ConnectionConfig}
+ */
 class ConnectionConfig {
   static DEFAULTS = {
     authSecret: null,
@@ -16,28 +20,55 @@ class ConnectionConfig {
     sampleRate: null,
     snappy: false,
     tls: false,
-    tlsVerification: true
+    tlsVerification: true,
   };
 
+  /**
+   * Indicates if an address has the host pair combo.
+   *
+   * @param  {String}  addr
+   * @return {Boolean}
+   */
   static isBareAddress(addr) {
     const [host, port] = addr.split(':');
     return host.length > 0 && port > 0;
   }
 
+  /**
+   * Instantiates a new ConnectionConfig.
+   *
+   * @constructor
+   * @param  {Object} [options={}]
+   */
   constructor(options = {}) {
     options = _.chain(options)
       .pick(_.keys(this.constructor.DEFAULTS))
       .defaults(this.constructor.DEFAULTS)
       .value();
+
     _.extend(this, options);
   }
 
+  /**
+   * Throws an error if the value is not a non empty string.
+   *
+   * @param  {String}  option
+   * @param  {*}  value
+   */
   isNonEmptyString(option, value) {
     if (!_.isString(value) || !(value.length > 0)) {
       throw new Error(`${option} must be a non-empty string`);
     }
   }
 
+  /**
+   * Throws an error if the value is not a number.
+   *
+   * @param  {String}  option
+   * @param  {*}  value
+   * @param  {*}  lower
+   * @param  {*}  upper
+   */
   isNumber(option, value, lower, upper) {
     if (_.isNaN(value) || !_.isNumber(value)) {
       throw new Error(`${option}(${value}) is not a number`);
@@ -52,6 +83,14 @@ class ConnectionConfig {
     }
   }
 
+  /**
+   * Throws an error if the value is not exclusive.
+   *
+   * @param  {String}  option
+   * @param  {*}  value
+   * @param  {*}  lower
+   * @param  {*}  upper
+   */
   isNumberExclusive(option, value, lower, upper) {
     if (_.isNaN(value) || !_.isNumber(value)) {
       throw new Error(`${option}(${value}) is not a number`);
@@ -66,18 +105,36 @@ class ConnectionConfig {
     }
   }
 
+  /**
+   * Throws an error if the option is not a Boolean.
+   *
+   * @param  {String}  option
+   * @param  {*}  value
+   */
   isBoolean(option, value) {
     if (!_.isBoolean(value)) {
       throw new Error(`${option} must be either true or false`);
     }
   }
 
+  /**
+   * Throws an error if the option is not a bare address.
+   *
+   * @param  {String}  option
+   * @param  {*}  value
+   */
   isBareAddresses(option, value) {
     if (!_.isArray(value) || !_.every(value, ConnectionConfig.isBareAddress)) {
       throw new Error(`${option} must be a list of addresses 'host:port'`);
     }
   }
 
+  /**
+   * Throws an error if the option is not a valid lookupd http address.
+   *
+   * @param  {String}  option
+   * @param  {*}  value
+   */
   isLookupdHTTPAddresses(option, value) {
     const isAddr = addr => {
       if (addr.indexOf('://') === -1) {
@@ -97,6 +154,12 @@ HTTP/HTTPS URI`
     }
   }
 
+  /**
+   * Returns the validated client config. Throws an error if any values are
+   * not correct.
+   *
+   * @return {Object}
+   */
   conditions() {
     return {
       authSecret: [this.isNonEmptyString],
@@ -112,19 +175,31 @@ HTTP/HTTPS URI`
       sampleRate: [this.isNumber, 1, 99],
       snappy: [this.isBoolean],
       tls: [this.isBoolean],
-      tlsVerification: [this.isBoolean]
+      tlsVerification: [this.isBoolean],
     };
   }
 
+  /**
+   * Helper function that will validate a condition with the given args.
+   *
+   * @param  {String} option
+   * @param  {String} value
+   * @return {Boolean}
+   */
   validateOption(option, value) {
     const [fn, ...args] = this.conditions()[option];
     return fn(option, value, ...args);
   }
 
+  /**
+   * Validate the connection options.
+   */
   validate() {
-    for (const option in this) {
+    const options = Object.keys(this);
+    for (const option of options) {
       // dont validate our methods
       const value = this[option];
+
       if (_.isFunction(value)) {
         continue;
       }
@@ -150,6 +225,10 @@ HTTP/HTTPS URI`
   }
 }
 
+/**
+ * Responsible for configuring the official defaults for Reader connections.
+ * @type {[type]}
+ */
 class ReaderConfig extends ConnectionConfig {
   static DEFAULTS = _.extend({}, ConnectionConfig.DEFAULTS, {
     lookupdHTTPAddresses: [],
@@ -158,9 +237,15 @@ class ReaderConfig extends ConnectionConfig {
     name: null,
     nsqdTCPAddresses: [],
     maxAttempts: 0,
-    maxBackoffDuration: 128
+    maxBackoffDuration: 128,
   });
 
+  /**
+   * Returns the validated reader client config. Throws an error if any
+   * values are not correct.
+   *
+   * @return {Object}
+   */
   conditions() {
     return _.extend({}, super.conditions(), {
       lookupdHTTPAddresses: [this.isLookupdHTTPAddresses],
@@ -169,14 +254,17 @@ class ReaderConfig extends ConnectionConfig {
       name: [this.isNonEmptyString],
       nsqdTCPAddresses: [this.isBareAddresses],
       maxAttempts: [this.isNumber, 0],
-      maxBackoffDuration: [this.isNumber, 0]
+      maxBackoffDuration: [this.isNumber, 0],
     });
   }
 
-  validate() {
+  /**
+   * Validate the connection options.
+   */
+  validate(...args) {
     const addresses = ['nsqdTCPAddresses', 'lookupdHTTPAddresses'];
 
-    /** 
+    /**
      * Either a string or list of strings can be provided. Ensure list of
      * strings going forward.
      */
@@ -186,7 +274,7 @@ class ReaderConfig extends ConnectionConfig {
       }
     }
 
-    super.validate(...arguments);
+    super.validate(...args);
 
     const pass = _.chain(addresses)
       .map(key => this[key].length)

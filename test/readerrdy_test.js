@@ -50,7 +50,7 @@ class StubNSQDConnection extends EventEmitter {
     const msgArgs = msgComponents.concat([
       this.requeueDelay,
       this.msgTimeout,
-      this.maxMsgTimeout
+      this.maxMsgTimeout,
     ]);
     const msg = new Message(...msgArgs);
 

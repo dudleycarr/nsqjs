@@ -32,7 +32,8 @@
   ],
   "scripts": {
     "build": "babel src -d build",
-    "format": "prettier --single-quote --write \"{src,test}/**/*.js\"",
+    "format": "prettier --single-quote --trailing-comma --es5 --write \"{src,test}/**/*.js\"",
+    "lint": "eslint src",
     "test": "mocha --compilers js:babel-core/register",
     "install": "npm run build"
   },
@@ -41,6 +42,12 @@
     "node": ">= 0.10.0"
   },
   "devDependencies": {
+    "babel-eslint": "^7.2.1",
+    "eslint": "^3.19.0",
+    "eslint-config-google": "^0.7.1",
+    "eslint-config-prettier": "^1.6.0",
+    "eslint-plugin-babel": "^4.1.1",
+    "eslint-plugin-import": "^2.2.0",
     "mocha": "^3.2",
     "nock": "~0.27.1",
     "prettier": "^0.22.0",

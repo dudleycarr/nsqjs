@@ -4,11 +4,14 @@ import request from 'request';
 import url from 'url';
 
 /**
- * lookupdRequest returns the list of producers from a lookupd given a 
+ * lookupdRequest returns the list of producers from a lookupd given a
  * URL to query.
- * 
- * The callback will not return an error since it's assumed that there might 
+ *
+ * The callback will not return an error since it's assumed that there might
  * be transient issues with lookupds.
+ *
+ * @param {String} url
+ * @param {Function} callback
  */
 function lookupdRequest(url, callback) {
   // All responses are JSON
@@ -16,7 +19,7 @@ function lookupdRequest(url, callback) {
     url,
     method: 'GET',
     json: true,
-    timeout: 2000
+    timeout: 2000,
   };
 
   request(options, (err, response, data = {}) => {
@@ -29,10 +32,11 @@ function lookupdRequest(url, callback) {
 }
 
 /**
- * Takes a list of responses from lookupds and dedupes the nsqd 
+ * Takes a list of responses from lookupds and dedupes the nsqd
  * hosts based on host / port pair.
- * 
+ *
  * @param {Array} results - list of lists of nsqd node objects.
+ * @return {Array}
  */
 function dedupeOnHostPort(results) {
   return (
@@ -64,17 +68,17 @@ const dedupedRequests = function(lookupdEndpoints, urlFn, callback) {
 };
 
 /**
- * Queries lookupds for known nsqd nodes given a topic and returns 
- * a deduped list. 
- * 
- * @param {String} lookupdEndpoints - a string or a list of strings of 
+ * Queries lookupds for known nsqd nodes given a topic and returns
+ * a deduped list.
+ *
+ * @param {String} lookupdEndpoints - a string or a list of strings of
  *   lookupd HTTP endpoints. eg. ['127.0.0.1:4161']
  * @param {String} topic - a string of the topic name
- * @param {Function} callback - with signature `(err, nodes) ->`. `nodes` 
+ * @param {Function} callback - with signature `(err, nodes) ->`. `nodes`
  *   is a list of objects return by lookupds and deduped.
  */
 function lookup(lookupdEndpoints, topic, callback) {
-  const endpointURL = function(endpoint) {
+  const endpointURL = endpoint => {
     if (endpoint.indexOf('://') === -1) {
       endpoint = `http://${endpoint}`;
     }
@@ -87,7 +91,8 @@ function lookup(lookupdEndpoints, topic, callback) {
     delete parsedUrl.search;
     return url.format(parsedUrl);
   };
-  return dedupedRequests(lookupdEndpoints, endpointURL, callback);
+
+  dedupedRequests(lookupdEndpoints, endpointURL, callback);
 }
 
 export default lookup;

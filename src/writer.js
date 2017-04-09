@@ -1,4 +1,4 @@
-import Debug from 'debug';
+import debug from 'debug';
 import { EventEmitter } from 'events';
 
 import _ from 'underscore';
@@ -9,7 +9,6 @@ import { WriterNSQDConnection } from './nsqdconnection';
  *  Publish messages to nsqds.
  *
  *  Usage:
- *
  *    const writer = new Writer('127.0.0.1', 4150);
  *    writer.connect();
  *
@@ -30,6 +29,14 @@ class Writer extends EventEmitter {
   static CLOSED = 'closed';
   static ERROR = 'error';
 
+  /**
+   * Instantiates a new Writer.
+   *
+   * @constructor
+   * @param {String} nsqdHost
+   * @param {String} nsqdPort
+   * @param {Object} options
+   */
   constructor(nsqdHost, nsqdPort, options) {
     super();
 
@@ -40,7 +47,7 @@ class Writer extends EventEmitter {
     // while the Writer is connecting.
     this.setMaxListeners(10000);
 
-    this.debug = Debug(`nsqjs:writer:${this.nsqdHost}/${this.nsqdPort}`);
+    this.debug = debug(`nsqjs:writer:${this.nsqdHost}/${this.nsqdPort}`);
     this.config = new ConnectionConfig(options);
     this.config.validate();
     this.ready = false;
@@ -49,6 +56,9 @@ class Writer extends EventEmitter {
     this.debug(this.config);
   }
 
+  /**
+   * Connect establishes a new nsqd writer connection.
+   */
   connect() {
     this.conn = new WriterNSQDConnection(
       this.nsqdHost,
@@ -89,9 +99,11 @@ class Writer extends EventEmitter {
    * of the messages should either be strings or buffers with the payload encoded.
 
    * @param {String} topic
-   * @param {String|Buffer|Object|Array} msgs - A string, a buffer, a 
-   *   JSON serializable object, or a list of string / buffers / 
+   * @param {String|Buffer|Object|Array} msgs - A string, a buffer, a
+   *   JSON serializable object, or a list of string / buffers /
    *   JSON serializable objects.
+   * @param {Function} callback
+   * @return {undefined}
    */
   publish(topic, msgs, callback) {
     let err;
@@ -157,6 +169,10 @@ class Writer extends EventEmitter {
     return this.conn.produceMessages(topic, msgs, callback);
   }
 
+  /**
+   * Close the writer connection.
+   * @return {undefined}
+   */
   close() {
     return this.conn.destroy();
   }

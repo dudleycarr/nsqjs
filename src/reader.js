@@ -1,4 +1,4 @@
-import Debug from 'debug';
+import debug from 'debug';
 import RoundRobinList from './roundrobinlist';
 import lookup from './lookupd';
 import { EventEmitter } from 'events';
@@ -6,6 +6,12 @@ import { NSQDConnection } from './nsqdconnection';
 import { ReaderConfig } from './config';
 import { ReaderRdy } from './readerrdy';
 
+/**
+ * Reader provides high-level functionality for building robust NSQ
+ * consumers. Reader is built upon the EventEmitter and thus supports various
+ * hooks when different events occur.
+ * @type {Reader}
+ */
 class Reader extends EventEmitter {
   static ERROR = 'error';
   static MESSAGE = 'message';
@@ -13,11 +19,17 @@ class Reader extends EventEmitter {
   static NSQD_CONNECTED = 'nsqd_connected';
   static NSQD_CLOSED = 'nsqd_closed';
 
-  constructor(topic, channel, options) {
-    super(...arguments);
+  /**
+   * @constructor
+   * @param  {String} topic
+   * @param  {String} channel
+   * @param  {Object} options
+   */
+  constructor(topic, channel, options, ...args) {
+    super(topic, channel, options, ...args);
     this.topic = topic;
     this.channel = channel;
-    this.debug = Debug(`nsqjs:reader:${this.topic}/${this.channel}`);
+    this.debug = debug(`nsqjs:reader:${this.topic}/${this.channel}`);
     this.config = new ReaderConfig(options);
     this.config.validate();
 
@@ -27,15 +39,22 @@ class Reader extends EventEmitter {
     this.roundrobinLookupd = new RoundRobinList(
       this.config.lookupdHTTPAddresses
     );
+
     this.readerRdy = new ReaderRdy(
       this.config.maxInFlight,
       this.config.maxBackoffDuration,
       `${this.topic}/${this.channel}`
     );
+
     this.connectIntervalId = null;
     this.connectionIds = [];
   }
 
+  /**
+   * Adds a connection to nsqd at the configured address.
+   *
+   * @return {undefined}
+   */
   connect() {
     let delayedStart;
     const interval = this.config.lookupdPollInterval * 1000;
@@ -83,41 +102,61 @@ class Reader extends EventEmitter {
     setTimeout(delayedStart, delay);
   }
 
-  // Caution: in-flight messages will not get a chance to finish.
+  /**
+   * Close all connections and prevent any periodic callbacks.
+   * @return {Array} The closed connections.
+   */
   close() {
     clearInterval(this.connectIntervalId);
     return this.readerRdy.close();
   }
 
+  /**
+   * Pause all connections
+   * @return {Array} The paused connections.
+   */
   pause() {
     this.debug('pause');
     return this.readerRdy.pause();
   }
 
+  /**
+   * Unpause all connections
+   * @return {Array} The unpaused connections.
+   */
   unpause() {
     this.debug('unpause');
     return this.readerRdy.unpause();
   }
 
+  /**
+   * @return {Boolean}
+   */
   isPaused() {
     return this.readerRdy.isPaused();
   }
 
+  /**
+   * Trigger a query of the configured nsq_lookupd_http_addresses.
+   * @return {undefined}
+   */
   queryLookupd() {
     // Don't establish new connections while the Reader is paused.
-    if (this.isPaused()) {
-      return;
-    }
+    if (this.isPaused()) return;
 
-    // Trigger a query of the configured ``lookupdHTTPAddresses``
+    // Trigger a query of the configured `lookupdHTTPAddresses`.
     const endpoint = this.roundrobinLookupd.next();
-    lookup(endpoint, this.topic, (err, nodes = []) => {
-      return nodes.map(n => {
-        return this.connectToNSQD(n.broadcast_address, n.tcp_port);
-      });
-    });
+    lookup(endpoint, this.topic, (err, nodes = []) =>
+      nodes.map(n => this.connectToNSQD(n.broadcast_address, n.tcp_port)));
   }
 
+  /**
+   * Adds a connection to nsqd at the specified address.
+   *
+   * @param  {String} host
+   * @param  {Number|String} port
+   * @return {Object|undefined} The newly created nsqd connection.
+   */
   connectToNSQD(host, port) {
     this.debug(`discovered ${host}:${port} for ${this.topic} topic`);
     const conn = new NSQDConnection(
@@ -132,6 +171,7 @@ class Reader extends EventEmitter {
     if (this.connectionIds.indexOf(conn.id()) !== -1) {
       return;
     }
+
     this.debug(`connecting to ${host}:${port}`);
     this.connectionIds.push(conn.id());
 
@@ -141,6 +181,10 @@ class Reader extends EventEmitter {
     return conn.connect();
   }
 
+  /**
+   * Registers event handlers for the nsqd connection.
+   * @param  {Object} conn
+   */
   registerConnectionListeners(conn) {
     conn.on(NSQDConnection.CONNECTED, () => {
       this.debug(Reader.NSQD_CONNECTED);
@@ -181,12 +225,17 @@ class Reader extends EventEmitter {
     });
   }
 
+  /**
+   * Asynchronously handles an nsqd message.
+   *
+   * @param  {Object} message
+   */
   handleMessage(message) {
     /**
-     * Give the internal event listeners a chance at the events 
+     * Give the internal event listeners a chance at the events
      * before clients of the Reader.
      */
-    return process.nextTick(() => {
+    process.nextTick(() => {
       const autoFinishMessage = this.config.maxAttempts > 0 &&
         this.config.maxAttempts <= message.attempts;
       const numDiscardListeners = this.listeners(Reader.DISCARD).length;
@@ -198,7 +247,7 @@ class Reader extends EventEmitter {
       }
 
       if (autoFinishMessage) {
-        return message.finish();
+        message.finish();
       }
     });
   }
