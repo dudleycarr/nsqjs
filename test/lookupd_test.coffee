@@ -81,7 +81,6 @@ setFailedTopicReply = (lookupdAddress, topic) ->
     .reply 500,
       status_txt: 'INVALID_ARG_TOPIC'
 
-
 describe 'lookupd.lookup', ->
   afterEach ->
     nock.cleanAll()
