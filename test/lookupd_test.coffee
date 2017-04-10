@@ -63,7 +63,6 @@ registerWithLookupd = (lookupdAddress, nsqd) ->
         nock("http://#{lookupdAddress}")
           .get("/lookup?topic=#{topic}")
           .reply 200,
-            status_txt: 'OK'
             producers: producers
       else
         {baseUrl, path} = nockUrlSplit(lookupdAddress)
@@ -72,14 +71,13 @@ registerWithLookupd = (lookupdAddress, nsqd) ->
         nock(baseUrl)
           .get("#{path}?topic=#{topic}")
           .reply 200,
-            status_txt: 'OK'
             producers: producers
 
 setFailedTopicReply = (lookupdAddress, topic) ->
   nock("http://#{lookupdAddress}")
     .get("/lookup?topic=#{topic}")
-    .reply 500,
-      status_txt: 'INVALID_ARG_TOPIC'
+    .reply 404,
+      message: 'TOPIC_NOT_FOUND'
 
 describe 'lookupd.lookup', ->
   afterEach ->
