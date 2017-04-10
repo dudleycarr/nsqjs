@@ -22,10 +22,11 @@ lookupdRequest = (url, callback) ->
     if err
       callback null, []
       return
-
+    
     # Unpack JSON response
     try
-      {status_code: status_code, data: {producers: producers}} = data
+      {statusCode: status_code} = response
+      {producers:producers} = data
     catch error
       callback null, []
       return

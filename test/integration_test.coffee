@@ -8,8 +8,8 @@ temp = require('temp').track()
 
 nsq = require '../src/nsq'
 
-TCP_PORT = 14150
-HTTP_PORT = 14151
+TCP_PORT = 4150
+HTTP_PORT = 4151
 
 startNSQD = (dataPath, additionalOptions, callback) ->
   additionalOptions or= {}
