@@ -6,7 +6,7 @@ import * as wire from './wire';
  * Message - a high-level message object, which exposes stateful methods
  * for responding to nsqd (FIN, REQ, TOUCH, etc.) as well as metadata
  * such as attempts and timestamp.
- * @type {String}
+ * @type {Message}
  */
 class Message extends EventEmitter {
   // Event types
@@ -54,22 +54,24 @@ class Message extends EventEmitter {
 
     // Keep track of when this message actually times out.
     this.timedOut = false;
+    this.trackTimeout();
+  }
 
-    const trackTimeout = () => {
-      if (this.hasResponded) return;
+  trackTimeout() {
+    if (this.hasResponded) return;
 
-      const soft = this.timeUntilTimeout();
-      const hard = this.timeUntilTimeout(true);
+    const soft = this.timeUntilTimeout();
+    const hard = this.timeUntilTimeout(true);
 
-      // Both values have to be not null otherwise we've timedout.
-      this.timedOut = !soft || !hard;
-      if (!this.timedOut) {
-        clearTimeout(this.trackTimeoutId);
-        this.trackTimeoutId = setTimeout(trackTimeout, Math.min(soft, hard));
-      }
-    };
-
-    trackTimeout();
+    // Both values have to be not null otherwise we've timedout.
+    this.timedOut = !soft || !hard;
+    if (!this.timedOut) {
+      clearTimeout(this.trackTimeoutId);
+      this.trackTimeoutId = setTimeout(
+        () => this.trackTimeout(),
+        Math.min(soft, hard)
+      );
+    }
   }
 
   /**
