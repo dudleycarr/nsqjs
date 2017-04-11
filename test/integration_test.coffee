@@ -22,8 +22,8 @@ startNSQD = (dataPath, additionalOptions, callback) ->
     'tls-key': './test/key.pem'
 
   _.extend options, additionalOptions
-  options = _.flatten (["-#{key}", value] for key, value of options)
-  process = child_process.spawn 'nsqd', options.concat(additionalOptions),
+  options = ("-#{key}=#{value}" for key, value of options)
+  process = child_process.spawn 'nsqd', options,
     stdio: ['ignore', 'ignore', 'ignore']
 
   # Give nsqd a chance to startup successfully.
@@ -77,14 +77,13 @@ describe 'integration', ->
     deleteTopic 'test', done
 
   describe 'stream compression and encryption', ->
-    optionPermutations = [
+    [
       {deflate: true}
       {snappy: true}
       {tls: true, tlsVerification: false}
       {tls: true, tlsVerification: false, snappy: true}
       {tls: true, tlsVerification: false, deflate: true}
-    ]
-    for options in optionPermutations
+    ].forEach (options) ->
       # Figure out what compression is enabled
       compression = (key for key in ['deflate', 'snappy'] when key of options)
       compression.push 'none'
