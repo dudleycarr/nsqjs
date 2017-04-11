@@ -8,14 +8,15 @@ temp = require('temp').track()
 
 nsq = require '../src/nsq'
 
-TCP_PORT = 14150
-HTTP_PORT = 14151
+TCP_PORT = 4150
+HTTP_PORT = 4151
 
 startNSQD = (dataPath, additionalOptions, callback) ->
   additionalOptions or= {}
   options =
     'http-address': "127.0.0.1:#{HTTP_PORT}"
     'tcp-address': "127.0.0.1:#{TCP_PORT}"
+    'broadcast-address': '127.0.0.1'
     'data-path': dataPath
     'tls-cert': './test/cert.pem'
     'tls-key': './test/key.pem'
@@ -38,8 +39,8 @@ topicOp = (op, topic, callback) ->
   request options, (err, res, body) ->
     callback err
 
-createTopic = _.partial topicOp, 'create_topic'
-deleteTopic = _.partial topicOp, 'delete_topic'
+createTopic = _.partial topicOp, 'topic/create'
+deleteTopic = _.partial topicOp, 'topic/delete'
 
 # Publish a single message via HTTP
 publish = (topic, message, done) ->
