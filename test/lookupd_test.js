@@ -69,9 +69,7 @@ const registerWithLookupd = (lookupdAddress, nsqd) => {
           .reply(200, {
             status_code: 200,
             status_txt: 'OK',
-            data: {
-              producers,
-            },
+            producers,
           });
       } else {
         const params = nockUrlSplit(lookupdAddress);
@@ -84,9 +82,7 @@ const registerWithLookupd = (lookupdAddress, nsqd) => {
         nock(baseUrl).get(`${path}?topic=${topic}`).reply(200, {
           status_code: 200,
           status_txt: 'OK',
-          data: {
-            producers,
-          },
+          producers,
         });
       }
     });
@@ -95,9 +91,8 @@ const registerWithLookupd = (lookupdAddress, nsqd) => {
 
 const setFailedTopicReply = (lookupdAddress, topic) =>
   nock(`http://${lookupdAddress}`).get(`/lookup?topic=${topic}`).reply(200, {
-    status_code: 500,
-    status_txt: 'INVALID_ARG_TOPIC',
-    data: null,
+    status_code: 404,
+    status_txt: 'TOPIC_NOT_FOUND',
   });
 
 describe('lookupd.lookup', () => {

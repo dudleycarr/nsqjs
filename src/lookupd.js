@@ -28,7 +28,19 @@ function lookupdRequest(url, callback) {
       return callback(err, []);
     }
 
-    callback(null, data.data.producers);
+    try {
+      const { status_code: statusCode } = response;
+      let { producers } = data;
+
+      // Support pre version 1.x lookupd response.
+      if (!_.isEmpty(data.data)) {
+        producers = data.data.producers;
+      }
+
+      callback(null, producers);
+    } catch (err) {
+      callback(null, []);
+    }
   });
 }
 

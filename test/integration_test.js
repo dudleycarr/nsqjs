@@ -8,13 +8,14 @@ import nsq from '../src/nsq';
 
 const temp = require('temp').track();
 
-const TCP_PORT = 14150;
-const HTTP_PORT = 14151;
+const TCP_PORT = 4150;
+const HTTP_PORT = 4151;
 
 const startNSQD = (dataPath, additionalOptions = {}, callback) => {
   let options = {
     'http-address': `127.0.0.1:${HTTP_PORT}`,
     'tcp-address': `127.0.0.1:${TCP_PORT}`,
+    'broadcast-address': '127.0.0.1',
     'data-path': dataPath,
     'tls-cert': './test/cert.pem',
     'tls-key': './test/key.pem',
@@ -44,8 +45,8 @@ const topicOp = (op, topic, callback) => {
   request(options, err => callback(err));
 };
 
-const createTopic = _.partial(topicOp, 'create_topic');
-const deleteTopic = _.partial(topicOp, 'delete_topic');
+const createTopic = _.partial(topicOp, 'topic/create');
+const deleteTopic = _.partial(topicOp, 'topic/delete');
 
 // Publish a single message via HTTP
 const publish = (topic, message, callback = () => {}) => {
