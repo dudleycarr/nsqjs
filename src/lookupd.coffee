@@ -16,7 +16,10 @@ lookupdRequest = (url, callback) ->
     url: url
     method: 'GET'
     json: true
-    timeout: 2000
+    timeout: 2000,
+    headers: {
+      'Accept': 'application/vnd.nsq; version=1.0'
+    }
 
   request options, (err, response, data) ->
     if err
