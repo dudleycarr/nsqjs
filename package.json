@@ -1,7 +1,7 @@
 {
   "name": "nsqjs",
   "description": "NodeJS client for NSQ",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "homepage": "https://github.com/dudleycarr/nsqjs",
   "author": {
     "name": "Dudley Carr",
@@ -30,34 +30,39 @@
       "url": "https://github.com/dudleycarr/nsqjs/blob/master/LICENSE-MIT"
     }
   ],
-  "main": "lib/nsq",
   "scripts": {
-    "build": "coffee --bare --compile --output lib src/*.coffee",
-    "prepublish": "coffee --bare --compile --output lib src/*.coffee",
-    "postpublish": "rm -rf lib",
-    "test": "node_modules/.bin/grunt test"
+    "build": "babel src -d build",
+    "format": "prettier --single-quote --trailing-comma es5 --write \"{src,test}/**/*.js\"",
+    "lint": "eslint src",
+    "test": "mocha --compilers js:babel-core/register",
+    "prepublish": "npm run build",
+    "postpublish": "rm -rf build"
   },
+  "main": "build/nsq",
   "engines": {
     "node": ">= 0.10.0"
   },
   "devDependencies": {
-    "coffee-errors": "^0.8.6",
-    "coffee-script": "^1.12.2",
-    "coffeelint": "~1.0.2",
-    "grunt": "^1.0.0",
-    "grunt-cli": "^1.2",
-    "grunt-coffeelint": "0.0.16",
-    "grunt-contrib-coffee": "^1.0",
-    "grunt-contrib-watch": "^1.0.0",
-    "grunt-mocha-cli": "^3.0.0",
+    "babel-eslint": "^7.2.1",
+    "eslint": "^3.19.0",
+    "eslint-config-google": "^0.7.1",
+    "eslint-config-prettier": "^1.6.0",
+    "eslint-plugin-babel": "^4.1.1",
+    "eslint-plugin-import": "^2.2.0",
     "mocha": "^3.2",
     "nock": "~0.27.1",
+    "prettier": "^0.22.0",
     "should": "^11.1.2",
     "sinon": "~1.7.3",
     "temp": "^0.8.0"
   },
   "dependencies": {
     "async": "^2.1.4",
+    "babel-cli": "^6.24.0",
+    "babel-core": "^6.23.1",
+    "babel-polyfill": "^6.23.0",
+    "babel-preset-es2015": "^6.22.0",
+    "babel-preset-stage-0": "^6.22.0",
     "bignumber.js": "~1.2.1",
     "debug": "^2.6.0",
     "moment": "^2.17.1",
