@@ -124,6 +124,46 @@ describe('ConnectionConfig', () => {
     });
   });
 
+  describe('isBuffer', () => {
+    it('should require tls keys to be buffers', () => {
+      const check = () =>
+        config.isBuffer('key', new Buffer('a buffer'));
+      check.should.not.throw();
+    });
+
+    it('should require tls keys to be buffers', () => {
+      const check = () =>
+        config.isBuffer('key', 'not a buffer');
+      check.should.throw();
+    });
+
+    it('should require tls certs to be buffers', () => {
+      const check = () =>
+        config.isBuffer('cert', new Buffer('definitely a buffer'));
+      check.should.not.throw();
+    });
+
+    it('should throw when a tls cert is not a buffer', () => {
+      const check = () =>
+        config.isBuffer('cert', 'still not a buffer');
+      check.should.throw();
+    });
+  });
+
+  describe('isArray', () => {
+    it('should require cert authority chains to be arrays', () => {
+      const check = () =>
+        config.isArray('ca', ['cat', 'dog']);
+      check.should.not.throw();
+    });
+
+    it('should require cert authority chains to be arrays', () => {
+      const check = () =>
+        config.isArray('ca', 'not an array');
+      check.should.throw();
+    });
+  });
+
   describe('isBareAddresses', () => {
     it('should validate against a validate address list of 1', () => {
       const check = () =>
