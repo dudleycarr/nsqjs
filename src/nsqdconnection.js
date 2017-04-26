@@ -187,6 +187,9 @@ class NSQDConnection extends EventEmitter {
     const options = {
       socket: this.conn,
       rejectUnauthorized: this.config.tlsVerification,
+      ca: this.config.ca,
+      key: this.config.key,
+      cert: this.config.cert
     };
 
     let tlsConn = tls.connect(options, () => {

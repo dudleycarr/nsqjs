@@ -22,6 +22,9 @@ class ConnectionConfig {
     snappy: false,
     tls: false,
     tlsVerification: true,
+    key: null,
+    cert: null,
+    ca: null,
   };
 
   /**
@@ -156,6 +159,30 @@ HTTP/HTTPS URI`
   }
 
   /**
+   * Throws an error if the option is not a buffer.
+   *
+   * @param  {String}  option
+   * @param  {*}  value
+   */
+  isBuffer(option, value) {
+    if (!Buffer.isBuffer(value)) {
+      throw new Error(`${option} must be a buffer`);
+    }
+  }
+
+  /**
+   * Throws an error if the option is not an array.
+   *
+   * @param  {String}  option
+   * @param  {*}  value
+   */
+  isArray(option, value) {
+    if (!_.isArray(value)) {
+      throw new Error(`${option} must be an array`);
+    }
+  }
+
+  /**
    * Returns the validated client config. Throws an error if any values are
    * not correct.
    *
@@ -177,6 +204,9 @@ HTTP/HTTPS URI`
       snappy: [this.isBoolean],
       tls: [this.isBoolean],
       tlsVerification: [this.isBoolean],
+      key: [this.isBuffer],
+      cert: [this.isBuffer],
+      ca: [this.isArray],
     };
   }
 
