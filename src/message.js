@@ -70,7 +70,7 @@ class Message extends EventEmitter {
       this.trackTimeoutId = setTimeout(
         () => this.trackTimeout(),
         Math.min(soft, hard)
-      );
+      ).unref();
     }
   }
 
