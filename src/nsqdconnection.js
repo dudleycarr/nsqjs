@@ -7,7 +7,6 @@ import zlib from 'zlib';
 import NodeState from 'node-state';
 import _ from 'underscore';
 import debug from 'debug';
-import { SnappyStream, UnsnappyStream } from 'snappystream';
 
 import * as wire from './wire';
 import FrameBuffer from './framebuffer';
@@ -216,8 +215,9 @@ class NSQDConnection extends EventEmitter {
    * Create a snappy stream.
    */
   startSnappy() {
-    this.inflater = new UnsnappyStream();
-    this.deflater = new SnappyStream();
+    const snappystream = require('snappystream');
+    this.inflater = new snappystream.UnsnappyStream();
+    this.deflater = new snappystream.SnappyStream();
     this.reconsumeFrameBuffer();
   }
 
