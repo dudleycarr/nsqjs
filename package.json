@@ -64,6 +64,7 @@
     "temp": "^0.8.0"
   },
   "dependencies": {
+    "array.from": "^1.0.3",
     "async": "^2.1.4",
     "bignumber.js": "~1.2.1",
     "debug": "^2.6.0",
