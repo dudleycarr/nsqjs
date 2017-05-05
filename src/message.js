@@ -57,6 +57,9 @@ class Message extends EventEmitter {
     this.trackTimeout();
   }
 
+  /**
+   * track whether or not a message has timed out.
+   */
   trackTimeout() {
     if (this.hasResponded) return;
 

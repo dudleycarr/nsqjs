@@ -23,7 +23,7 @@ function lookupdRequest(url, callback) {
     timeout: 2000,
   };
 
-  request(options, (err, response, data={}) => {
+  request(options, (err, response, data = {}) => {
     if (err) {
       return callback(err, []);
     }
