@@ -1,5 +1,6 @@
 import should from 'should';
 import sinon from 'sinon';
+import ArrayFrom from 'array.from';
 
 const nsq = require('../src/nsq');
 
@@ -78,7 +79,7 @@ describe('writer', () => {
     it('should publish a list of objects as JSON', () => {
       const topic = 'test_topic';
       const msgs = [{ a: 1 }, { b: 2 }];
-      const encodedMsgs = Array.from(msgs).map(i => JSON.stringify(i));
+      const encodedMsgs = ArrayFrom(msgs).map(i => JSON.stringify(i));
 
       writer.publish(topic, msgs, () => {
         should.equal(writer.conn.produceMessages.calledOnce, true);

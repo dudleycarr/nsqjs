@@ -1,4 +1,5 @@
 import _ from 'underscore';
+import ArrayFrom from 'array.from';
 import Int64 from 'node-int64';
 import BigNumber from 'bignumber.js';
 
@@ -137,7 +138,7 @@ export function identify(data) {
   // Make sure there are no unexpected keys
   const unexpectedKeys = _.filter(
     _.keys(data),
-    k => !Array.from(validIdentifyKeys).includes(k)
+    k => !ArrayFrom(validIdentifyKeys).includes(k)
   );
 
   if (unexpectedKeys.length) {

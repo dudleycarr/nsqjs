@@ -34,7 +34,7 @@
     "build": "babel src -d build",
     "format": "prettier --single-quote --trailing-comma es5 --write \"{src,test}/**/*.js\"",
     "lint": "eslint src",
-    "test": "nyc mocha --compilers js:babel-core/register",
+    "test": "nyc mocha --compilers js:babel-core/register --require babel-polyfill",
     "prepublish": "npm run build",
     "postpublish": "rm -rf build"
   },

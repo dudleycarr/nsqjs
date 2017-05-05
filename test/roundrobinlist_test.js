@@ -1,6 +1,7 @@
 import assert from 'assert';
 
 import _ from 'underscore';
+import ArrayFrom from 'array.from';
 import should from 'should';
 
 import RoundRobinList from '../src/roundrobinlist';
@@ -27,7 +28,7 @@ describe('roundrobinlist', () => {
   describe('add', () =>
     it('@list should include the item', () => {
       rrl.add(10);
-      should.ok(Array.from(rrl.list).includes(10));
+      should.ok(ArrayFrom(rrl.list).includes(10));
     }));
 
   describe('next', () => {
@@ -52,7 +53,7 @@ describe('roundrobinlist', () => {
   describe('remove', () => {
     it('should remove the item if it exists in the list', () => {
       rrl.remove(3);
-      should.ok(!Array.from(rrl.list).includes(3));
+      should.ok(!ArrayFrom(rrl.list).includes(3));
     });
 
     it('should not affect the order of items returned', () => {
