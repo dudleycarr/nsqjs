@@ -1,6 +1,7 @@
 import should from 'should';
 
 import * as wire from '../src/wire';
+import ArrayFrom from 'array.from';
 
 const matchCommand = (commandFn, args, expected) => {
   const commandOut = commandFn(...args);
@@ -100,7 +101,7 @@ describe('nsq wire', () => {
     ];
     const msgParts = wire.unpackMessage(new Buffer(msgPayload.join(''), 'hex'));
 
-    const [id, timestamp, attempts] = Array.from(msgParts);
+    const [id, timestamp, attempts] = ArrayFrom(msgParts);
     timestamp.toString(10).should.eql('1381679323234827642');
     id.should.eql('055c5be1ce433027');
     return attempts.should.eql(1);

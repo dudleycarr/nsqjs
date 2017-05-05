@@ -6,6 +6,7 @@ import zlib from 'zlib';
 
 import NodeState from 'node-state';
 import _ from 'underscore';
+import ArrayFrom from 'array.from';
 import debug from 'debug';
 import { SnappyStream, UnsnappyStream } from 'snappystream';
 
@@ -270,7 +271,7 @@ class NSQDConnection extends EventEmitter {
     let frame = this.frameBuffer.nextFrame();
 
     while (frame) {
-      const [frameId, payload] = Array.from(frame);
+      const [frameId, payload] = ArrayFrom(frame);
       switch (frameId) {
         case wire.FRAME_TYPE_RESPONSE:
           this.statemachine.raise('response', payload);
@@ -637,7 +638,7 @@ ConnectionState.prototype.states = {
     },
 
     produceMessages(data) {
-      const [topic, msgs, callback] = Array.from(data);
+      const [topic, msgs, callback] = ArrayFrom(data);
       this.conn.messageCallbacks.push(callback);
 
       if (!_.isArray(msgs)) {
