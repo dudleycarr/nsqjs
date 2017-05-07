@@ -24,12 +24,16 @@ function lookupdRequest(url, callback) {
   };
 
   request(options, (err, response, data = {}) => {
-    if (err || data.status_code !== 200) {
+    if (err) {
       return callback(err, []);
     }
 
+    const statusCode = (data ? data.status_code : null) || response.statusCode
+    if (statusCode !== 200) {
+      return callback(null, []);
+    }
+
     try {
-      const { status_code: statusCode } = response;
       let { producers } = data;
 
       // Support pre version 1.x lookupd response.
