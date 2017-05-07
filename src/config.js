@@ -1,6 +1,7 @@
 import url from 'url';
 
 import _ from 'underscore';
+import ArrayFrom from 'array.from';
 
 /**
  * Responsible for configuring the official defaults for nsqd connections.
@@ -299,7 +300,7 @@ class ReaderConfig extends ConnectionConfig {
      * Either a string or list of strings can be provided. Ensure list of
      * strings going forward.
      */
-    for (const key of Array.from(addresses)) {
+    for (const key of ArrayFrom(addresses)) {
       if (_.isString(this[key])) {
         this[key] = [this[key]];
       }

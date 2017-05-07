@@ -11,3 +11,4 @@ node_modules/
 share/man
 src/node-*
 build
+.nyc_output

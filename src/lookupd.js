@@ -2,6 +2,7 @@ import url from 'url';
 
 import _ from 'underscore';
 import async from 'async';
+import ArrayFrom from 'array.from';
 import request from 'request';
 
 /**
@@ -74,7 +75,7 @@ const dedupedRequests = function(lookupdEndpoints, urlFn, callback) {
   }
 
   // URLs for querying `nodes` on each of the lookupds.
-  const urls = Array.from(lookupdEndpoints).map(endpoint => urlFn(endpoint));
+  const urls = ArrayFrom(lookupdEndpoints).map(endpoint => urlFn(endpoint));
 
   return async.map(urls, lookupdRequest, (err, results) => {
     if (err) {

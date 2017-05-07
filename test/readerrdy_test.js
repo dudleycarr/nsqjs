@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 
 import _ from 'underscore';
+import ArrayFrom from 'array.from';
 import should from 'should';
 import sinon from 'sinon';
 
@@ -84,7 +85,7 @@ const createNSQDConnection = id => {
 };
 
 describe('ConnectionRdy', () => {
-  let [conn, spy, cRdy] = Array.from([null, null, null]);
+  let [conn, spy, cRdy] = ArrayFrom([null, null, null]);
 
   beforeEach(() => {
     conn = createNSQDConnection(1);
@@ -523,12 +524,12 @@ describe('ReaderRdy', () => {
       const checkRdyCount = () => {
         should.equal(readerRdy.isLowRdy(), true);
 
-        const rdyCounts = Array.from(readerRdy.connections).map(
+        const rdyCounts = ArrayFrom(readerRdy.connections).map(
           connRdy => connRdy.lastRdySent
         );
 
         should.equal(readerRdy.connections.length, 4);
-        should.ok(Array.from(rdyCounts).includes(1));
+        should.ok(ArrayFrom(rdyCounts).includes(1));
       };
 
       const handleMessage = msg => {

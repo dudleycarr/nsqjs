@@ -2,6 +2,7 @@ import should from 'should';
 
 import * as wire from '../src/wire';
 import FrameBuffer from '../src/framebuffer';
+import ArrayFrom from 'array.from';
 
 const createFrame = (frameId, payload) => {
   const frame = new Buffer(4 + 4 + payload.length);
@@ -17,7 +18,7 @@ describe('FrameBuffer', () => {
     const data = createFrame(wire.FRAME_TYPE_RESPONSE, 'OK');
     frameBuffer.consume(data);
 
-    const [frameId, payload] = Array.from(frameBuffer.nextFrame());
+    const [frameId, payload] = ArrayFrom(frameBuffer.nextFrame());
     frameId.should.eql(wire.FRAME_TYPE_RESPONSE);
     payload.toString().should.eql('OK');
   });
@@ -35,11 +36,11 @@ describe('FrameBuffer', () => {
     const frames = [frameBuffer.nextFrame(), frameBuffer.nextFrame()];
     frames.length.should.eql(2);
 
-    let [frameId, data] = Array.from(frames.shift());
+    let [frameId, data] = ArrayFrom(frames.shift());
     frameId.should.eql(wire.FRAME_TYPE_RESPONSE);
     data.toString().should.eql('OK');
 
-    [frameId, data] = Array.from(frames.shift());
+    [frameId, data] = ArrayFrom(frames.shift());
     frameId.should.eql(wire.FRAME_TYPE_ERROR);
     data.toString().should.eql(JSON.stringify({ shortname: 'localhost' }));
   });
