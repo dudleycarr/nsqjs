@@ -103,10 +103,15 @@ class Writer extends EventEmitter {
    * @param {String|Buffer|Object|Array} msgs - A string, a buffer, a
    *   JSON serializable object, or a list of string / buffers /
    *   JSON serializable objects.
+   * @param {Number} timeMs - optional defer time
    * @param {Function} callback
    * @return {undefined}
    */
-  publish(topic, msgs, callback) {
+  publish(topic, msgs, timeMs, callback) {
+    if(callback == undefined && typeof timeMs == 'function'){
+      callback = timeMs;
+      timeMs = undefined;
+    }
     let err;
     let connState = '';
 
@@ -133,7 +138,7 @@ class Writer extends EventEmitter {
     if (!this.ready) {
       const ready = () => {
         remove();
-        this.publish(topic, msgs, callback);
+        this.publish(...arguments);
       };
 
       const failed = function(err) {
@@ -167,7 +172,7 @@ class Writer extends EventEmitter {
       return JSON.stringify(msg);
     });
 
-    return this.conn.produceMessages(topic, msgs, callback);
+    return this.conn.produceMessages(topic, msgs, timeMs, callback);
   }
 
   /**
