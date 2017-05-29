@@ -148,8 +148,13 @@ class Reader extends EventEmitter {
 
     // Trigger a query of the configured `lookupdHTTPAddresses`.
     const endpoint = this.roundrobinLookupd.next();
-    lookup(endpoint, this.topic, (err, nodes = []) =>
-      nodes.map(n => this.connectToNSQD(n.broadcast_address, n.tcp_port)));
+    console.log(endpoint);
+    lookup(endpoint, this.topic, (err, nodes = []) => {
+      if(err){
+        this.emit(Reader.ERROR, err);
+      }
+      nodes.map(n => this.connectToNSQD(n.broadcast_address, n.tcp_port))
+    });
   }
 
   /**

@@ -167,9 +167,9 @@ class NSQDConnection extends EventEmitter {
    */
   registerStreamListeners(conn) {
     conn.on('data', data => this.receiveRawData(data));
-    conn.on('end', err => {
+    conn.on('end', () => {
       this.statemachine.goto('CLOSED');
-      this.emit('connection_error', err);
+      this.emit(NSQDConnection.CONNECTION_ERROR, new Error('The other side closed the connection'));
     });
     conn.on('close', () => this.statemachine.raise('close'));
   }
