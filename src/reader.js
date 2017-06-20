@@ -87,7 +87,7 @@ class Reader extends EventEmitter {
       directConnect();
 
       // Start interval for connecting after delay.
-      setTimeout(delayedStart, delay);
+      setTimeout(delayedStart, delay).unref();
     }
 
     delayedStart = () => {
@@ -101,7 +101,7 @@ class Reader extends EventEmitter {
     this.queryLookupd();
 
     // Start interval for querying lookupd after delay.
-    setTimeout(delayedStart, delay);
+    setTimeout(delayedStart, delay).unref();
   }
 
   /**
