@@ -1,7 +1,7 @@
-import { EventEmitter } from 'events';
+const EventEmitter = require('events')
 
-import _ from 'underscore';
-import debug from 'debug';
+const _ = require('lodash');
+const debug = require('debug');
 
 import { ConnectionConfig } from './config';
 import { WriterNSQDConnection } from './nsqdconnection';

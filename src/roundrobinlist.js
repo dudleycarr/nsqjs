@@ -16,9 +16,9 @@ class RoundRobinList {
    *
    * @param  {Array} list
    */
-  constructor(list) {
-    this.list = list.slice();
-    this.index = 0;
+  constructor (list) {
+    this.list = list.slice()
+    this.index = 0
   }
 
   /**
@@ -26,8 +26,8 @@ class RoundRobinList {
    *
    * @return {Number}
    */
-  length() {
-    return this.list.length;
+  length () {
+    return this.list.length
   }
 
   /**
@@ -36,8 +36,8 @@ class RoundRobinList {
    * @param {*} item
    * @return {*} The item added.
    */
-  add(item) {
-    return this.list.push(item);
+  add (item) {
+    return this.list.push(item)
   }
 
   /**
@@ -46,15 +46,15 @@ class RoundRobinList {
    * @param  {*} item
    * @return {Array|undefined}
    */
-  remove(item) {
-    const itemIndex = this.list.indexOf(item);
-    if (itemIndex === -1) return;
+  remove (item) {
+    const itemIndex = this.list.indexOf(item)
+    if (itemIndex === -1) return
 
     if (this.index > itemIndex) {
-      this.index -= 1;
+      this.index -= 1
     }
 
-    return this.list.splice(itemIndex, 1);
+    return this.list.splice(itemIndex, 1)
   }
 
   /**
@@ -63,11 +63,11 @@ class RoundRobinList {
    * @param  {Number}   [count=1]
    * @return {Array}
    */
-  next(count = 1) {
-    const { index } = this;
-    this.index = (this.index + count) % this.list.length;
-    return this.list.slice(index, index + count);
+  next (count = 1) {
+    const { index } = this
+    this.index = (this.index + count) % this.list.length
+    return this.list.slice(index, index + count)
   }
 }
 
-export default RoundRobinList;
+export default RoundRobinList

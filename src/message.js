@@ -1,6 +1,7 @@
-import { EventEmitter } from 'events';
+'use strict'
 
-import * as wire from './wire';
+const EventEmitter = require('events')
+const wire = require('./wire')
 
 /**
  * Message - a high-level message object, which exposes stateful methods
@@ -9,15 +10,6 @@ import * as wire from './wire';
  * @type {Message}
  */
 class Message extends EventEmitter {
-  // Event types
-  static BACKOFF = 'backoff';
-  static RESPOND = 'respond';
-
-  // Response types
-  static FINISH = 0;
-  static REQUEUE = 1;
-  static TOUCH = 2;
-
   /**
    * Instantiates a new instance of a Message.
    * @constructor
@@ -29,7 +21,7 @@ class Message extends EventEmitter {
    * @param  {Number} msgTimeout
    * @param  {Number} maxMsgTimeout
    */
-  constructor(
+  constructor (
     id,
     timestamp,
     attempts,
@@ -38,42 +30,42 @@ class Message extends EventEmitter {
     msgTimeout,
     maxMsgTimeout
   ) {
-    super(...arguments); // eslint-disable-line prefer-rest-params
-    this.id = id;
-    this.timestamp = timestamp;
-    this.attempts = attempts;
-    this.body = body;
-    this.requeueDelay = requeueDelay;
-    this.msgTimeout = msgTimeout;
-    this.maxMsgTimeout = maxMsgTimeout;
-    this.hasResponded = false;
-    this.receivedOn = Date.now();
-    this.lastTouched = this.receivedOn;
-    this.touchCount = 0;
-    this.trackTimeoutId = null;
+    super(...arguments) // eslint-disable-line prefer-rest-params
+    this.id = id
+    this.timestamp = timestamp
+    this.attempts = attempts
+    this.body = body
+    this.requeueDelay = requeueDelay
+    this.msgTimeout = msgTimeout
+    this.maxMsgTimeout = maxMsgTimeout
+    this.hasResponded = false
+    this.receivedOn = Date.now()
+    this.lastTouched = this.receivedOn
+    this.touchCount = 0
+    this.trackTimeoutId = null
 
     // Keep track of when this message actually times out.
-    this.timedOut = false;
-    this.trackTimeout();
+    this.timedOut = false
+    this.trackTimeout()
   }
 
   /**
    * track whether or not a message has timed out.
    */
-  trackTimeout() {
-    if (this.hasResponded) return;
+  trackTimeout () {
+    if (this.hasResponded) return
 
-    const soft = this.timeUntilTimeout();
-    const hard = this.timeUntilTimeout(true);
+    const soft = this.timeUntilTimeout()
+    const hard = this.timeUntilTimeout(true)
 
     // Both values have to be not null otherwise we've timedout.
-    this.timedOut = !soft || !hard;
+    this.timedOut = !soft || !hard
     if (!this.timedOut) {
-      clearTimeout(this.trackTimeoutId);
+      clearTimeout(this.trackTimeoutId)
       this.trackTimeoutId = setTimeout(
         () => this.trackTimeout(),
         Math.min(soft, hard)
-      ).unref();
+      ).unref()
     }
   }
 
@@ -82,16 +74,16 @@ class Message extends EventEmitter {
    *
    * @return {Object}
    */
-  json() {
+  json () {
     if (this.parsed == null) {
       try {
-        this.parsed = JSON.parse(this.body);
+        this.parsed = JSON.parse(this.body)
       } catch (err) {
-        throw new Error('Invalid JSON in Message');
+        throw new Error('Invalid JSON in Message')
       }
     }
 
-    return this.parsed;
+    return this.parsed
   }
 
   /**
@@ -104,28 +96,28 @@ class Message extends EventEmitter {
    * @param  {Boolean} [hard=false]
    * @return {Number|null}
    */
-  timeUntilTimeout(hard = false) {
-    if (this.hasResponded) return null;
+  timeUntilTimeout (hard = false) {
+    if (this.hasResponded) return null
 
-    let delta;
+    let delta
     if (hard) {
-      delta = this.receivedOn + this.maxMsgTimeout - Date.now();
+      delta = this.receivedOn + this.maxMsgTimeout - Date.now()
     } else {
-      delta = this.lastTouched + this.msgTimeout - Date.now();
+      delta = this.lastTouched + this.msgTimeout - Date.now()
     }
 
     if (delta > 0) {
-      return delta;
+      return delta
     }
 
-    return null;
+    return null
   }
 
   /**
    * Respond with a `FINISH` event.
    */
-  finish() {
-    this.respond(Message.FINISH, wire.finish(this.id));
+  finish () {
+    this.respond(Message.FINISH, wire.finish(this.id))
   }
 
   /**
@@ -135,10 +127,10 @@ class Message extends EventEmitter {
    * @param  {Number}  [delay=this.requeueDelay]
    * @param  {Boolean} [backoff=true]            [description]
    */
-  requeue(delay = this.requeueDelay, backoff = true) {
-    this.respond(Message.REQUEUE, wire.requeue(this.id, delay));
+  requeue (delay = this.requeueDelay, backoff = true) {
+    this.respond(Message.REQUEUE, wire.requeue(this.id, delay))
     if (backoff) {
-      this.emit(Message.BACKOFF);
+      this.emit(Message.BACKOFF)
     }
   }
 
@@ -147,10 +139,10 @@ class Message extends EventEmitter {
    * on the nsqd side. This can be done repeatedly until the message
    * is either FIN or REQ, up to the sending nsqd’s configured max_msg_timeout.
    */
-  touch() {
-    this.touchCount += 1;
-    this.lastTouched = Date.now();
-    this.respond(Message.TOUCH, wire.touch(this.id));
+  touch () {
+    this.touchCount += 1
+    this.lastTouched = Date.now()
+    this.respond(Message.TOUCH, wire.touch(this.id))
   }
 
   /**
@@ -160,22 +152,31 @@ class Message extends EventEmitter {
    * @param  {String} wireData
    * @return {undefined}
    */
-  respond(responseType, wireData) {
+  respond (responseType, wireData) {
     // TODO: Add a debug/warn when we moved to debug.js
-    if (this.hasResponded) return;
+    if (this.hasResponded) return
 
     process.nextTick(() => {
       if (responseType !== Message.TOUCH) {
-        this.hasResponded = true;
-        clearTimeout(this.trackTimeoutId);
-        this.trackTimeoutId = null;
+        this.hasResponded = true
+        clearTimeout(this.trackTimeoutId)
+        this.trackTimeoutId = null
       } else {
-        this.lastTouched = Date.now();
+        this.lastTouched = Date.now()
       }
 
-      this.emit(Message.RESPOND, responseType, wireData);
-    });
+      this.emit(Message.RESPOND, responseType, wireData)
+    })
   }
 }
 
-export default Message;
+// Event types
+Message.BACKOFF = 'backoff'
+Message.RESPOND = 'respond'
+
+// Response types
+Message.FINISH = 0
+Message.REQUEUE = 1
+Message.TOUCH = 2
+
+module.exports = Message

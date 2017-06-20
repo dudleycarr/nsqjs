@@ -1,10 +1,11 @@
-import { EventEmitter } from 'events';
+/*global describe:true, it:true, before:true, after:true, beforeEach: true, afterEach:true */
 
-import _ from 'underscore';
-import should from 'should';
-import sinon from 'sinon';
+const _ = require('lodash');
+const EventEmitter = require('events')
+const should = require('should');
+const sinon = require('sinon');
 
-import Message from '../src/message';
+const Message = require('../src/message');
 import { NSQDConnection } from '../src/nsqdconnection';
 import { ReaderRdy, ConnectionRdy } from '../src/readerrdy';
 
@@ -467,7 +468,7 @@ describe('ReaderRdy', () => {
       };
 
       const sendMessageOnce = _.once(() => {
-        connections[1].createMessage('1', Date.now(), new Buffer('test'));
+        connections[1].createMessage('1', Date.now(), Buffer('test'));
         setTimeout(checkRdyCount, 20);
       });
 
@@ -547,7 +548,7 @@ describe('ReaderRdy', () => {
       });
 
       const sendMessageOnce = _.once(() => {
-        connections[0].createMessage('1', Date.now(), new Buffer('test'));
+        connections[0].createMessage('1', Date.now(), Buffer.from('test'));
       });
 
       // Send a message on the 2nd connection when we can. Only send the message

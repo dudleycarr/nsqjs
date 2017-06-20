@@ -1,11 +1,11 @@
-import { EventEmitter } from 'events';
+const EventEmitter = require('events')
 
-import NodeState from 'node-state';
-import debug from 'debug';
-import _ from 'underscore';
+const NodeState = require('node-state');
+const debug = require('debug');
+const _ = require('lodash');
 
-import BackoffTimer from './backofftimer';
-import RoundRobinList from './roundrobinlist';
+const BackoffTimer = require('./backofftimer');
+const RoundRobinList = require('./roundrobinlist');
 import { NSQDConnection } from './nsqdconnection';
 
 /**

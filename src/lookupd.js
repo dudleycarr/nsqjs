@@ -1,8 +1,7 @@
-import url from 'url';
-
-import _ from 'underscore';
-import async from 'async';
-import request from 'request';
+const url = require('url')
+const _ = require('lodash')
+const async = require('async')
+const request = require('request')
 
 /**
  * lookupdRequest returns the list of producers from a lookupd given a
@@ -14,38 +13,38 @@ import request from 'request';
  * @param {String} url
  * @param {Function} callback
  */
-function lookupdRequest(url, callback) {
+function lookupdRequest (url, callback) {
   // All responses are JSON
   const options = {
     url,
     method: 'GET',
     json: true,
-    timeout: 2000,
-  };
+    timeout: 2000
+  }
 
   request(options, (err, response, data = {}) => {
     if (err) {
-      return callback(err, []);
+      return callback(err, [])
     }
 
     const statusCode = (data ? data.status_code : null) || response.statusCode
     if (statusCode !== 200) {
-      return callback(null, []);
+      return callback(null, [])
     }
 
     try {
-      let { producers } = data;
+      let { producers } = data
 
       // Support pre version 1.x lookupd response.
       if (!_.isEmpty(data.data)) {
-        producers = data.data.producers;
+        producers = data.data.producers
       }
 
-      callback(null, producers);
+      callback(null, producers)
     } catch (err) {
-      callback(null, []);
+      callback(null, [])
     }
-  });
+  })
 }
 
 /**
@@ -55,7 +54,7 @@ function lookupdRequest(url, callback) {
  * @param {Array} results - list of lists of nsqd node objects.
  * @return {Array}
  */
-function dedupeOnHostPort(results) {
+function dedupeOnHostPort (results) {
   return (
     _.chain(results)
       // Flatten list of lists of objects
@@ -64,25 +63,25 @@ function dedupeOnHostPort(results) {
       .indexBy(item => `${item.hostname}:${item.tcp_port}`)
       .values()
       .value()
-  );
+  )
 }
 
-const dedupedRequests = function(lookupdEndpoints, urlFn, callback) {
+const dedupedRequests = function (lookupdEndpoints, urlFn, callback) {
   // Ensure we have a list of endpoints for lookupds.
   if (_.isString(lookupdEndpoints)) {
-    lookupdEndpoints = [lookupdEndpoints];
+    lookupdEndpoints = [lookupdEndpoints]
   }
 
   // URLs for querying `nodes` on each of the lookupds.
-  const urls = Array.from(lookupdEndpoints).map(endpoint => urlFn(endpoint));
+  const urls = Array.from(lookupdEndpoints).map(endpoint => urlFn(endpoint))
 
   return async.map(urls, lookupdRequest, (err, results) => {
     if (err) {
-      return callback(err, null);
+      return callback(err, null)
     }
-    return callback(null, dedupeOnHostPort(results));
-  });
-};
+    return callback(null, dedupeOnHostPort(results))
+  })
+}
 
 /**
  * Queries lookupds for known nsqd nodes given a topic and returns
@@ -94,22 +93,22 @@ const dedupedRequests = function(lookupdEndpoints, urlFn, callback) {
  * @param {Function} callback - with signature `(err, nodes) ->`. `nodes`
  *   is a list of objects return by lookupds and deduped.
  */
-function lookup(lookupdEndpoints, topic, callback) {
+function lookup (lookupdEndpoints, topic, callback) {
   const endpointURL = endpoint => {
     if (endpoint.indexOf('://') === -1) {
-      endpoint = `http://${endpoint}`;
+      endpoint = `http://${endpoint}`
     }
-    const parsedUrl = url.parse(endpoint, true);
+    const parsedUrl = url.parse(endpoint, true)
 
     if (!parsedUrl.pathname || parsedUrl.pathname === '/') {
-      parsedUrl.pathname = '/lookup';
+      parsedUrl.pathname = '/lookup'
     }
-    parsedUrl.query.topic = topic;
-    delete parsedUrl.search;
-    return url.format(parsedUrl);
-  };
+    parsedUrl.query.topic = topic
+    delete parsedUrl.search
+    return url.format(parsedUrl)
+  }
 
-  dedupedRequests(lookupdEndpoints, endpointURL, callback);
+  dedupedRequests(lookupdEndpoints, endpointURL, callback)
 }
 
-export default lookup;
+export default lookup
