@@ -2,7 +2,7 @@
 
 import { SnappyStream, UnsnappyStream } from 'snappystream'
 import * as wire from './wire'
-import { ConnectionConfig } from './config'
+const ConnectionConfig = require('./config')
 const EventEmitter = require('events')
 const net = require('net')
 const os = require('os')
