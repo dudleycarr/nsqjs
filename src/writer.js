@@ -1,8 +1,8 @@
 const _ = require('lodash')
-const ConnectionConfig = require('./config')
+const ConnectionConfig = require('./config').ConnectionConfig
 const debug = require('debug')
 const EventEmitter = require('events')
-const WriterNSQDConnection = require('./nsqdconnection')
+const WriterNSQDConnection = require('./nsqdconnection').WriterNSQDConnection
 
 /**
  *  Publish messages to nsqds.

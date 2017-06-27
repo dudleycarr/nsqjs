@@ -2,9 +2,9 @@ const EventEmitter = require('events')
 const debug = require('debug')
 const RoundRobinList = require('./roundrobinlist')
 const lookup = require('./lookupd')
-const NSQDConnection = require('./nsqdconnection')
-const ReaderConfig = require('./config')
-const ReaderRdy = require('./readerrdy')
+const NSQDConnection = require('./nsqdconnection').NSQDConnection
+const ReaderConfig = require('./config').ReaderConfig
+const ReaderRdy = require('./readerrdy').ReaderRdy
 
 /**
  * Reader provides high-level functionality for building robust NSQ

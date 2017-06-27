@@ -1,7 +1,7 @@
-const url = require('url')
 const _ = require('lodash')
 const async = require('async')
 const request = require('request')
+const url = require('url')
 
 /**
  * lookupdRequest returns the list of producers from a lookupd given a
@@ -60,7 +60,7 @@ function dedupeOnHostPort (results) {
       // Flatten list of lists of objects
       .flatten()
       // De-dupe nodes by hostname / port
-      .indexBy(item => `${item.hostname}:${item.tcp_port}`)
+      .keyBy(item => `${item.hostname}:${item.tcp_port}`)
       .values()
       .value()
   )
@@ -111,4 +111,4 @@ function lookup (lookupdEndpoints, topic, callback) {
   dedupedRequests(lookupdEndpoints, endpointURL, callback)
 }
 
-export default lookup
+module.exports = lookup

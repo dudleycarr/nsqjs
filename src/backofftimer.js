@@ -77,4 +77,4 @@ class BackoffTimer {
   }
 }
 
-export default BackoffTimer
+module.exports = BackoffTimer

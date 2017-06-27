@@ -1,11 +1,11 @@
 /* global describe:true, it:true, beforeEach: true, afterEach:true */
 
 const _ = require('lodash')
-const ConnectionRdy = require('./src/readerrdy').ConnectionRdy
+const ConnectionRdy = require('../src/readerrdy').ConnectionRdy
 const EventEmitter = require('events')
 const Message = require('../src/message')
-const NSQDConnection = require('../src/nsqdconnection')
-const ReaderRdy = require('./src/readerrdy').ReaderRdy
+const NSQDConnection = require('../src/nsqdconnection').NSQDConnection
+const ReaderRdy = require('../src/readerrdy').ReaderRdy
 const should = require('should')
 const sinon = require('sinon')
 

@@ -86,4 +86,4 @@ class FrameBuffer {
   }
 }
 
-export default FrameBuffer
+module.exports = FrameBuffer

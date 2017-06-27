@@ -1,14 +1,14 @@
 /* global describe:true, it:true, beforeEach: true,  */
-import {
-  ConnectionState,
-  NSQDConnection,
-  WriterNSQDConnection,
-  WriterConnectionState
-} from '../src/nsqdconnection'
 const _ = require('lodash')
+const nsdqconn = require('../src/nsqdconnection')
 const should = require('should')
 const sinon = require('sinon')
 const wire = require('../src/wire')
+
+const ConnectionState = nsdqconn.ConnectionState
+const NSQDConnection = nsdqconn.NSQDConnection
+const WriterNSQDConnection = nsdqconn.WriterNSQDConnection
+const WriterConnectionState = nsdqconn.WriterConnectionState
 
 describe('Reader ConnectionState', () => {
   const state = {

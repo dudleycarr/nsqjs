@@ -300,7 +300,7 @@ class ReaderConfig extends ConnectionConfig {
 
     const pass = _.chain(addresses)
       .map(key => this[key].length)
-      .any(_.identity)
+      .some(_.identity)
       .value()
 
     if (!pass) {

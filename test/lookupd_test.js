@@ -139,7 +139,7 @@ describe('lookupd.lookup', () => {
       lookup(lookupdAddresses, 'sample_topic', (err, nodes) => {
         nodes.should.have.length(4)
         _.chain(nodes)
-          .pluck('tcp_port')
+          .map('tcp_port')
           .sort()
           .value()
           .should.be.eql([4150, 5150, 6150, 7150])

@@ -1,5 +1,7 @@
 /* global describe:true, it:true, beforeEach: true, */
-import { ConnectionConfig, ReaderConfig } from '../src/config'
+const config = require('../src/config')
+const ConnectionConfig = config.ConnectionConfig
+const ReaderConfig = config.ReaderConfig
 
 describe('ConnectionConfig', () => {
   let config = null

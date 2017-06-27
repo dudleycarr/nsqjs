@@ -1,11 +1,18 @@
+'use strict'
+
 const _ = require('lodash')
 const Int64 = require('node-int64')
 const BigNumber = require('bignumber.js')
 
-export const MAGIC_V2 = '  V2'
-export const FRAME_TYPE_RESPONSE = 0
-export const FRAME_TYPE_ERROR = 1
-export const FRAME_TYPE_MESSAGE = 2
+const MAGIC_V2 = '  V2'
+const FRAME_TYPE_RESPONSE = 0
+const FRAME_TYPE_ERROR = 1
+const FRAME_TYPE_MESSAGE = 2
+
+exports.MAGIC_V2 = MAGIC_V2
+exports.FRAME_TYPE_RESPONSE = FRAME_TYPE_RESPONSE
+exports.FRAME_TYPE_ERROR = FRAME_TYPE_ERROR
+exports.FRAME_TYPE_MESSAGE = FRAME_TYPE_MESSAGE
 
 /**
  * Stringifies an object. Supports unicode.
@@ -43,7 +50,7 @@ function byteLength (msg) {
  * @param  {Object} data
  * @return {Array}
  */
-export function unpackMessage (data) {
+exports.unpackMessage = function unpackMessage (data) {
   // Int64 to read the 64bit Int from the buffer
   let timestamp = new Int64(data, 0).toOctetString()
   // BigNumber to represent the timestamp in a workable way.
@@ -98,7 +105,7 @@ function command (cmd, body, ...parameters) {
  * @param  {String} channel
  * @return {Array}
  */
-export function subscribe (topic, channel) {
+exports.subscribe = function subscribe (topic, channel) {
   if (!validTopicName(topic)) {
     throw new Error(`Invalid topic: ${topic}`)
   }
@@ -116,7 +123,7 @@ export function subscribe (topic, channel) {
  * @param  {Object} data
  * @return {Array}
  */
-export function identify (data) {
+exports.identify = function identify (data) {
   const validIdentifyKeys = [
     'client_id',
     'deflate',
@@ -153,7 +160,7 @@ export function identify (data) {
  * @param  {Number} count
  * @return {Array}
  */
-export function ready (count) {
+exports.ready = function ready (count) {
   if (!_.isNumber(count)) {
     throw new Error(`RDY count (${count}) is not a number`)
   }
@@ -171,7 +178,7 @@ export function ready (count) {
  * @param  {String} id
  * @return {Array}
  */
-export function finish (id) {
+exports.finish = function finish (id) {
   if (!(Buffer.byteLength(id) <= 16)) {
     throw new Error(`FINISH invalid id (${id})`)
   }
@@ -185,7 +192,7 @@ export function finish (id) {
  * @param  {Number} timeMs
  * @return {Array}
  */
-export function requeue (id, timeMs = 0) {
+exports.requeue = function requeue (id, timeMs = 0) {
   if (!(Buffer.byteLength(id) <= 16)) {
     throw new Error(`REQUEUE invalid id (${id})`)
   }
@@ -204,7 +211,7 @@ export function requeue (id, timeMs = 0) {
  * @param  {String} id
  * @return {Array}
  */
-export function touch (id) {
+exports.touch = function touch (id) {
   return command('TOUCH', null, id)
 }
 
@@ -213,7 +220,7 @@ export function touch (id) {
  *
  * @return {Array}
  */
-export function nop () {
+exports.nop = function nop () {
   return command('NOP', null)
 }
 
@@ -224,7 +231,7 @@ export function nop () {
  * @param  {Object} data
  * @return {Array}
  */
-export function pub (topic, data) {
+exports.pub = function pub (topic, data) {
   return command('PUB', data, topic)
 }
 
@@ -235,7 +242,7 @@ export function pub (topic, data) {
  * @param  {Object} data
  * @return {Array}
  */
-export function mpub (topic, data) {
+exports.mpub = function mpub (topic, data) {
   if (!_.isArray(data)) {
     throw new Error('MPUB requires an array of message')
   }
@@ -265,7 +272,7 @@ export function mpub (topic, data) {
  * @param  {String} token
  * @return {Array}
  */
-export function auth (token) {
+exports.auth = function auth (token) {
   return command('AUTH', token)
 }
 

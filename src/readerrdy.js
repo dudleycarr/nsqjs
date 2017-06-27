@@ -3,7 +3,7 @@ const BackoffTimer = require('./backofftimer')
 const debug = require('debug')
 const EventEmitter = require('events')
 const NodeState = require('node-state')
-const NSQDConnection = require('./nsqdconnection')
+const NSQDConnection = require('./nsqdconnection').NSQDConnection
 const RoundRobinList = require('./roundrobinlist')
 
 /**

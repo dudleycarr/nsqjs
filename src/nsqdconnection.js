@@ -1,21 +1,20 @@
 'use strict'
 
-import { SnappyStream, UnsnappyStream } from 'snappystream'
-import * as wire from './wire'
-const ConnectionConfig = require('./config')
-const EventEmitter = require('events')
-const net = require('net')
-const os = require('os')
-const tls = require('tls')
-const zlib = require('zlib')
-
-const NodeState = require('node-state')
 const _ = require('lodash')
+const ConnectionConfig = require('./config').ConnectionConfig
 const debug = require('debug')
-
+const EventEmitter = require('events')
 const FrameBuffer = require('./framebuffer')
 const Message = require('./message')
+const net = require('net')
+const NodeState = require('node-state')
+const os = require('os')
+const SnappyStream = require('snappystream').SnappyStream
+const tls = require('tls')
+const UnsnappyStream = require('snappystream').UnsnappyStream
 const version = require('./version')
+const wire = require('./wire')
+const zlib = require('zlib')
 
 /**
  * NSQDConnection is a reader connection to a nsqd instance. It manages all
@@ -810,7 +809,7 @@ class WriterConnectionState extends ConnectionState {
   }
 }
 
-export {
+module.exports = {
   NSQDConnection,
   ConnectionState,
   WriterNSQDConnection,
