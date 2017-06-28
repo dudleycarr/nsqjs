@@ -51,6 +51,6 @@
   "scripts": {
     "format": "prettier --single-quote --trailing-comma es5 --write \"{src,test}/**/*.js\"",
     "lint": "standard",
-    "test": "mocha -R spec -b"
+    "test": "mocha -R spec"
   }
 }

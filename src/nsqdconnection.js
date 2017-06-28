@@ -162,6 +162,10 @@ class NSQDConnection extends EventEmitter {
       this.emit('connection_error', err)
     })
     conn.on('close', () => this.statemachine.raise('close'))
+    conn.on('error', err => {
+      this.statemachine.goto('CLOSED')
+      this.emit('connection_error', err)
+    })
   }
 
   /**
@@ -170,7 +174,7 @@ class NSQDConnection extends EventEmitter {
    * @param  {Function} callback
    */
   startTLS (callback) {
-    for (const event of ['data', 'error', 'close']) {
+    for (const event of ['data', 'error', 'close', 'error']) {
       this.conn.removeAllListeners(event)
     }
 

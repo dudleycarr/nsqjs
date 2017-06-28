@@ -346,35 +346,27 @@ describe('failures', () => {
     describe('nsqd disconnect before publish', () => {
       it('should fail to publish a message', done => {
         const writer = new nsq.Writer('127.0.0.1', TCP_PORT)
-        async.series(
-          [
-            // Connect the writer to the nsqd.
-            callback => {
-              writer.connect()
-              writer.on('ready', callback)
-              writer.on('error', () => {}) // Ensure error message is handled.
-            },
 
-            // Stop the nsqd process.
-            callback => {
-              nsqdProcess.kill()
-              setTimeout(callback, 200)
-            },
+        function publish () {
+          writer.publish('test_topic', 'a message that should fail',
+            err => {
+              should.exist(err)
+              done()
+            })
+        }
 
-            // Attempt to publish a message.
-            callback => {
-              writer.publish(
-                'test_topic',
-                'a message that should fail',
-                err => {
-                  should.exist(err)
-                  callback()
-                }
-              )
-            }
-          ],
-          done
-        )
+        writer.once('ready', () => {
+          console.log('ready')
+          nsqdProcess.kill()
+          setTimeout(publish, 1500)
+        })
+        writer.on('error', err => {
+          console.log(err)
+        })
+        writer.once('closed', () => {
+          console.log('closed')
+        })
+        writer.connect()
       })
     })
   })
