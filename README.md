@@ -149,9 +149,11 @@ These methods are available on a Writer object:
   Connect to the nsqd specified.
 * `close()` <br/>
   Disconnect from nsqd.
-* `publish(topic, msgs, [timeMs], [callback])` <br/>
+* `publish(topic, msgs, [callback])` <br/>
   `topic` is a string. `msgs` is either a string, a `Buffer`, JSON serializable
-  object, a list of strings / `Buffers` / JSON serializable objects. `timeMs` is the delay by which the message should be delivered. `callback` takes a single `error` argument.
+  object, a list of strings / `Buffers` / JSON serializable objects. `callback` takes a single `error` argument.
+* `deferPublish(topic, msg, timeMs, [callback])` <br/>
+  `topic` is a string. `msg` is either a string, a `Buffer`, JSON serializable object. `timeMs` is the delay by which the message should be delivered. `callback` takes a single `error` argument.
 
 ### Simple example
 
