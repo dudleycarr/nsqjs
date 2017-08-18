@@ -255,6 +255,14 @@ HTTP/HTTPS URI`
     if (this.snappy && this.deflate) {
       throw new Error('Cannot use both deflate and snappy');
     }
+
+    if (this.snappy) {
+      try {
+        require('snappystream')
+      } catch(err) {
+        throw new Error('Cannot use snappy since it did not successfully install via npm.')
+      }
+    }
   }
 }
 
