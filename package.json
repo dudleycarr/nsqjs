@@ -31,8 +31,8 @@
     }
   ],
   "scripts": {
-    "format": "prettier --single-quote --trailing-comma es5 --write \"{src,test}/**/*.js\"",
-    "lint": "eslint src",
+    "format": "prettier --single-quote --trailing-comma es5 --write \"{lib,test}/**/*.js\"",
+    "lint": "eslint lib",
     "test": "mocha"
   },
   "main": "lib/nsq",
