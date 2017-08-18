@@ -1,7 +1,7 @@
 const should = require('should')
 
-const wire = require('../src/wire')
-const FrameBuffer = require('../src/framebuffer')
+const wire = require('../lib/wire')
+const FrameBuffer = require('../lib/framebuffer')
 
 const createFrame = (frameId, payload) => {
   const frame = new Buffer(4 + 4 + payload.length);

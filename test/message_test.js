@@ -1,6 +1,6 @@
 const should = require('should')
 const sinon = require('sinon')
-const Message = require('../src/message')
+const Message = require('../lib/message')
 
 const createMessage = (body, requeueDelay, timeout, maxTimeout) =>
   new Message(

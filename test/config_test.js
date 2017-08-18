@@ -1,4 +1,4 @@
-const {ConnectionConfig, ReaderConfig} = require('../src/config')
+const {ConnectionConfig, ReaderConfig} = require('../lib/config')
 
 describe('ConnectionConfig', () => {
   let config = null;

@@ -3,7 +3,7 @@ const assert = require('assert')
 const _ = require('lodash')
 const should = require('should')
 
-const RoundRobinList = require('../src/roundrobinlist')
+const RoundRobinList = require('../lib/roundrobinlist')
 
 describe('roundrobinlist', () => {
   let list = null;

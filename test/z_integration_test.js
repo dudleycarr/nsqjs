@@ -4,7 +4,7 @@ const child_process = require('child_process') // eslint-disable-line camelcase
 const request = require('request')
 const should = require('should')
 
-const nsq = require('../src/nsq')
+const nsq = require('../lib/nsq')
 
 const temp = require('temp').track();
 
