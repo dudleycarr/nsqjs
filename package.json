@@ -60,7 +60,9 @@
     "moment": "^2.17.1",
     "node-int64": "~0.3.0",
     "node-state": "~1.4.4",
-    "request": "^2.79.0",
+    "request": "^2.79.0"
+  },
+  "optionalDependencies": {
     "snappystream": "^0.3.4"
   }
 }
