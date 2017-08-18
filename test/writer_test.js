@@ -1,5 +1,5 @@
-import should from 'should';
-import sinon from 'sinon';
+const should = require('should')
+const sinon = require('sinon')
 
 const nsq = require('../src/nsq');
 

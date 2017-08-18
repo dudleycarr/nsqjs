@@ -1,14 +1,13 @@
-import _ from 'underscore';
-import should from 'should';
-import sinon from 'sinon';
+const _ = require('underscore')
+const should = require('should')
+const sinon = require('sinon')
 
-import * as wire from '../src/wire';
-import {
+const wire = require('../src/wire')
+const {
   ConnectionState,
   NSQDConnection,
   WriterNSQDConnection,
-  WriterConnectionState,
-} from '../src/nsqdconnection';
+  WriterConnectionState} = require('../src/nsqdconnection')
 
 describe('Reader ConnectionState', () => {
   const state = {

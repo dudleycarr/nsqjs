@@ -1,12 +1,12 @@
-import { EventEmitter } from 'events';
+const {EventEmitter} = require('events')
 
-import debug from 'debug';
+const debug = require('debug')
 
-import RoundRobinList from './roundrobinlist';
-import lookup from './lookupd';
-import { NSQDConnection } from './nsqdconnection';
-import { ReaderConfig } from './config';
-import { ReaderRdy } from './readerrdy';
+const RoundRobinList = require('./roundrobinlist')
+const lookup = require('./lookupd')
+const {NSQDConnection} = require('./nsqdconnection')
+const {ReaderConfig} = require('./config')
+const {ReaderRdy} = require('./readerrdy')
 
 /**
  * Reader provides high-level functionality for building robust NSQ
@@ -15,11 +15,11 @@ import { ReaderRdy } from './readerrdy';
  * @type {Reader}
  */
 class Reader extends EventEmitter {
-  static ERROR = 'error';
-  static MESSAGE = 'message';
-  static DISCARD = 'discard';
-  static NSQD_CONNECTED = 'nsqd_connected';
-  static NSQD_CLOSED = 'nsqd_closed';
+  static get ERROR() { return 'error' }
+  static get MESSAGE() { return 'message' }
+  static get DISCARD() { return 'discard' }
+  static get NSQD_CONNECTED() { return 'nsqd_connected' }
+  static get NSQD_CLOSED() { return 'nsqd_closed' }
 
   /**
    * @constructor
@@ -255,4 +255,4 @@ class Reader extends EventEmitter {
   }
 }
 
-export default Reader;
+module.exports = Reader

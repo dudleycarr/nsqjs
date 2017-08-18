@@ -1,10 +1,9 @@
-import { EventEmitter } from 'events';
+const _ = require('underscore')
+const debug = require('debug')
+const {EventEmitter} = require('events')
 
-import _ from 'underscore';
-import debug from 'debug';
-
-import { ConnectionConfig } from './config';
-import { WriterNSQDConnection } from './nsqdconnection';
+const {ConnectionConfig} = require('./config')
+const {WriterNSQDConnection} = require('./nsqdconnection')
 
 /**
  *  Publish messages to nsqds.
@@ -26,9 +25,9 @@ import { WriterNSQDConnection } from './nsqdconnection';
  */
 class Writer extends EventEmitter {
   // Writer events
-  static READY = 'ready';
-  static CLOSED = 'closed';
-  static ERROR = 'error';
+  static get READY() { return 'ready' }
+  static get CLOSED() { return 'closed' }
+  static get ERROR() { return 'error' }
 
   /**
    * Instantiates a new Writer.
@@ -187,8 +186,6 @@ class Writer extends EventEmitter {
     }
   }
 
-
-
   _checkMsgsValidity(msgs){
     // maybe when an array check every message to not be empty
     if (!msgs || _.isEmpty(msgs)) {
@@ -207,7 +204,6 @@ class Writer extends EventEmitter {
       }
       throw err;  
   }
-
 
   _callwhenReady(topic, msgs, callback, functionToCall, timeMs){
     let args = arguments;
@@ -238,4 +234,4 @@ class Writer extends EventEmitter {
   
 }
 
-export default Writer;
+module.exports = Writer

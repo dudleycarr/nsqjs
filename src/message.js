@@ -1,6 +1,5 @@
-import { EventEmitter } from 'events';
-
-import * as wire from './wire';
+const {EventEmitter} = require('events')
+const wire = require('./wire')
 
 /**
  * Message - a high-level message object, which exposes stateful methods
@@ -9,14 +8,16 @@ import * as wire from './wire';
  * @type {Message}
  */
 class Message extends EventEmitter {
-  // Event types
-  static BACKOFF = 'backoff';
-  static RESPOND = 'respond';
 
-  // Response types
-  static FINISH = 0;
-  static REQUEUE = 1;
-  static TOUCH = 2;
+// Event types
+  static get BACKOFF() { return 'backoff' }
+  static get RESPOND() { return 'respond' }
+
+// Response types
+  static get FINISH() { return 0 }
+  static get REQUEUE() { return 1 }
+  static get TOUCH() { return 2 }
+
 
   /**
    * Instantiates a new instance of a Message.
@@ -178,4 +179,4 @@ class Message extends EventEmitter {
   }
 }
 
-export default Message;
+module.exports = Message;

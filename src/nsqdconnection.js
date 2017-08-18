@@ -1,19 +1,19 @@
-import { EventEmitter } from 'events';
-import net from 'net';
-import os from 'os';
-import tls from 'tls';
-import zlib from 'zlib';
+const {EventEmitter} = require('events')
+const net = require('net')
+const os = require('os')
+const tls = require('tls')
+const zlib = require('zlib')
 
-import NodeState from 'node-state';
-import _ from 'underscore';
-import debug from 'debug';
-import { SnappyStream, UnsnappyStream } from 'snappystream';
+const NodeState = require('node-state')
+const _ = require('underscore')
+const debug = require('debug')
+const {SnappyStream, UnsnappyStream} = require('snappystream')
 
-import * as wire from './wire';
-import FrameBuffer from './framebuffer';
-import Message from './message';
-import version from './version';
-import { ConnectionConfig } from './config';
+const wire = require('./wire')
+const FrameBuffer = require('./framebuffer')
+const Message = require('./message')
+const version = require('./version')
+const {ConnectionConfig} = require('./config')
 
 /**
  * NSQDConnection is a reader connection to a nsqd instance. It manages all
@@ -61,15 +61,15 @@ import { ConnectionConfig } from './config';
  */
 class NSQDConnection extends EventEmitter {
   // Events emitted by NSQDConnection
-  static BACKOFF = 'backoff';
-  static CONNECTED = 'connected';
-  static CLOSED = 'closed';
-  static CONNECTION_ERROR = 'connection_error';
-  static ERROR = 'error';
-  static FINISHED = 'finished';
-  static MESSAGE = 'message';
-  static REQUEUED = 'requeued';
-  static READY = 'ready';
+  static get BACKOFF() { return 'backoff' }
+  static get CONNECTED() { return 'connected' }
+  static get CLOSED() { return 'closed' }
+  static get CONNECTION_ERROR() { return 'connection_error' }
+  static get ERROR() { return 'error' }
+  static get FINISHED() { return 'finished' }
+  static get MESSAGE() { return 'message' }
+  static get REQUEUED() { return 'requeued' }
+  static get READY() { return 'ready' }
 
   /**
    * Instantiates a new NSQDConnection.
@@ -819,7 +819,7 @@ class WriterConnectionState extends ConnectionState {
   }
 }
 
-export {
+module.exports = {
   NSQDConnection,
   ConnectionState,
   WriterNSQDConnection,

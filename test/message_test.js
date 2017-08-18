@@ -1,6 +1,6 @@
-import should from 'should';
-import sinon from 'sinon';
-import Message from '../src/message';
+const should = require('should')
+const sinon = require('sinon')
+const Message = require('../src/message')
 
 const createMessage = (body, requeueDelay, timeout, maxTimeout) =>
   new Message(

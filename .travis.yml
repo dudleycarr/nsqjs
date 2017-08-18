@@ -8,11 +8,8 @@ addons:
     packages:
       - g++-4.8
 env:
-  - TRAVIS_NODE_VERSION="0.10"
-  - TRAVIS_NODE_VERSION="0.12"
-  - TRAVIS_NODE_VERSION="iojs"
-  - TRAVIS_NODE_VERSION="4"
   - TRAVIS_NODE_VERSION="6"
+  - TRAVIS_NODE_VERSION="8"
 language: cpp
 install:
   - rm -rf ~/.nvm

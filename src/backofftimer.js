@@ -1,4 +1,4 @@
-import decimal from 'bignumber.js';
+const decimal = require('bignumber.js')
 
 const min = (a, b) => a.lte(b) ? a : b;
 const max = (a, b) => a.gte(b) ? a : b;
@@ -77,4 +77,4 @@ class BackoffTimer {
   }
 }
 
-export default BackoffTimer;
+module.exports = BackoffTimer

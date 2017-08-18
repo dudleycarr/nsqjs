@@ -1,10 +1,10 @@
-import should from 'should';
-import request from 'request';
-import child_process from 'child_process'; // eslint-disable-line camelcase
-import async from 'async';
-import _ from 'underscore';
+const _ = require('underscore')
+const async = require('async')
+const child_process = require('child_process') // eslint-disable-line camelcase
+const request = require('request')
+const should = require('should')
 
-import nsq from '../src/nsq';
+const nsq = require('../src/nsq')
 
 const temp = require('temp').track();
 
@@ -357,7 +357,7 @@ describe('failures', () => {
             // Stop the nsqd process.
             callback => {
               nsqdProcess.kill();
-              setTimeout(callback, 200);
+              setTimeout(callback, 500);
             },
 
             // Attempt to publish a message.

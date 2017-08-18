@@ -1,4 +1,4 @@
-import BackoffTimer from '../src/backofftimer';
+const BackoffTimer = require('../src/backofftimer')
 
 describe('backofftimer', () => {
   let timer = null;

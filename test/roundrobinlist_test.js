@@ -1,9 +1,9 @@
-import assert from 'assert';
+const assert = require('assert')
 
-import _ from 'underscore';
-import should from 'should';
+const _ = require('underscore')
+const should = require('should')
 
-import RoundRobinList from '../src/roundrobinlist';
+const RoundRobinList = require('../src/roundrobinlist')
 
 describe('roundrobinlist', () => {
   let list = null;

@@ -1,12 +1,12 @@
-import { EventEmitter } from 'events';
+const {EventEmitter} = require('events')
 
-import NodeState from 'node-state';
-import debug from 'debug';
-import _ from 'underscore';
+const NodeState = require('node-state')
+const _ = require('underscore')
+const debug = require('debug')
 
-import BackoffTimer from './backofftimer';
-import RoundRobinList from './roundrobinlist';
-import { NSQDConnection } from './nsqdconnection';
+const BackoffTimer = require('./backofftimer')
+const RoundRobinList = require('./roundrobinlist')
+const {NSQDConnection} = require('./nsqdconnection')
 
 /**
  * Maintains the RDY and in-flight counts for a nsqd connection. ConnectionRdy
@@ -27,8 +27,8 @@ import { NSQDConnection } from './nsqdconnection';
 */
 class ConnectionRdy extends EventEmitter {
   // Events emitted by ConnectionRdy
-  static READY = 'ready';
-  static STATE_CHANGE = 'statechange';
+  static get READY() { return 'ready' }
+  static get STATE_CHANGE() { return 'statechange' }
 
   /**
    * Instantiates a new ConnectionRdy event emitter.
@@ -722,4 +722,5 @@ ReaderRdy.prototype.transitions = {
   },
 };
 
-export { ReaderRdy, ConnectionRdy };
+
+module.exports = {ReaderRdy, ConnectionRdy}

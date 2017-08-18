@@ -1,6 +1,5 @@
-import should from 'should';
-
-import * as wire from '../src/wire';
+const should = require('should')
+const wire = require('../src/wire')
 
 const matchCommand = (commandFn, args, expected) => {
   const commandOut = commandFn(...args);
