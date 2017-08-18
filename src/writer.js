@@ -117,7 +117,7 @@ class Writer extends EventEmitter {
 
     // Call publish again once the Writer is ready.
     if (!this.ready) {
-      this._callwhenReady(...arguments);
+      this._callwhenReady(topic, msgs, callback, this.publish.bind(this));
     }
 
     if (!_.isArray(msgs)) {
@@ -139,11 +139,11 @@ class Writer extends EventEmitter {
    * @param {String|Buffer|Object} msg - A string, a buffer, a
    *   JSON serializable object, or a list of string / buffers /
    *   JSON serializable objects.
-   * @param {Number} timeMs - defer time
    * @param {Function} callback
+   * @param {Number} timeMs - defer time
    * @return {undefined}
    */
-  deferPublish(topic, msg, timeMs, callback){
+  deferPublish(topic, msg, callback, timeMs){
     let err = this._checkStateValidity();
     err = err || this._checkMsgsValidity(msg);
     err = err || this._checkTimeMsValidity(timeMs);
@@ -154,7 +154,7 @@ class Writer extends EventEmitter {
 
     // Call publish again once the Writer is ready.
     if (!this.ready) {
-      this._callwhenReady(...arguments);
+      this._callwhenReady(topic, msgs, callback, this.deferPublish.bind(this), timeMs);
     }
 
     return this.conn.produceMessages(topic, msg, timeMs, callback);
@@ -198,7 +198,7 @@ class Writer extends EventEmitter {
 
 
   _checkTimeMsValidity(timeMs){
-    return _.isNumber(timeMs)? undefined : new Error('The Delay must be a number') ;
+    return (_.isNumber(timeMs) && timeMs > 0)? undefined : new Error('The Delay must be a (positiv) number') ;
   }
 
   _throwOrCallback(err, callback){
@@ -209,18 +209,11 @@ class Writer extends EventEmitter {
   }
 
 
-  _callwhenReady(){
+  _callwhenReady(topic, msgs, callback, functionToCall, timeMs){
     let args = arguments;
-    let isDeferPublish = arguments.length === 4;
-    console.log(isDeferPublish);
     const ready = () => {
       remove();
-      if(isDeferPublish){
-        this.deferPublish(...args);
-      }
-      else{
-        this.publish(...args);
-      }
+      functionToCall(topic, msgs, callback, timeMs);
     };
 
     const failed = function(err) {
