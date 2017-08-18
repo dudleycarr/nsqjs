@@ -69,7 +69,9 @@
     "node-int64": "~0.3.0",
     "node-state": "~1.4.4",
     "request": "^2.79.0",
-    "snappystream": "^0.3.4",
     "underscore": "~1.5.2"
+  },
+  "optionalDependencies": {
+    "snappystream": "^0.3.4"
   }
 }
