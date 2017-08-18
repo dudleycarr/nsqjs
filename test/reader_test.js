@@ -1,7 +1,7 @@
-import should from 'should';
-import sinon from 'sinon';
+const should = require('should')
+const sinon = require('sinon')
 
-import nsq from '../src/nsq';
+const nsq = require('../src/nsq')
 
 describe('reader', () => {
   const readerWithAttempts = attempts =>

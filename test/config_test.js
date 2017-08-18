@@ -1,4 +1,4 @@
-import { ConnectionConfig, ReaderConfig } from '../src/config';
+const {ConnectionConfig, ReaderConfig} = require('../src/config')
 
 describe('ConnectionConfig', () => {
   let config = null;

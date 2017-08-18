@@ -1,8 +1,8 @@
-import _ from 'underscore';
-import nock from 'nock';
-import should from 'should';
+const _ = require('underscore')
+const nock = require('nock')
+const should = require('should')
 
-import lookup from '../src/lookupd';
+const lookup = require('../src/lookupd')
 
 const NSQD_1 = {
   address: 'localhost',

@@ -1,4 +1,4 @@
-import _ from 'underscore';
+const _ = require('underscore')
 
 /**
  * From the NSQ protocol documentation:
@@ -86,4 +86,4 @@ class FrameBuffer {
   }
 }
 
-export default FrameBuffer;
+module.exports = FrameBuffer;

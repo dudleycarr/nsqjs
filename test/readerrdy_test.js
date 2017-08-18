@@ -1,12 +1,11 @@
-import { EventEmitter } from 'events';
+const {EventEmitter} = require('events')
+const _ = require('underscore')
+const should = require('should')
+const sinon = require('sinon')
 
-import _ from 'underscore';
-import should from 'should';
-import sinon from 'sinon';
-
-import Message from '../src/message';
-import { NSQDConnection } from '../src/nsqdconnection';
-import { ReaderRdy, ConnectionRdy } from '../src/readerrdy';
+const Message = require('../src/message')
+const {NSQDConnection} = require('../src/nsqdconnection')
+const {ReaderRdy, ConnectionRdy} = require('../src/readerrdy')
 
 class StubNSQDConnection extends EventEmitter {
   constructor(
@@ -36,10 +35,10 @@ class StubNSQDConnection extends EventEmitter {
   }
 
   // Empty
-  connect = () => {};
+  connect() {};
 
   // Empty
-  destroy = () => {};
+  destroy() {};
 
   // Empty
   setRdy(rdyCount) {

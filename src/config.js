@@ -1,31 +1,32 @@
-import url from 'url';
-
-import _ from 'underscore';
+const _ = require('underscore')
+const url = require('url')
 
 /**
  * Responsible for configuring the official defaults for nsqd connections.
  * @type {ConnectionConfig}
  */
 class ConnectionConfig {
-  static DEFAULTS = {
-    authSecret: null,
-    clientId: null,
-    deflate: false,
-    deflateLevel: 6,
-    heartbeatInterval: 30,
-    maxInFlight: 1,
-    messageTimeout: null,
-    outputBufferSize: null,
-    outputBufferTimeout: null,
-    requeueDelay: 90,
-    sampleRate: null,
-    snappy: false,
-    tls: false,
-    tlsVerification: true,
-    key: null,
-    cert: null,
-    ca: null,
-  };
+  static get DEFAULTS() {
+    return {
+      authSecret: null,
+      clientId: null,
+      deflate: false,
+      deflateLevel: 6,
+      heartbeatInterval: 30,
+      maxInFlight: 1,
+      messageTimeout: null,
+      outputBufferSize: null,
+      outputBufferTimeout: null,
+      requeueDelay: 90,
+      sampleRate: null,
+      snappy: false,
+      tls: false,
+      tlsVerification: true,
+      key: null,
+      cert: null,
+      ca: null,
+    };
+  }
 
   /**
    * Indicates if an address has the host pair combo.
@@ -45,6 +46,7 @@ class ConnectionConfig {
    * @param  {Object} [options={}]
    */
   constructor(options = {}) {
+
     options = _.chain(options)
       .pick(_.keys(this.constructor.DEFAULTS))
       .defaults(this.constructor.DEFAULTS)
@@ -261,15 +263,18 @@ HTTP/HTTPS URI`
  * @type {[type]}
  */
 class ReaderConfig extends ConnectionConfig {
-  static DEFAULTS = _.extend({}, ConnectionConfig.DEFAULTS, {
-    lookupdHTTPAddresses: [],
-    lookupdPollInterval: 60,
-    lookupdPollJitter: 0.3,
-    name: null,
-    nsqdTCPAddresses: [],
-    maxAttempts: 0,
-    maxBackoffDuration: 128,
-  });
+
+  static get DEFAULTS() {
+    return _.extend({}, ConnectionConfig.DEFAULTS, {
+      lookupdHTTPAddresses: [],
+      lookupdPollInterval: 60,
+      lookupdPollJitter: 0.3,
+      name: null,
+      nsqdTCPAddresses: [],
+      maxAttempts: 0,
+      maxBackoffDuration: 128,
+    });
+  }
 
   /**
    * Returns the validated reader client config. Throws an error if any
@@ -318,4 +323,4 @@ class ReaderConfig extends ConnectionConfig {
   }
 }
 
-export { ConnectionConfig, ReaderConfig };
+module.exports = {ConnectionConfig, ReaderConfig}

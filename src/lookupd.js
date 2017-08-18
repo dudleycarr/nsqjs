@@ -1,8 +1,7 @@
-import url from 'url';
-
-import _ from 'underscore';
-import async from 'async';
-import request from 'request';
+const _ = require('underscore')
+const async = require('async')
+const request = require('request')
+const url = require('url')
 
 /**
  * lookupdRequest returns the list of producers from a lookupd given a
@@ -112,4 +111,4 @@ function lookup(lookupdEndpoints, topic, callback) {
   dedupedRequests(lookupdEndpoints, endpointURL, callback);
 }
 
-export default lookup;
+module.exports = lookup

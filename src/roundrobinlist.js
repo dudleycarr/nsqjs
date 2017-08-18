@@ -70,4 +70,4 @@ class RoundRobinList {
   }
 }
 
-export default RoundRobinList;
+module.exports = RoundRobinList

@@ -1,7 +1,7 @@
-import should from 'should';
+const should = require('should')
 
-import * as wire from '../src/wire';
-import FrameBuffer from '../src/framebuffer';
+const wire = require('../src/wire')
+const FrameBuffer = require('../src/framebuffer')
 
 const createFrame = (frameId, payload) => {
   const frame = new Buffer(4 + 4 + payload.length);
