@@ -1,4 +1,4 @@
-const _ = require('underscore')
+const _ = require('lodash')
 const Int64 = require('node-int64')
 const BigNumber = require('bignumber.js')
 

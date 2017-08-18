@@ -1,5 +1,5 @@
 const {EventEmitter} = require('events')
-const _ = require('underscore')
+const _ = require('lodash')
 const should = require('should')
 const sinon = require('sinon')
 

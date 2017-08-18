@@ -1,4 +1,4 @@
-const _ = require('underscore')
+const _ = require('lodash')
 const debug = require('debug')
 const {EventEmitter} = require('events')
 

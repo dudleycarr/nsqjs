@@ -1,4 +1,4 @@
-const _ = require('underscore')
+const _ = require('lodash')
 const async = require('async')
 const request = require('request')
 const url = require('url')
@@ -60,7 +60,7 @@ function dedupeOnHostPort(results) {
       // Flatten list of lists of objects
       .flatten()
       // De-dupe nodes by hostname / port
-      .indexBy(item => `${item.hostname}:${item.tcp_port}`)
+      .keyBy(item => `${item.hostname}:${item.tcp_port}`)
       .values()
       .value()
   );
