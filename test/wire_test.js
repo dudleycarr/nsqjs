@@ -1,5 +1,5 @@
 const should = require('should')
-const wire = require('../src/wire')
+const wire = require('../lib/wire')
 
 const matchCommand = (commandFn, args, expected) => {
   const commandOut = commandFn(...args);

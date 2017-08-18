@@ -1,4 +1,4 @@
-const BackoffTimer = require('../src/backofftimer')
+const BackoffTimer = require('../lib/backofftimer')
 
 describe('backofftimer', () => {
   let timer = null;

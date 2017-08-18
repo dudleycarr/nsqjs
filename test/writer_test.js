@@ -1,7 +1,7 @@
 const should = require('should')
 const sinon = require('sinon')
 
-const nsq = require('../src/nsq');
+const nsq = require('../lib/nsq');
 
 describe('writer', () => {
   let writer = null;

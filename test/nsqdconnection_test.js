@@ -2,12 +2,12 @@ const _ = require('lodash')
 const should = require('should')
 const sinon = require('sinon')
 
-const wire = require('../src/wire')
+const wire = require('../lib/wire')
 const {
   ConnectionState,
   NSQDConnection,
   WriterNSQDConnection,
-  WriterConnectionState} = require('../src/nsqdconnection')
+  WriterConnectionState} = require('../lib/nsqdconnection')
 
 describe('Reader ConnectionState', () => {
   const state = {

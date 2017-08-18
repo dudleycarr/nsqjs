@@ -2,7 +2,7 @@ const _ = require('lodash')
 const nock = require('nock')
 const should = require('should')
 
-const lookup = require('../src/lookupd')
+const lookup = require('../lib/lookupd')
 
 const NSQD_1 = {
   address: 'localhost',

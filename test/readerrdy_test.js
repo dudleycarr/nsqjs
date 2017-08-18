@@ -3,9 +3,9 @@ const _ = require('lodash')
 const should = require('should')
 const sinon = require('sinon')
 
-const Message = require('../src/message')
-const {NSQDConnection} = require('../src/nsqdconnection')
-const {ReaderRdy, ConnectionRdy} = require('../src/readerrdy')
+const Message = require('../lib/message')
+const {NSQDConnection} = require('../lib/nsqdconnection')
+const {ReaderRdy, ConnectionRdy} = require('../lib/readerrdy')
 
 class StubNSQDConnection extends EventEmitter {
   constructor(
