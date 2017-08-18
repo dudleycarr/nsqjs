@@ -637,7 +637,7 @@ ConnectionState.prototype.states = {
     },
 
     produceMessages(data) {
-      const [topic, msgs, callback] = Array.from(data);
+      const [topic, msgs, timeMs, callback] = Array.from(data);
       this.conn.messageCallbacks.push(callback);
 
       if (!_.isArray(msgs)) {
@@ -645,9 +645,19 @@ ConnectionState.prototype.states = {
       }
 
       if (msgs.length === 1) {
-        return this.conn.write(wire.pub(topic, msgs[0]));
+        if(!timeMs){
+          return this.conn.write(wire.pub(topic, msgs[0]));
+        }
+        else{
+          return this.conn.write(wire.dpub(topic, msgs[0], timeMs));
+        }
       }
-      return this.conn.write(wire.mpub(topic, msgs));
+      if(!timeMs){
+        return this.conn.write(wire.mpub(topic, msgs));
+      }
+      else{
+        throw new Error('DPUB can only defer one message at a time');
+      }
     },
 
     response(data) {
@@ -782,15 +792,16 @@ class WriterNSQDConnection extends NSQDConnection {
   }
 
   /**
-   * Emits a `produceMessages` event with the specified topic, msgs and a
+   * Emits a `produceMessages` event with the specified topic, msgs, timeMs and a
    * callback.
    *
    * @param  {String}   topic
    * @param  {Array}    msgs
+   * @param  {Number}   timeMs
    * @param  {Function} callback
    */
-  produceMessages(topic, msgs, callback) {
-    this.statemachine.raise('produceMessages', [topic, msgs, callback]);
+  produceMessages(topic, msgs, timeMs, callback) {
+    this.statemachine.raise('produceMessages', [topic, msgs, timeMs, callback]);
   }
 }
 

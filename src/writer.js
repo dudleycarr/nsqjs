@@ -107,52 +107,17 @@ class Writer extends EventEmitter {
    * @return {undefined}
    */
   publish(topic, msgs, callback) {
-    let err;
-    let connState = '';
-
-    if (this.conn && this.conn.statemachine) {
-      connState = this.conn.statemachine.current_state_name;
-    }
-
-    if (!this.conn || ['CLOSED', 'ERROR'].includes(connState)) {
-      err = new Error('No active Writer connection to send messages');
-    }
-
-    if (!msgs || _.isEmpty(msgs)) {
-      err = new Error('Attempting to publish an empty message');
-    }
+    let err = this._checkStateValidity();
+    err = err || this._checkMsgsValidity(msgs);
+    
 
     if (err) {
-      if (callback) {
-        return callback(err);
-      }
-      throw err;
+      return this._throwOrCallback(err, callback);
     }
 
     // Call publish again once the Writer is ready.
     if (!this.ready) {
-      const ready = () => {
-        remove();
-        this.publish(topic, msgs, callback);
-      };
-
-      const failed = function(err) {
-        if (!err) {
-          err = new Error('Connection closed!');
-        }
-        remove();
-        callback(err);
-      };
-
-      const remove = () => {
-        this.removeListener(Writer.READY, ready);
-        this.removeListener(Writer.ERROR, failed);
-        this.removeListener(Writer.CLOSED, failed);
-      };
-
-      this.on(Writer.READY, ready);
-      this.on(Writer.ERROR, failed);
-      this.on(Writer.CLOSED, failed);
+      this._callwhenReady(topic, msgs, callback, this.publish.bind(this));
     }
 
     if (!_.isArray(msgs)) {
@@ -160,14 +125,39 @@ class Writer extends EventEmitter {
     }
 
     // Automatically serialize as JSON if the message isn't a String or a Buffer
-    msgs = msgs.map(msg => {
-      if (_.isString(msg) || Buffer.isBuffer(msg)) {
-        return msg;
-      }
-      return JSON.stringify(msg);
-    });
+    msgs = msgs.map(this._serializeMsg);
 
-    return this.conn.produceMessages(topic, msgs, callback);
+    return this.conn.produceMessages(topic, msgs, undefined, callback);
+  }
+
+
+/**
+   * Publish a message to the connected nsqd with delay. The contents
+   * of the messages should either be strings or buffers with the payload encoded.
+
+   * @param {String} topic
+   * @param {String|Buffer|Object} msg - A string, a buffer, a
+   *   JSON serializable object, or a list of string / buffers /
+   *   JSON serializable objects.
+   * @param {Function} callback
+   * @param {Number} timeMs - defer time
+   * @return {undefined}
+   */
+  deferPublish(topic, msg, callback, timeMs){
+    let err = this._checkStateValidity();
+    err = err || this._checkMsgsValidity(msg);
+    err = err || this._checkTimeMsValidity(timeMs);
+
+    if (err) {
+      return this._throwOrCallback(err, callback);
+    }
+
+    // Call publish again once the Writer is ready.
+    if (!this.ready) {
+      this._callwhenReady(topic, msgs, callback, this.deferPublish.bind(this), timeMs);
+    }
+
+    return this.conn.produceMessages(topic, msg, timeMs, callback);
   }
 
   /**
@@ -177,6 +167,75 @@ class Writer extends EventEmitter {
   close() {
     return this.conn.destroy();
   }
+
+  _serializeMsg(msg){
+    if (_.isString(msg) || Buffer.isBuffer(msg)) {
+      return msg;
+    }
+    return JSON.stringify(msg);
+  }
+
+  _checkStateValidity(){
+    let connState = '';
+
+    if (this.conn && this.conn.statemachine) {
+      connState = this.conn.statemachine.current_state_name;
+    }
+
+    if (!this.conn || ['CLOSED', 'ERROR'].includes(connState)) {
+      return new Error('No active Writer connection to send messages');
+    }
+  }
+
+
+
+  _checkMsgsValidity(msgs){
+    // maybe when an array check every message to not be empty
+    if (!msgs || _.isEmpty(msgs)) {
+      return new Error('Attempting to publish an empty message');
+    }
+  }
+
+
+  _checkTimeMsValidity(timeMs){
+    return (_.isNumber(timeMs) && timeMs > 0)? undefined : new Error('The Delay must be a (positiv) number') ;
+  }
+
+  _throwOrCallback(err, callback){
+    if (callback) {
+        return callback(err);
+      }
+      throw err;  
+  }
+
+
+  _callwhenReady(topic, msgs, callback, functionToCall, timeMs){
+    let args = arguments;
+    const ready = () => {
+      remove();
+      functionToCall(topic, msgs, callback, timeMs);
+    };
+
+    const failed = function(err) {
+      if (!err) {
+        err = new Error('Connection closed!');
+      }
+      remove();
+      callback(err);
+    };
+
+    const remove = () => {
+      this.removeListener(Writer.READY, ready);
+      this.removeListener(Writer.ERROR, failed);
+      this.removeListener(Writer.CLOSED, failed);
+    };
+
+    this.on(Writer.READY, ready);
+    this.on(Writer.ERROR, failed);
+    this.on(Writer.CLOSED, failed);
+  }
+
+  
 }
 
 export default Writer;

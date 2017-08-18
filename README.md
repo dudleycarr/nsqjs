@@ -152,6 +152,8 @@ These methods are available on a Writer object:
 * `publish(topic, msgs, [callback])` <br/>
   `topic` is a string. `msgs` is either a string, a `Buffer`, JSON serializable
   object, a list of strings / `Buffers` / JSON serializable objects. `callback` takes a single `error` argument.
+* `deferPublish(topic, msg, timeMs, [callback])` <br/>
+  `topic` is a string. `msg` is either a string, a `Buffer`, JSON serializable object. `timeMs` is the delay by which the message should be delivered. `callback` takes a single `error` argument.
 
 ### Simple example
 
@@ -314,6 +316,7 @@ w.connect();
 
 w.on('ready', function () {
   w.publish('sample_topic', 'it really tied the room together');
+  w.publish('sample_topic', 'This message gonna arrive 1 sec later.', 1000);
   w.publish('sample_topic', [
     'Uh, excuse me. Mark it zero. Next frame.', 
     'Smokey, this is not \'Nam. This is bowling. There are rules.'

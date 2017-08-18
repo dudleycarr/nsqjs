@@ -29,6 +29,22 @@ describe('writer', () => {
       });
     });
 
+    it('should defer publish a string', () => {
+      const topic = 'test_topic';
+      const msg = 'hello world!';
+
+      writer.publish(topic, msg, 300, () => {
+        should.equal(writer.conn.produceMessages.calledOnce, true);
+        should.equal(
+          writer.conn.produceMessages.calledWith(topic, [msg]),
+          true
+        );
+      });
+    });
+
+    // Add test where it is not ready yet
+
+
     it('should publish a list of strings', () => {
       const topic = 'test_topic';
       const msgs = ['hello world!', 'another message'];

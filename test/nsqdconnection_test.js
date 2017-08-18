@@ -229,7 +229,7 @@ describe('WriterConnectionState', () => {
     const { statemachine, connection } = state;
 
     connection.on(WriterNSQDConnection.READY, () => {
-      connection.produceMessages('test', ['one'], () => done());
+      connection.produceMessages('test', ['one'], undefined, () => done());
       statemachine.raise('response', 'OK');
     });
 
@@ -242,8 +242,8 @@ describe('WriterConnectionState', () => {
     const { statemachine, connection } = state;
 
     connection.on(WriterNSQDConnection.READY, () => {
-      connection.produceMessages('test', ['one']);
-      connection.produceMessages('test', ['two'], () => {
+      connection.produceMessages('test', ['one'], undefined);
+      connection.produceMessages('test', ['two'], undefined, () => {
         // There should be no more callbacks
         should.equal(connection.messageCallbacks.length, 0);
         done();
@@ -267,8 +267,8 @@ describe('WriterConnectionState', () => {
     connection.on(WriterNSQDConnection.ERROR, () => {});
 
     connection.on(WriterNSQDConnection.READY, () => {
-      connection.produceMessages('test', ['one'], firstCb);
-      connection.produceMessages('test', ['two'], secondCb);
+      connection.produceMessages('test', ['one'], undefined, firstCb);
+      connection.produceMessages('test', ['two'], undefined, secondCb);
       statemachine.goto('ERROR', 'lost connection');
     });
 

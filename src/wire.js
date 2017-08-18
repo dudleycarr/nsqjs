@@ -260,6 +260,18 @@ export function mpub(topic, data) {
 }
 
 /**
+ * Emit a `DPUB` command.
+ *
+ * @param  {String} topic
+ * @param  {Object} data
+ * @param  {Number} timeMs
+ * @return {Array}
+ */
+export function dpub(topic, data, timeMs = 0) {
+  return command('DPUB', data, topic, timeMs);
+}
+
+/**
  * Emit an `AUTH` command.
  *
  * @param  {String} token
