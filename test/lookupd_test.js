@@ -1,4 +1,4 @@
-const _ = require('underscore')
+const _ = require('lodash')
 const nock = require('nock')
 const should = require('should')
 
@@ -137,7 +137,7 @@ describe('lookupd.lookup', () => {
       lookup(lookupdAddresses, 'sample_topic', (err, nodes) => {
         nodes.should.have.length(4);
         _.chain(nodes)
-          .pluck('tcp_port')
+          .map(n => n['tcp_port'])
           .sort()
           .value()
           .should.be.eql([4150, 5150, 6150, 7150]);

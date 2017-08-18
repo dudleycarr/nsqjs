@@ -1,4 +1,4 @@
-const _ = require('underscore')
+const _ = require('lodash')
 const async = require('async')
 const child_process = require('child_process') // eslint-disable-line camelcase
 const request = require('request')

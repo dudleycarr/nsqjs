@@ -1,6 +1,6 @@
 const assert = require('assert')
 
-const _ = require('underscore')
+const _ = require('lodash')
 const should = require('should')
 
 const RoundRobinList = require('../src/roundrobinlist')

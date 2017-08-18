@@ -1,7 +1,7 @@
 const {EventEmitter} = require('events')
 
 const NodeState = require('node-state')
-const _ = require('underscore')
+const _ = require('lodash')
 const debug = require('debug')
 
 const BackoffTimer = require('./backofftimer')
