@@ -26,12 +26,12 @@ const startNSQD = (dataPath, additionalOptions = {}, callback) => {
   // Convert to array for child_process.
   options = Object.keys(options).map(option => [`-${option}`, options[option]]);
 
-  // const process = child_process.spawn('nsqd', _.flatten(options), {
-  //   stdio: ['ignore', 'ignore', 'ignore'],
-  // });
   const process = child_process.spawn('nsqd', _.flatten(options), {
-    stdio: 'inherit'
+    stdio: ['ignore', 'ignore', 'ignore'],
   });
+  // const process = child_process.spawn('nsqd', _.flatten(options), {
+  //   stdio: 'inherit'
+  // });
 
   process.on('error', (err) => {
     throw err
@@ -63,6 +63,10 @@ const topicOp = (op, topic, callback) => {
   request(options, err => callback(err));
 };
 
+// TODO: nsqd seems to be unhappy with how the connection is being closed.
+// We're not waiting for confirmation of the closed connection before trying
+// to delete the topic.
+// TODO: Try creating a new nsqd instance beforeEach
 const createTopic = _.partial(topicOp, 'topic/create');
 const deleteTopic = _.partial(topicOp, 'topic/delete');
 
@@ -84,30 +88,73 @@ describe('integration', () => {
   let nsqdProcess = null;
   let reader = null;
 
-  beforeEach(done => createTopic('test', done));
+  beforeEach(done => {
+    async.series(
+      [
+        // Start NSQD
+        callback => {
+          temp.mkdir('/nsq', (err, dirPath) => {
+            if (err) return callback(err)
+
+            startNSQD(dirPath, {}, (err, process) => {
+              nsqdProcess = process
+              callback(err)
+            })
+          })
+        },
+        // Create the test topic
+        callback => {
+          createTopic('test', callback)
+        }
+      ],
+      done)
+  })
 
   afterEach(done => {
-    reader.close();
-    deleteTopic('test', done);
-  });
+    async.series(
+      [
+        callback => {
+          console.log('closing')
+          reader.close()
+          setTimeout(callback, 200)
+        },
+        callback => {console.log('deleting topic'); deleteTopic('test', callback)},
+        callback => {
+          console.log('nsqd exit')
+          nsqdProcess.on('exit', callback)
+          nsqdProcess.kill(9)
+        }
+      ],
+      err => {
+        console.log('cleaned up')
+        done(err)
+      })
+  })
 
-  before(done => {
-    temp.mkdir('/nsq', (err, dirPath) => {
-      if (err) return done(err);
+  // beforeEach(done => createTopic('test', done));
 
-      startNSQD(dirPath, {}, (err, process) => {
-        nsqdProcess = process;
-        done(err);
-      });
-    });
-  });
+  // afterEach(done => {
+  //   reader.close();
+  //   deleteTopic('test', done);
+  // });
 
-  after(done => {
-    nsqdProcess.on('exit', done)
-    nsqdProcess.kill();
-    // Give nsqd a chance to exit before it's data directory will be cleaned up.
-    //setTimeout(done, 500);
-  });
+  // before(done => {
+  //   temp.mkdir('/nsq', (err, dirPath) => {
+  //     if (err) return done(err);
+
+  //     startNSQD(dirPath, {}, (err, process) => {
+  //       nsqdProcess = process;
+  //       done(err);
+  //     });
+  //   });
+  // });
+
+  // after(done => {
+  //   nsqdProcess.on('exit', done)
+  //   nsqdProcess.kill();
+  //   // Give nsqd a chance to exit before it's data directory will be cleaned up.
+  //   //setTimeout(done, 500);
+  // });
 
 
   describe('stream compression and encryption', () => {
@@ -292,14 +339,12 @@ describe('integration', () => {
         id.should.equal('');
         id = msg.id;
 
-        if (reader.isPaused()) return done();
+        //if (reader.isPaused()) return done();
         reader.pause();
 
-        process.nextTick(() => {
-          // send it again, shouldn't get this one
-          msg.requeue(0, false);
-          setTimeout(done, 100);
-        });
+        // send it again, shouldn't get this one
+        msg.requeue(0, false);
+        setTimeout(done, 100)
       });
     });
 
