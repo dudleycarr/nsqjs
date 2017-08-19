@@ -30,6 +30,10 @@ const startNSQD = (dataPath, additionalOptions = {}, callback) => {
     stdio: ['ignore', 'ignore', 'ignore'],
   });
 
+  process.on('error', (err) => {
+    console.error(err)
+  })
+
   setTimeout(() => callback(null, process), 500);
 };
 
