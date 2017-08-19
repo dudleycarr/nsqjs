@@ -122,7 +122,7 @@ describe('integration', () => {
         callback => {
           console.log('nsqd exit')
           nsqdProcess.on('exit', callback)
-          nsqdProcess.kill(9)
+          nsqdProcess.kill('SIGKILL')
         }
       ],
       err => {
