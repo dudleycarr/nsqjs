@@ -66,6 +66,13 @@ describe('integration', () => {
   let nsqdProcess = null;
   let reader = null;
 
+  beforeEach(done => createTopic('test', done));
+
+  afterEach(done => {
+    reader.close();
+    deleteTopic('test', done);
+  });
+
   before(done => {
     temp.mkdir('/nsq', (err, dirPath) => {
       if (err) return done(err);
@@ -83,12 +90,6 @@ describe('integration', () => {
     setTimeout(done, 500);
   });
 
-  beforeEach(done => createTopic('test', done));
-
-  afterEach(done => {
-    reader.close();
-    deleteTopic('test', done);
-  });
 
   describe('stream compression and encryption', () => {
     const optionPermutations = [
