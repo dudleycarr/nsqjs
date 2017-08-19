@@ -34,10 +34,21 @@ const startNSQD = (dataPath, additionalOptions = {}, callback) => {
   });
 
   process.on('error', (err) => {
-    console.error(err)
+    throw err
   })
 
-  setTimeout(() => callback(null, process), 500);
+  const retryOptions = {times: 10, interval: 50}
+  const liveliness = (callback) => {
+    request('http://localhost:4151/ping', (err, res, body) => {
+      if (err || res.statusCode != 200) {
+        return callback(new Error('nsqd not ready'))
+      }
+      callback()
+    })
+  }
+
+  async.retry(retryOptions, liveliness, err => {callback(err, process)})
+  //setTimeout(() => callback(null, process), 500);
 };
 
 const topicOp = (op, topic, callback) => {
