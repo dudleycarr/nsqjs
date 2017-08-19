@@ -26,8 +26,12 @@ const startNSQD = (dataPath, additionalOptions = {}, callback) => {
   // Convert to array for child_process.
   options = Object.keys(options).map(option => [`-${option}`, options[option]]);
 
+  // const process = child_process.spawn('nsqd', _.flatten(options), {
+  //   stdio: ['ignore', 'ignore', 'ignore'],
+  // });
   const process = child_process.spawn('nsqd', _.flatten(options), {
-    stdio: ['ignore', 'ignore', 'ignore'],
+    stdio: 'inherit',
+    shell: true
   });
 
   process.on('error', (err) => {
