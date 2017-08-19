@@ -26,12 +26,8 @@ const startNSQD = (dataPath, additionalOptions = {}, callback) => {
   // Convert to array for child_process.
   options = Object.keys(options).map(option => [`-${option}`, options[option]]);
 
-  // const process = child_process.spawn('nsqd', _.flatten(options), {
-  //   stdio: ['ignore', 'ignore', 'ignore'],
-  // });
   const process = child_process.spawn('nsqd', _.flatten(options), {
-    stdio: 'inherit',
-    shell: true
+    stdio: ['ignore', 'ignore', 'ignore'],
   });
 
   process.on('error', (err) => {
@@ -93,9 +89,10 @@ describe('integration', () => {
   });
 
   after(done => {
+    nsqdProcess.on('exit', done)
     nsqdProcess.kill();
     // Give nsqd a chance to exit before it's data directory will be cleaned up.
-    setTimeout(done, 500);
+    //setTimeout(done, 500);
   });
 
 

@@ -33,7 +33,7 @@
   "scripts": {
     "format": "prettier --single-quote --trailing-comma es5 --write \"{lib,test}/**/*.js\"",
     "lint": "eslint lib",
-    "test": "mocha"
+    "test": "mocha -R spec"
   },
   "main": "lib/nsq",
   "engines": {
