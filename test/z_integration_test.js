@@ -88,73 +88,66 @@ describe('integration', () => {
   let nsqdProcess = null;
   let reader = null;
 
-  beforeEach(done => {
-    async.series(
-      [
-        // Start NSQD
-        callback => {
-          temp.mkdir('/nsq', (err, dirPath) => {
-            if (err) return callback(err)
+  // beforeEach(done => {
+  //   async.series(
+  //     [
+  //       // Start NSQD
+  //       callback => {
+  //         temp.mkdir('/nsq', (err, dirPath) => {
+  //           if (err) return callback(err)
 
-            startNSQD(dirPath, {}, (err, process) => {
-              nsqdProcess = process
-              callback(err)
-            })
-          })
-        },
-        // Create the test topic
-        callback => {
-          createTopic('test', callback)
-        }
-      ],
-      done)
-  })
-
-  afterEach(done => {
-    async.series(
-      [
-        callback => {
-          console.log('closing')
-          reader.close()
-          setTimeout(callback, 200)
-        },
-        callback => {console.log('deleting topic'); deleteTopic('test', callback)},
-        callback => {
-          console.log('nsqd exit')
-          nsqdProcess.on('exit', callback)
-          nsqdProcess.kill('SIGKILL')
-        }
-      ],
-      err => {
-        console.log('cleaned up')
-        done(err)
-      })
-  })
-
-  // beforeEach(done => createTopic('test', done));
+  //           startNSQD(dirPath, {}, (err, process) => {
+  //             nsqdProcess = process
+  //             callback(err)
+  //           })
+  //         })
+  //       },
+  //       // Create the test topic
+  //       callback => {
+  //         createTopic('test', callback)
+  //       }
+  //     ],
+  //     done)
+  // })
 
   // afterEach(done => {
-  //   reader.close();
-  //   deleteTopic('test', done);
-  // });
+  //   reader.close()
+  //   async.series(
+  //     [
+  //       callback => {deleteTopic('test', callback)},
+  //       callback => {
+  //         nsqdProcess.on('exit', callback)
+  //         nsqdProcess.kill('SIGKILL')
+  //       }
+  //     ],
+  //     done
+  //   )
+  // })
 
-  // before(done => {
-  //   temp.mkdir('/nsq', (err, dirPath) => {
-  //     if (err) return done(err);
+  beforeEach(done => createTopic('test', done));
 
-  //     startNSQD(dirPath, {}, (err, process) => {
-  //       nsqdProcess = process;
-  //       done(err);
-  //     });
-  //   });
-  // });
+  afterEach(done => {
+    reader.close();
+    deleteTopic('test', done);
+  });
 
-  // after(done => {
-  //   nsqdProcess.on('exit', done)
-  //   nsqdProcess.kill();
-  //   // Give nsqd a chance to exit before it's data directory will be cleaned up.
-  //   //setTimeout(done, 500);
-  // });
+  before(done => {
+    temp.mkdir('/nsq', (err, dirPath) => {
+      if (err) return done(err);
+
+      startNSQD(dirPath, {}, (err, process) => {
+        nsqdProcess = process;
+        done(err);
+      });
+    });
+  });
+
+  after(done => {
+    nsqdProcess.on('exit', done)
+    nsqdProcess.kill();
+    // Give nsqd a chance to exit before it's data directory will be cleaned up.
+    //setTimeout(done, 500);
+  });
 
 
   describe('stream compression and encryption', () => {
@@ -313,6 +306,8 @@ describe('integration', () => {
     it('should not receive any new messages when paused', done => {
       writer.publish(topic, { messageShouldArrive: true });
 
+      reader.on('error', err => { console.log(err) })
+
       reader.on('message', msg => {
         // check the message
         msg.json().messageShouldArrive.should.be.true();
@@ -346,6 +341,10 @@ describe('integration', () => {
         msg.requeue(0, false);
         setTimeout(done, 100)
       });
+
+      reader.on('error', err => {
+        console.log(err)
+      })
     });
 
     it('should start receiving messages again after unpause', done => {
