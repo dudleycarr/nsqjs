@@ -420,7 +420,6 @@ describe('failures', () => {
             callback => {
               nsqdProcess.on('exit', callback)
               nsqdProcess.kill('SIGKILL');
-              //setTimeout(callback, 500);
             },
 
             // Attempt to publish a message.
