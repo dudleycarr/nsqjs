@@ -38,6 +38,9 @@ class StubNSQDConnection extends EventEmitter {
   connect() {};
 
   // Empty
+  close() {};
+
+  // Empty
   destroy() {};
 
   // Empty

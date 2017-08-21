@@ -26,6 +26,7 @@ describe('Reader ConnectionState', () => {
       'channel_test'
     );
     sinon.stub(connection, 'write', data => sent.push(data.toString()));
+    sinon.stub(connection, 'close', () => {});
     sinon.stub(connection, 'destroy', () => {});
 
     const statemachine = new ConnectionState(connection);

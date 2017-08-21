@@ -8,8 +8,8 @@ const nsq = require('../lib/nsq')
 
 const temp = require('temp').track();
 
-const TCP_PORT = 4150;
-const HTTP_PORT = 4151;
+let TCP_PORT = 4150;
+let HTTP_PORT = 4151;
 
 const startNSQD = (dataPath, additionalOptions = {}, callback) => {
   let options = {
@@ -29,9 +29,6 @@ const startNSQD = (dataPath, additionalOptions = {}, callback) => {
   const process = child_process.spawn('nsqd', _.flatten(options), {
     stdio: ['ignore', 'ignore', 'ignore'],
   });
-  // const process = child_process.spawn('nsqd', _.flatten(options), {
-  //   stdio: 'inherit'
-  // });
 
   process.on('error', (err) => {
     throw err
@@ -39,7 +36,7 @@ const startNSQD = (dataPath, additionalOptions = {}, callback) => {
 
   const retryOptions = {times: 10, interval: 50}
   const liveliness = (callback) => {
-    request('http://localhost:4151/ping', (err, res, body) => {
+    request(`http://localhost:${HTTP_PORT}/ping`, (err, res, body) => {
       if (err || res.statusCode != 200) {
         return callback(new Error('nsqd not ready'))
       }
@@ -48,7 +45,6 @@ const startNSQD = (dataPath, additionalOptions = {}, callback) => {
   }
 
   async.retry(retryOptions, liveliness, err => {callback(err, process)})
-  //setTimeout(() => callback(null, process), 500);
 };
 
 const topicOp = (op, topic, callback) => {
@@ -111,44 +107,30 @@ describe('integration', () => {
   })
 
   afterEach(done => {
-    reader.close()
     async.series(
       [
+        callback => {
+          reader.on('nsqd_closed', (nsqdAddress) => {callback()})
+          reader.close()
+        },
         callback => {deleteTopic('test', callback)},
         callback => {
-          nsqdProcess.on('exit', callback)
+          nsqdProcess.on('exit', err => {callback(err)})
           nsqdProcess.kill('SIGKILL')
         }
       ],
-      done
+      err => {
+        // After each start, increment the ports to prevent possible conflict the
+        // next time an NSQD instance is started. Sometimes NSQD instances do not
+        // exit cleanly causing odd behavior for tests and the test suite.
+        TCP_PORT = TCP_PORT + 50
+        HTTP_PORT = HTTP_PORT + 50
+
+        reader = null
+        done(err)
+      }
     )
   })
-
-  // beforeEach(done => createTopic('test', done));
-
-  // afterEach(done => {
-  //   reader.close();
-  //   deleteTopic('test', done);
-  // });
-
-  // before(done => {
-  //   temp.mkdir('/nsq', (err, dirPath) => {
-  //     if (err) return done(err);
-
-  //     startNSQD(dirPath, {}, (err, process) => {
-  //       nsqdProcess = process;
-  //       done(err);
-  //     });
-  //   });
-  // });
-
-  // after(done => {
-  //   nsqdProcess.on('exit', done)
-  //   nsqdProcess.kill();
-  //   // Give nsqd a chance to exit before it's data directory will be cleaned up.
-  //   //setTimeout(done, 500);
-  // });
-
 
   describe('stream compression and encryption', () => {
     const optionPermutations = [
@@ -224,7 +206,6 @@ describe('integration', () => {
   describe('end to end', () => {
     const topic = 'test';
     const channel = 'default';
-    const tcpAddress = `127.0.0.1:${TCP_PORT}`;
     let writer = null;
     reader = null;
 
@@ -232,18 +213,17 @@ describe('integration', () => {
       writer = new nsq.Writer('127.0.0.1', TCP_PORT);
       writer.on('ready', () => {
         reader = new nsq.Reader(topic, channel, {
-          nsqdTCPAddresses: tcpAddress,
+          nsqdTCPAddresses: [`127.0.0.1:${TCP_PORT}`],
         });
+        reader.on('nsqd_connected', addr => done())
         reader.connect();
-        done();
       });
 
       writer.on('error', () => {});
-
       writer.connect();
     });
 
-    afterEach(() => writer.close());
+    afterEach(() => {writer.close()});
 
     it('should send and receive a string', done => {
       const message = 'hello world';
@@ -251,7 +231,7 @@ describe('integration', () => {
         if (err) done(err);
       });
 
-      reader.on('error', () => {});
+      reader.on('error', err => {console.log(err)});
 
       reader.on('message', msg => {
         msg.body.toString().should.eql(message);
@@ -275,18 +255,9 @@ describe('integration', () => {
       });
     });
 
-    // TODO (Dudley): The behavior of nsqd seems to have changed around this.
-    //    This requires more investigation but not concerning at the moment.
-    it.skip('should not receive messages when immediately paused', done => {
-      let waitedLongEnough = false;
+    it('should not receive messages when immediately paused', done => {
 
-      const timeout = setTimeout(
-        () => {
-          reader.unpause();
-          waitedLongEnough = true;
-        },
-        100
-      );
+      setTimeout(done, 50)
 
       // Note: because NSQDConnection.connect() does most of it's work in
       // process.nextTick(), we're really pausing before the reader is
@@ -295,9 +266,7 @@ describe('integration', () => {
       reader.pause();
       reader.on('message', msg => {
         msg.finish();
-        clearTimeout(timeout);
-        waitedLongEnough.should.be.true();
-        done();
+        done(new Error('Should not have received a message while paused'))
       });
 
       writer.publish(topic, 'pause test');
@@ -320,7 +289,7 @@ describe('integration', () => {
         process.nextTick(() => {
           // send it again, shouldn't get this one
           writer.publish(topic, { messageShouldArrive: false });
-          setTimeout(done, 100);
+          setTimeout(done, 50);
         });
       });
     });
@@ -339,7 +308,7 @@ describe('integration', () => {
 
         // send it again, shouldn't get this one
         msg.requeue(0, false);
-        setTimeout(done, 100)
+        setTimeout(done, 50)
       });
 
       reader.on('error', err => {
@@ -348,28 +317,57 @@ describe('integration', () => {
     });
 
     it('should start receiving messages again after unpause', done => {
-      let shouldReceive = true;
-      writer.publish(topic, { sentWhilePaused: false });
+      let paused = false;
+      let handlerFn = null;
+      let afterHandlerFn = null;
+
+      const firstMessage = (msg) => {
+        reader.pause()
+        paused = true
+        msg.requeue()
+      };
+
+      const secondMessage = (msg) => {msg.finish()};
 
       reader.on('message', msg => {
-        should.equal(shouldReceive, true);
-        reader.pause();
-        msg.requeue();
+        should.equal(paused, false)
+        handlerFn(msg)
 
-        if (msg.json().sentWhilePaused) return done();
+        if (afterHandlerFn) {
+          afterHandlerFn()
+        }
+      })
 
-        shouldReceive = false;
-        writer.publish(topic, { sentWhilePaused: true });
-        setTimeout(
-          () => {
-            shouldReceive = true;
-            reader.unpause();
-          },
-          100
-        );
+      async.series([
+        // Publish and handle first message
+        callback => {
+          handlerFn = firstMessage
+          afterHandlerFn = callback
 
-        done();
-      });
+          writer.publish(topic, "not paused", (err) => {
+            if (err) {callback(err)}
+          })
+        },
+        // Publish second message
+        callback => {
+          afterHandlerFn = callback
+          writer.publish(topic, "paused", callback)
+        },
+        // Wait for 50ms
+        callback => {setTimeout(callback, 50)},
+        // Unpause. Processed queued message.
+        callback => {
+          handlerFn = secondMessage
+          // Note: We know a message was processed after unpausing when this
+          // callback is called. No need to explicitly note a 2nd message was
+          // processed.
+          afterHandlerFn = callback
+
+          reader.unpause()
+          paused = false
+        }],
+        done
+      )
     });
 
     it('should successfully publish a message before fully connected', done => {
@@ -420,8 +418,9 @@ describe('failures', () => {
 
             // Stop the nsqd process.
             callback => {
-              nsqdProcess.kill();
-              setTimeout(callback, 500);
+              nsqdProcess.on('exit', callback)
+              nsqdProcess.kill('SIGKILL');
+              //setTimeout(callback, 500);
             },
 
             // Attempt to publish a message.
