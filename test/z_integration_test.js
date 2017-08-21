@@ -59,10 +59,6 @@ const topicOp = (op, topic, callback) => {
   request(options, err => callback(err));
 };
 
-// TODO: nsqd seems to be unhappy with how the connection is being closed.
-// We're not waiting for confirmation of the closed connection before trying
-// to delete the topic.
-// TODO: Try creating a new nsqd instance beforeEach
 const createTopic = _.partial(topicOp, 'topic/create');
 const deleteTopic = _.partial(topicOp, 'topic/delete');
 
@@ -303,7 +299,6 @@ describe('integration', () => {
         id.should.equal('');
         id = msg.id;
 
-        //if (reader.isPaused()) return done();
         reader.pause();
 
         // send it again, shouldn't get this one
