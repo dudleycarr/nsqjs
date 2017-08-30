@@ -61,7 +61,8 @@ options object.
   sampleRate <= 99```
 * ```clientId: null```<br/>
   An identifier used to disambiguate this client.
-  
+* ```idleTimeout: 0``` <br/>
+  Socket timeout after idling for the duration in second (default to 0 means disabled).
 
 Reader events are:
 
