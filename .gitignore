@@ -6,7 +6,6 @@ include/python2.7
 lib/dtrace
 lib/node_modules/
 lib/python2.7
-lib
 node_modules/
 share/man
 src/node-*
