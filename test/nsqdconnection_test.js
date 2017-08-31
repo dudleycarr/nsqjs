@@ -25,9 +25,9 @@ describe('Reader ConnectionState', () => {
       'topic_test',
       'channel_test'
     );
-    sinon.stub(connection, 'write', data => sent.push(data.toString()));
-    sinon.stub(connection, 'close', () => {});
-    sinon.stub(connection, 'destroy', () => {});
+    sinon.stub(connection, 'write').callsFake(data => sent.push(data.toString()));
+    sinon.stub(connection, 'close').callsFake(() => {});
+    sinon.stub(connection, 'destroy').callsFake(() => {});
 
     const statemachine = new ConnectionState(connection);
 
@@ -107,7 +107,7 @@ describe('Reader ConnectionState', () => {
 
   it('handle a message finish after a disconnect', done => {
     const { statemachine, connection } = state;
-    sinon.stub(wire, 'unpackMessage', () => [
+    sinon.stub(wire, 'unpackMessage').callsFake(() => [
       '1',
       0,
       0,
@@ -170,7 +170,7 @@ describe('WriterConnectionState', () => {
     const connection = new WriterNSQDConnection('127.0.0.1', 4150);
     sinon.stub(connection, 'destroy');
 
-    sinon.stub(connection, 'write', data => {
+    sinon.stub(connection, 'write').callsFake(data => {
       sent.push(data.toString());
     });
 

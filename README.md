@@ -1,5 +1,7 @@
 nsqjs
 =====
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/dudleycarr/nsqjs.svg)](https://greenkeeper.io/)
 The official NodeJS client for the [nsq](http://nsq.io/) client protocol. This implementation attempts to be
 fully compliant and maintain feature parity with the official Go ([go-nsq](https://github.com/nsqio/go-nsq)) and Python ([pynsq](https://github.com/nsqio/pynsq)) clients.
 

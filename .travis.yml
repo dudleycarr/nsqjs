@@ -1,25 +1,17 @@
 sudo: false
 os:
   - linux
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-4.8
-env:
-  - TRAVIS_NODE_VERSION="6"
-  - TRAVIS_NODE_VERSION="8"
-language: cpp
+node_js:
+  - "6"
+  - "8"
+language: node_js
+before_install:
+  - npm install -g npm@5
+  - npm install -g greenkeeper-lockfile@1
 install:
-  - rm -rf ~/.nvm
-  - git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`)
-  - source ~/.nvm/nvm.sh
-  - nvm install $TRAVIS_NODE_VERSION
-  - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX=g++-4.8; fi
-  - $CXX --version
-  - npm install
   - wget "https://s3.amazonaws.com/bitly-downloads/nsq/nsq-0.3.8.linux-amd64.go1.6.2.tar.gz"
   - tar zvxf "nsq-0.3.8.linux-amd64.go1.6.2.tar.gz"
   - export PATH="$PATH:./nsq-0.3.8.linux-amd64.go1.6.2/bin"
-script: npm test
+before_script: greenkeeper-lockfile-update
+script: npm install-test
+after_script: greenkeeper-lockfile-upload
