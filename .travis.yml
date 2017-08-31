@@ -2,9 +2,9 @@ sudo: false
 os:
   - linux
 node_js:
-  - 6
-  - 8
-language: nodejs
+  - "6"
+  - "8"
+language: node_js
 before_install:
   - npm install -g npm@5
   - npm install -g greenkeeper-lockfile@1
