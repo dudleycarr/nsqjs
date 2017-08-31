@@ -218,7 +218,7 @@ describe('ReaderRdy', () => {
   it('should register listeners on a connection', () => {
     // Stub out creation of ConnectionRdy to ignore the events registered by
     // ConnectionRdy.
-    sinon.stub(readerRdy, 'createConnectionRdy', () => ({ on() {} }));
+    sinon.stub(readerRdy, 'createConnectionRdy').callsFake(() => ({ on() {} }));
     // Empty
 
     const conn = createNSQDConnection(1);
