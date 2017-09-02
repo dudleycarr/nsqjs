@@ -683,6 +683,23 @@ describe('ReaderRdy', () => {
     });
   });
 
+  describe('backoff', () => {
+    it.only('should not increase interval with more failures during backoff', () => {
+      readerRdy = new ReaderRdy(100, 1, 'topic/channel', 0.01);
+
+      // Create a connection and make it ready.
+      const c = createNSQDConnection(0)
+      readerRdy.addConnection(c)
+      c.emit(NSQDConnection.READY)
+
+      readerRdy.raise('backoff')
+      const interval = readerRdy.backoffTimer.getInterval()
+
+      readerRdy.raise('backoff')
+      readerRdy.backoffTimer.getInterval().should.eql(interval)
+    });
+  });
+
   describe('pause / unpause', () => {
     beforeEach(() => {
       // Shortening the periodic `balance` calls to every 10ms. Changing the
