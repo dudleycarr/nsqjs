@@ -32,7 +32,7 @@
   ],
   "scripts": {
     "format": "prettier --single-quote --trailing-comma es5 --write \"{lib,test}/**/*.js\"",
-    "lint": "eslint lib",
+    "lint": "standard lib",
     "test": "mocha -R spec -b"
   },
   "main": "lib/nsq",
@@ -40,16 +40,12 @@
     "node": ">= 6.0.0"
   },
   "devDependencies": {
-    "eslint": "^4.5.0",
-    "eslint-config-google": "^0.9.1",
-    "eslint-config-prettier": "^2.3.0",
-    "eslint-plugin-babel": "^4.1.1",
-    "eslint-plugin-import": "^2.2.0",
     "mocha": "^3.5",
     "nock": "~9.0.14",
     "prettier": "^1.6.1",
     "should": "^12.0.0",
     "sinon": "~3.2.1",
+    "standard": "^10.0.3",
     "temp": "^0.8.0"
   },
   "dependencies": {
