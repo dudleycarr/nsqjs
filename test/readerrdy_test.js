@@ -684,7 +684,7 @@ describe('ReaderRdy', () => {
   });
 
   describe('backoff', () => {
-    it.only('should not increase interval with more failures during backoff', () => {
+    it('should not increase interval with more failures during backoff', () => {
       readerRdy = new ReaderRdy(100, 1, 'topic/channel', 0.01);
 
       // Create a connection and make it ready.
