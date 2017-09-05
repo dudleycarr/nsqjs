@@ -1,10 +1,10 @@
 nsqjs
 =====
 
-[![Greenkeeper badge](https://badges.greenkeeper.io/dudleycarr/nsqjs.svg)](https://greenkeeper.io/)
 The official NodeJS client for the [nsq](http://nsq.io/) client protocol. This implementation attempts to be
 fully compliant and maintain feature parity with the official Go ([go-nsq](https://github.com/nsqio/go-nsq)) and Python ([pynsq](https://github.com/nsqio/pynsq)) clients.
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/dudleycarr/nsqjs.svg)](https://greenkeeper.io/)
 [![Build Status](https://travis-ci.org/dudleycarr/nsqjs.svg?branch=master)](https://travis-ci.org/dudleycarr/nsqjs)
 
 [![NPM](https://nodei.co/npm/nsqjs.svg?downloads=true)](https://nodei.co/npm/nsqjs/)
@@ -296,10 +296,10 @@ Changes
   * Use TCP NO_DELAY for nsqd connections.
   * Chores:
     * Replaced underscore with lodash
-    	* Move `src` to `lib`
-	* Dropped Babel support
-	* Use Standard JS style
-	* Less flakey tests
+    * Move `src` to `lib`
+    * Dropped Babel support
+    * Use Standard JS style
+    * Less flakey tests
 * **0.8.4**
   * Move to ES6 using Babel.
 * **0.7.12**
