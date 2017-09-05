@@ -31,38 +31,34 @@
     }
   ],
   "scripts": {
-    "format": "prettier --single-quote --trailing-comma es5 --write \"{src,test}/**/*.js\"",
-    "lint": "eslint src",
-    "test": "mocha"
+    "format": "prettier --single-quote --trailing-comma es5 --write \"{lib,test}/**/*.js\"",
+    "lint": "standard lib",
+    "test": "mocha -R spec -b"
   },
-  "main": "build/nsq",
+  "main": "lib/nsq",
   "engines": {
     "node": ">= 6.0.0"
   },
   "devDependencies": {
-    "eslint": "^3.19.0",
-    "eslint-config-google": "^0.7.1",
-    "eslint-config-prettier": "^1.6.0",
-    "eslint-plugin-babel": "^4.1.1",
-    "eslint-plugin-import": "^2.2.0",
-    "mocha": "^3.2",
-    "nock": "~0.27.1",
-    "prettier": "^0.22.0",
-    "should": "^11.1.2",
-    "sinon": "~1.7.3",
+    "mocha": "^3.5",
+    "nock": "~9.0.14",
+    "prettier": "^1.6.1",
+    "should": "^12.0.0",
+    "sinon": "~3.2.1",
+    "standard": "^10.0.3",
     "temp": "^0.8.0"
   },
   "dependencies": {
     "async": "^2.1.4",
-    "bignumber.js": "~1.2.1",
-    "debug": "^2.6.0",
+    "bignumber.js": "~4.0.3",
+    "debug": "^3.0.1",
     "lodash": "^4.17.4",
     "moment": "^2.17.1",
-    "node-int64": "~0.3.0",
+    "node-int64": "~0.4.0",
     "node-state": "~1.4.4",
     "request": "^2.79.0"
   },
   "optionalDependencies": {
-    "snappystream": "^0.3.4"
+    "snappystream": "^1.1.0"
   }
 }

@@ -1,5 +1,7 @@
 nsqjs
 =====
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/dudleycarr/nsqjs.svg)](https://greenkeeper.io/)
 The official NodeJS client for the [nsq](http://nsq.io/) client protocol. This implementation attempts to be
 fully compliant and maintain feature parity with the official Go ([go-nsq](https://github.com/nsqio/go-nsq)) and Python ([pynsq](https://github.com/nsqio/pynsq)) clients.
 
@@ -61,7 +63,8 @@ options object.
   sampleRate <= 99```
 * ```clientId: null```<br/>
   An identifier used to disambiguate this client.
-  
+* ```idleTimeout: 0``` <br/>
+  Socket timeout after idling for the duration in second (default to 0 means disabled).
 
 Reader events are:
 
