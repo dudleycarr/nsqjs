@@ -3,9 +3,9 @@ nsqjs
 The official NodeJS client for the [nsq](http://nsq.io/) client protocol. This implementation attempts to be
 fully compliant and maintain feature parity with the official Go ([go-nsq](https://github.com/nsqio/go-nsq)) and Python ([pynsq](https://github.com/nsqio/pynsq)) clients.
 
-[![Build Status](https://travis-ci.org/dudleycarr/nsqjs.png?branch=master)](https://travis-ci.org/dudleycarr/nsqjs)
+[![Build Status](https://travis-ci.org/dudleycarr/nsqjs.svg?branch=master)](https://travis-ci.org/dudleycarr/nsqjs)
 
-[![NPM](https://nodei.co/npm/nsqjs.png?downloads=true)](https://nodei.co/npm/nsqjs/)
+[![NPM](https://nodei.co/npm/nsqjs.svg?downloads=true)](https://nodei.co/npm/nsqjs/)
 
 Usage
 -----
@@ -284,13 +284,19 @@ w.on('closed', () => {
 Changes
 -------
 * **0.9**
-  * Breaking change: Node versions 6 and greater supported from now on.
+  * **Breaking change:** Node versions 6 and greater supported from now on.
   * Support for deferred message publishing! (thanks @spruce)
+  * Added idleTimeout for Reader and Writer (thanks @abbshr)
   * Snappy support is now optional. (thanks @bcoe)
+  * Snappy support is now fixed and working with 1.0.0-compat!
+  * Fixed backoff behavior if mulitiple messages fail at the same time. Should recover much faster.
+  * Use TCP NO_DELAY for nsqd connections.
   * Chores:
     * Replaced underscore with lodash
-	* Move `src` to `lib`
-	* Dropped Babel support.
+    	* Move `src` to `lib`
+	* Dropped Babel support
+	* Use Standard JS style
+	* Less flakey tests
 * **0.8.4**
   * Move to ES6 using Babel.
 * **0.7.12**
