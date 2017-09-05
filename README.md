@@ -1,13 +1,13 @@
 nsqjs
 =====
 
-[![Greenkeeper badge](https://badges.greenkeeper.io/dudleycarr/nsqjs.svg)](https://greenkeeper.io/)
 The official NodeJS client for the [nsq](http://nsq.io/) client protocol. This implementation attempts to be
 fully compliant and maintain feature parity with the official Go ([go-nsq](https://github.com/nsqio/go-nsq)) and Python ([pynsq](https://github.com/nsqio/pynsq)) clients.
 
-[![Build Status](https://travis-ci.org/dudleycarr/nsqjs.png?branch=master)](https://travis-ci.org/dudleycarr/nsqjs)
+[![Greenkeeper badge](https://badges.greenkeeper.io/dudleycarr/nsqjs.svg)](https://greenkeeper.io/)
+[![Build Status](https://travis-ci.org/dudleycarr/nsqjs.svg?branch=master)](https://travis-ci.org/dudleycarr/nsqjs)
 
-[![NPM](https://nodei.co/npm/nsqjs.png?downloads=true)](https://nodei.co/npm/nsqjs/)
+[![NPM](https://nodei.co/npm/nsqjs.svg?downloads=true)](https://nodei.co/npm/nsqjs/)
 
 Usage
 -----
@@ -168,37 +168,19 @@ $ nsqlookupd &
 $ nsqd --lookupd-tcp-address=127.0.0.1:4160 &
 ```
 
-#### JavaScript
 ```js
-var nsq = require('nsqjs');
+const nsq = require('nsqjs')
 
-var reader = new nsq.Reader('sample_topic', 'test_channel', {
+const reader = new nsq.Reader('sample_topic', 'test_channel', {
   lookupdHTTPAddresses: '127.0.0.1:4161'
-});
+})
 
-reader.connect();
-
-reader.on('message', function (msg) {
-  console.log('Received message [%s]: %s', msg.id, msg.body.toString());
-  msg.finish();
-});
-```
-
-#### CoffeeScript
-```coffee-script
-nsq = require 'nsqjs'
-
-topic = 'sample_topic'
-channel = 'test_channel'
-options =
-  lookupdHTTPAddresses: '127.0.0.1:4161'
-
-reader = new nsq.Reader topic, channel, options
 reader.connect()
 
-reader.on nsq.Reader.MESSAGE, (msg) ->
-  console.log "Received message [#{msg.id}]: #{msg.body.toString()}"
+reader.on('message', msg => {
+  console.log('Received message [%s]: %s', msg.id, msg.body.toString())
   msg.finish()
+})
 ```
 
 Publish a message to nsqd to be consumed by the sample client:
@@ -212,72 +194,39 @@ This script simulates a message that takes a long time to process or at least
 longer than the default message timeout. To ensure that the message doesn't
 timeout while being processed, touch events are sent to keep it alive.
 
-#### JavaScript
 ```js
-var nsq = require('nsqjs');
+const nsq = require('nsqjs')
 
-var reader = new nsq.Reader('sample_topic', 'test_channel', {
+const reader = new nsq.Reader('sample_topic', 'test_channel', {
   lookupdHTTPAddresses: '127.0.0.1:4161'
-});
+})
 
-reader.connect();
+reader.connect()
 
-reader.on('message', function (msg) {
-  console.log('Received message [%s]', msg.id);
+reader.on('message', msg => {
+  console.log('Received message [%s]', msg.id)
 
-  function touch() {
+  const touch = () => {
     if (!msg.hasResponded) {
-      console.log('Touch [%s]', msg.id);
-      msg.touch();
+      console.log('Touch [%s]', msg.id)
+      msg.touch()
+
       // Touch the message again a second before the next timeout.
-      setTimeout(touch, msg.timeUntilTimeout() - 1000);
+      setTimeout(touch, msg.timeUntilTimeout() - 1000)
     }
   }
 
-  function finish() {
-    console.log('Finished message [%s]: %s', msg.id, msg.body.toString());
-    msg.finish();
+  const finish = () => {
+    console.log('Finished message [%s]: %s', msg.id, msg.body.toString())
+    msg.finish()
   }
 
-  console.log('Message timeout is %f secs.', msg.timeUntilTimeout() / 1000);
-  setTimeout(touch, msg.timeUntilTimeout() - 1000);
+  console.log('Message timeout is %f secs.', msg.timeUntilTimeout() / 1000)
+  setTimeout(touch, msg.timeUntilTimeout() - 1000)
 
   // Finish the message after 2 timeout periods and 1 second.
-  setTimeout(finish, msg.timeUntilTimeout() * 2 + 1000);
-});
-```
-
-#### CoffeeScript
-```coffee-script
-{Reader} = require 'nsqjs'
-
-topic = 'sample_topic'
-channel = 'test_channel'
-options =
-  lookupdHTTPAddresses: '127.0.0.1:4161'
-
-reader = new Reader topic, channel, options
-reader.connect()
-
-reader.on Reader.MESSAGE, (msg) ->
-  console.log "Received message [#{msg.id}]"
-
-  touch = ->
-    unless msg.hasResponded
-      console.log "Touch [#{msg.id}]"
-      msg.touch()
-      # Touch the message again a second before the next timeout.
-      setTimeout touch, msg.timeUntilTimeout() - 1000
-
-  finish = ->
-    console.log "Finished message [#{msg.id}]: #{msg.body.toString()}"
-    msg.finish()
-
-  console.log "Message timeout is #{msg.timeUntilTimeout() / 1000} secs."
-  setTimeout touch, msg.timeUntilTimeout() - 1000
-
-  # Finish the message after 2 timeout periods and 1 second.
-  setTimeout finish, msg.timeUntilTimeout() * 2 + 1000
+  setTimeout(finish, msg.timeUntilTimeout() * 2 + 1000)
+})
 ```
 
 ### Enable nsqjs debugging
@@ -309,54 +258,50 @@ $ DEBUG=nsqjs:writer:* node my_nsqjs_script.js
 
 The writer sends a single message and then a list of messages.
 
-#### JavaScript
 ```js
-var nsq = require('nsqjs');
+const nsq = require('nsqjs')
 
-var w = new nsq.Writer('127.0.0.1', 4150);
+const w = new nsq.Writer('127.0.0.1', 4150)
 
-w.connect();
+w.connect()
 
-w.on('ready', function () {
-  w.publish('sample_topic', 'it really tied the room together');
-  w.publish('sample_topic', 'This message gonna arrive 1 sec later.', 1000);
+w.on('ready', () => {
+  w.publish('sample_topic', 'it really tied the room together')
+  w.publish('sample_topic', 'This message gonna arrive 1 sec later.', 1000)
   w.publish('sample_topic', [
     'Uh, excuse me. Mark it zero. Next frame.', 
     'Smokey, this is not \'Nam. This is bowling. There are rules.'
-  ]);
-  w.publish('sample_topic', 'Wu?', function (err) {
-    if (err) { return console.error(err.message); }
-    console.log('Message sent successfully');
-    w.close();
-  });
-});
-
-w.on('closed', function () {
-  console.log('Writer closed');
-});
-```
-
-#### CoffeeScript
-```coffee-script
-{Writer} = require 'nsqjs'
-
-w = new Writer '127.0.0.1', 4150
-w.connect()
-
-w.on Writer.READY, ->
-  w.publish 'sample_topic', 'it really tied the room together'
-  w.publish 'sample_topic', ['Uh, excuse me. Mark it zero. Next frame.', 
-    'Smokey, this is not \'Nam. This is bowling. There are rules.']
-  w.publish 'sample_topic', 'Wu?', (err) ->
-    console.log 'Message sent successfully' unless err?
+  ])
+  w.publish('sample_topic', 'Wu?',  err => {
+    if (err) { return console.error(err.message) }
+    console.log('Message sent successfully')
     w.close()
+  })
+})
 
-w.on Writer.CLOSED, ->
-  console.log 'Writer closed'
+w.on('closed', () => {
+  console.log('Writer closed')
+})
 ```
 
 Changes
 -------
+* **0.9**
+  * **Breaking change:** Node versions 6 and greater supported from now on.
+  * Support for deferred message publishing! (thanks @spruce)
+  * Added idleTimeout for Reader and Writer (thanks @abbshr)
+  * Snappy support is now optional. (thanks @bcoe)
+  * Snappy support is now fixed and working with 1.0.0-compat!
+  * Fixed backoff behavior if mulitiple messages fail at the same time. Should recover much faster.
+  * Use TCP NO_DELAY for nsqd connections.
+  * Chores:
+    * Replaced underscore with lodash
+    * Move `src` to `lib`
+    * Dropped Babel support
+    * Use Standard JS style
+    * Less flakey tests
+* **0.8.4**
+  * Move to ES6 using Babel.
 * **0.7.12**
   * Bug: Fix issue introduced by not sending RDY count to main max-in-flight.
     Readers connected to mulitple nsqds do not set RDY count for connections
