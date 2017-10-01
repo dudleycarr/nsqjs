@@ -286,6 +286,10 @@ w.on('closed', () => {
 
 Changes
 -------
+* **0.9.1**
+  * Fixed Reader close exceptions. (Thanks @ekristen)
+  * Bump Sinon version
+  * Bump bignumber.js version
 * **0.9**
   * **Breaking change:** Node versions 6 and greater supported from now on.
   * Support for deferred message publishing! (thanks @spruce)
