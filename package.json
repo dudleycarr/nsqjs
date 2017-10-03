@@ -40,7 +40,7 @@
     "node": ">= 6.0.0"
   },
   "devDependencies": {
-    "mocha": "^3.5",
+    "mocha": "^4.0.0",
     "nock": "~9.0.14",
     "prettier": "^1.6.1",
     "should": "^13.0.0",
