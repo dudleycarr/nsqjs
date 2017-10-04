@@ -286,6 +286,10 @@ w.on('closed', () => {
 
 Changes
 -------
+* **0.9.2**
+  * Fix `Reader.close` to cleanup all intervals to allow node to exit cleanly.
+  * Upraded Sinon
+  * Removed .eslintrc
 * **0.9.1**
   * Fixed Reader close exceptions. (Thanks @ekristen)
   * Bump Sinon version
