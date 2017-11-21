@@ -286,8 +286,10 @@ w.on('closed', () => {
 
 Changes
 -------
-* **0.9.3**
+* **0.10.0**
   * Fix off by one error for Message maxAttempts. (Thanks @tomc974)
+  * Fix requeueDelay default to be 90secs instead of 90msec. Updated docs.
+	(Thanks @tomc974)
 * **0.9.2**
   * Fix `Reader.close` to cleanup all intervals to allow node to exit cleanly.
   * Upraded Sinon
