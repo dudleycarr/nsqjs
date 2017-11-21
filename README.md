@@ -26,8 +26,8 @@ options object.
   event.
 * ```maxAttempts: 0``` <br/>
   The number of times a given message will be attempted (given to MESSAGE handler) before it will be handed to the DISCARD handler and then automatically finished. 0 means that there is **no limit.** If no DISCARD handler is specified and `maxAttempts > 0`, then the message will be finished automatically when the number of attempts has been exhausted.
-* ```requeueDelay: 90``` <br/>
-  The default amount of time (seconds) a message requeued should be delayed by before being dispatched by nsqd.
+* ```requeueDelay: 90,000 (90secs)``` <br/>
+  The default amount of time (milliseconds) a message requeued should be delayed by before being dispatched by nsqd.
 * ```nsqdTCPAddresses``` <br/>
   A string or an array of strings representing the host/port pair for nsqd instances.
   <br/> For example: `['localhost:4150']`
