@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "mocha": "^4.0.0",
-    "nock": "~9.0.14",
+    "nock": "~9.1.0",
     "prettier": "^1.6.1",
     "should": "^13.0.0",
     "sinon": "~4.1.0",
