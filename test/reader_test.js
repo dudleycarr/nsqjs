@@ -12,13 +12,24 @@ describe('reader', () => {
 
   describe('max attempts', () =>
     describe('exceeded', () => {
+      it('should process msg while attempts do not exceed max', done => {
+        const maxAttempts = 1
+        const reader = readerWithAttempts(maxAttempts)
+
+        reader.on(nsq.Reader.DISCARD, () => {
+          done(new Error('should not be discarded'))
+        })
+        reader.on(nsq.Reader.MESSAGE, () => done())
+        reader.handleMessage({attempts: 1, finish: () => {}})
+      })
+
       it('should finish after exceeding specified max attempts', done => {
         const maxAttempts = 2
         const reader = readerWithAttempts(maxAttempts)
 
         // Message that has exceed the maximum number of attempts
         const message = {
-          attempts: maxAttempts,
+          attempts: maxAttempts + 1,
           finish: sinon.spy()
         }
 
@@ -35,7 +46,7 @@ describe('reader', () => {
         const reader = readerWithAttempts(maxAttempts)
 
         const message = {
-          attempts: maxAttempts,
+          attempts: maxAttempts + 1,
           finish () {}
         }
 
@@ -48,7 +59,7 @@ describe('reader', () => {
         const reader = readerWithAttempts(maxAttempts)
 
         const message = {
-          attempts: maxAttempts,
+          attempts: maxAttempts + 1,
           finish () {}
         }
 

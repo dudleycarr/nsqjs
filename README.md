@@ -286,6 +286,8 @@ w.on('closed', () => {
 
 Changes
 -------
+* **0.9.3**
+  * Fix off by one error for Message maxAttempts. (Thanks @tomc974)
 * **0.9.2**
   * Fix `Reader.close` to cleanup all intervals to allow node to exit cleanly.
   * Upraded Sinon
