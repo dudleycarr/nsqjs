@@ -286,6 +286,8 @@ w.on('closed', () => {
 
 Changes
 -------
+* **0.10.1**
+  * Fix debug.js memory leak when destroying NSQDConnection objects.
 * **0.10.0**
   * Fix off by one error for Message maxAttempts. (Thanks @tomc974)
   * Fix requeueDelay default to be 90secs instead of 90msec. Updated docs.
