@@ -44,8 +44,8 @@
     "nock": "~9.2.5",
     "prettier": "^1.6.1",
     "should": "^13.0.0",
-    "sinon": "~4.2.0",
-    "standard": "^10.0.3",
+    "sinon": "~5.0.6",
+    "standard": "^11.0.0",
     "temp": "^0.8.0"
   },
   "dependencies": {
