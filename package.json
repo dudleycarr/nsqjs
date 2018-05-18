@@ -58,6 +58,6 @@
     "request": "^2.79.0"
   },
   "optionalDependencies": {
-    "snappystream": "^1.1.0"
+    "snappystream": "^1.0.1"
   }
 }
