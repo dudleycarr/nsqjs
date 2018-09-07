@@ -84,7 +84,7 @@ describe('nsq wire', () => {
   it('should publish multiple buffer messages', () =>
     matchCommand(
       wire.mpub,
-      ['test_topic', [new Buffer('abcd'), new Buffer('efgh')]],
+      ['test_topic', [Buffer.from('abcd'), Buffer.from('efgh')]],
       [
         'MPUB test_topic\n\u0000\u0000\u0000\u0014\u0000\u0000\u0000\u0002',
         '\u0000\u0000\u0000\u0004abcd',
@@ -97,7 +97,7 @@ describe('nsq wire', () => {
       '132cb60626e9fd7a00013035356335626531636534333330323769747265616c6c7974',
       '696564746865726f6f6d746f676574686572'
     ]
-    const msgParts = wire.unpackMessage(new Buffer(msgPayload.join(''), 'hex'))
+    const msgParts = wire.unpackMessage(Buffer.from(msgPayload.join(''), 'hex'))
 
     const [id, timestamp, attempts] = Array.from(msgParts)
     timestamp.toString(10).should.eql('1381679323234827642')

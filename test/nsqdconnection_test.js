@@ -53,7 +53,7 @@ describe('Reader ConnectionState', () => {
     const { statemachine, connection } = state
     statemachine.raise('connecting')
     statemachine.raise('connected')
-    statemachine.raise('response', new Buffer('OK'))
+    statemachine.raise('response', Buffer.from('OK'))
 
     should.equal(connection.maxRdyCount, 2500)
     should.equal(connection.maxMsgTimeout, 900000)
@@ -112,7 +112,7 @@ describe('Reader ConnectionState', () => {
     const { statemachine, connection } = state
     sinon
       .stub(wire, 'unpackMessage')
-      .callsFake(() => ['1', 0, 0, new Buffer(''), 60, 60, 120])
+      .callsFake(() => ['1', 0, 0, Buffer.from(''), 60, 60, 120])
 
     connection.on(NSQDConnection.MESSAGE, msg => {
       const fin = () => {

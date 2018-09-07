@@ -253,7 +253,7 @@ describe('integration', () => {
     })
 
     it('should send and receive a Buffer', done => {
-      const message = new Buffer([0x11, 0x22, 0x33])
+      const message = Buffer.from([0x11, 0x22, 0x33])
       writer.publish(topic, message)
 
       reader.on('error', () => {})

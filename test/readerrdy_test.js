@@ -469,7 +469,7 @@ describe('ReaderRdy', () => {
       }
 
       const sendMessageOnce = _.once(() => {
-        connections[1].createMessage('1', Date.now(), new Buffer('test'))
+        connections[1].createMessage('1', Date.now(), Buffer.from('test'))
         setTimeout(checkRdyCount, 20)
       })
 
@@ -549,7 +549,7 @@ describe('ReaderRdy', () => {
       })
 
       const sendMessageOnce = _.once(() => {
-        connections[0].createMessage('1', Date.now(), new Buffer('test'))
+        connections[0].createMessage('1', Date.now(), Buffer.from('test'))
       })
 
       // Send a message on the 2nd connection when we can. Only send the message

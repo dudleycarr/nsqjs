@@ -7,7 +7,7 @@ const createMessage = (body, requeueDelay, timeout, maxTimeout) =>
     '1',
     Date.now(),
     0,
-    new Buffer(body),
+    Buffer.from(body),
     requeueDelay,
     timeout,
     maxTimeout
