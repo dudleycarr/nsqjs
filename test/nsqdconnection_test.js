@@ -1,6 +1,7 @@
 const _ = require('lodash')
 const should = require('should')
 const sinon = require('sinon')
+const rawMessage = require('./rawmessage')
 
 const wire = require('../lib/wire')
 const {
@@ -129,7 +130,7 @@ describe('Reader ConnectionState', () => {
     statemachine.raise('response', 'OK') // Subscribe response
 
     // Receive message
-    const msg = connection.createMessage('')
+    const msg = connection.createMessage(rawMessage('1', Date.now(), 0, 'msg'))
     statemachine.raise('consumeMessage', msg)
 
     // Close the connection before the message has been processed.
