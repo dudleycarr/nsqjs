@@ -50,7 +50,7 @@ describe('writer', () => {
 
     it('should publish a buffer', () => {
       const topic = 'test_topic'
-      const msg = new Buffer('a buffer message')
+      const msg = Buffer.from('a buffer message')
 
       writer.publish(topic, msg, () => {
         should.equal(writer.conn.produceMessages.calledOnce, true)
@@ -73,7 +73,7 @@ describe('writer', () => {
 
     it('should publish a list of buffers', () => {
       const topic = 'test_topic'
-      const msgs = [new Buffer('a buffer message'), new Buffer('another msg')]
+      const msgs = [Buffer.from('a buffer message'), Buffer.from('another msg')]
 
       writer.publish(topic, msgs, () => {
         should.equal(writer.conn.produceMessages.calledOnce, true)

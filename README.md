@@ -26,8 +26,8 @@ options object.
   event.
 * ```maxAttempts: 0``` <br/>
   The number of times a given message will be attempted (given to MESSAGE handler) before it will be handed to the DISCARD handler and then automatically finished. 0 means that there is **no limit.** If no DISCARD handler is specified and `maxAttempts > 0`, then the message will be finished automatically when the number of attempts has been exhausted.
-* ```requeueDelay: 90``` <br/>
-  The default amount of time (seconds) a message requeued should be delayed by before being dispatched by nsqd.
+* ```requeueDelay: 90,000 (90secs)``` <br/>
+  The default amount of time (milliseconds) a message requeued should be delayed by before being dispatched by nsqd.
 * ```nsqdTCPAddresses``` <br/>
   A string or an array of strings representing the host/port pair for nsqd instances.
   <br/> For example: `['localhost:4150']`
@@ -68,6 +68,8 @@ options object.
 
 Reader events are:
 
+* `Reader.READY` or `ready`
+* `Reader.NOT_READY` or `not_ready`
 * `Reader.MESSAGE` or `message`
 * `Reader.DISCARD` or `discard`
 * `Reader.ERROR` or `error`
@@ -267,7 +269,7 @@ w.connect()
 
 w.on('ready', () => {
   w.publish('sample_topic', 'it really tied the room together')
-  w.publish('sample_topic', 'This message gonna arrive 1 sec later.', 1000)
+  w.deferPublish('sample_topic', ['This message gonna arrive 1 sec later.'], 1000)
   w.publish('sample_topic', [
     'Uh, excuse me. Mark it zero. Next frame.', 
     'Smokey, this is not \'Nam. This is bowling. There are rules.'
@@ -286,6 +288,26 @@ w.on('closed', () => {
 
 Changes
 -------
+* **0.11.0**
+  * Support NodeJS 10
+  * Fix Snappy issues with NSQD 1.0 and 1.1
+  * Fix `close` behavior for Readers
+  * Added `"ready"` and `"not_ready"` events for Reader.
+  * Fix short timeout for connection IDENTIFY requests. (Thanks @emaincourt)
+* **0.10.1**
+  * Fix debug.js memory leak when destroying NSQDConnection objects.
+* **0.10.0**
+  * Fix off by one error for Message maxAttempts. (Thanks @tomc974)
+  * Fix requeueDelay default to be 90secs instead of 90msec. Updated docs.
+	(Thanks @tomc974)
+* **0.9.2**
+  * Fix `Reader.close` to cleanup all intervals to allow node to exit cleanly.
+  * Upraded Sinon
+  * Removed .eslintrc
+* **0.9.1**
+  * Fixed Reader close exceptions. (Thanks @ekristen)
+  * Bump Sinon version
+  * Bump bignumber.js version
 * **0.9**
   * **Breaking change:** Node versions 6 and greater supported from now on.
   * Support for deferred message publishing! (thanks @spruce)
