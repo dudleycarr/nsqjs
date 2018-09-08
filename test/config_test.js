@@ -126,7 +126,7 @@ describe('ConnectionConfig', () => {
 
   describe('isBuffer', () => {
     it('should require tls keys to be buffers', () => {
-      const check = () => config.isBuffer('key', new Buffer('a buffer'))
+      const check = () => config.isBuffer('key', Buffer.from('a buffer'))
       check.should.not.throw()
     })
 
@@ -137,7 +137,7 @@ describe('ConnectionConfig', () => {
 
     it('should require tls certs to be buffers', () => {
       const check = () =>
-        config.isBuffer('cert', new Buffer('definitely a buffer'))
+        config.isBuffer('cert', Buffer.from('definitely a buffer'))
       check.should.not.throw()
     })
 

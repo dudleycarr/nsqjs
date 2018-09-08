@@ -4,7 +4,7 @@ const wire = require('../lib/wire')
 const FrameBuffer = require('../lib/framebuffer')
 
 const createFrame = (frameId, payload) => {
-  const frame = new Buffer(4 + 4 + payload.length)
+  const frame = Buffer.alloc(4 + 4 + payload.length)
   frame.writeInt32BE(payload.length + 4, 0)
   frame.writeInt32BE(frameId, 4)
   frame.write(payload, 8)
