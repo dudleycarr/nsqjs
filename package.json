@@ -41,16 +41,16 @@
   },
   "devDependencies": {
     "mocha": "^5.0.0",
-    "nock": "~9.2.5",
+    "nock": "~9.6.1",
     "prettier": "^1.6.1",
     "should": "^13.0.0",
-    "sinon": "~5.0.6",
-    "standard": "^11.0.0",
+    "sinon": "~6.0.1",
+    "standard": "^12.0.0",
     "temp": "^0.8.0"
   },
   "dependencies": {
     "async": "^2.1.4",
-    "bignumber.js": "~6.0.0",
+    "bignumber.js": "~7.2.1",
     "debug": "^3.0.1",
     "lodash": "^4.17.4",
     "node-int64": "~0.4.0",
