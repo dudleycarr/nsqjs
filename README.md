@@ -68,6 +68,8 @@ options object.
 
 Reader events are:
 
+* `Reader.READY` or `ready`
+* `Reader.NOT_READY` or `not_ready`
 * `Reader.MESSAGE` or `message`
 * `Reader.DISCARD` or `discard`
 * `Reader.ERROR` or `error`
@@ -286,6 +288,12 @@ w.on('closed', () => {
 
 Changes
 -------
+* **0.11.0**
+  * Support NodeJS 10
+  * Fix Snappy issues with NSQD 1.0 and 1.1
+  * Fix `close` behavior for Readers
+  * Added `"ready"` and `"not_ready"` events for Reader.
+  * Fix short timeout for connection IDENTIFY requests. (Thanks @emaincourt)
 * **0.10.1**
   * Fix debug.js memory leak when destroying NSQDConnection objects.
 * **0.10.0**
