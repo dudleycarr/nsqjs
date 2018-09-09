@@ -1,17 +1,16 @@
 const should = require('should')
 const sinon = require('sinon')
 const Message = require('../lib/message')
+const rawMessage = require('./rawmessage')
 
-const createMessage = (body, requeueDelay, timeout, maxTimeout) =>
-  new Message(
-    '1',
-    Date.now(),
-    0,
-    Buffer.from(body),
+const createMessage = (body, requeueDelay, timeout, maxTimeout) => {
+  return new Message(
+    rawMessage('1', Date.now(), 0, body),
     requeueDelay,
     timeout,
     maxTimeout
   )
+}
 
 describe('Message', () =>
   describe('timeout', () => {
@@ -61,17 +60,17 @@ describe('Message', () =>
 
       const finish = () => {
         msg.timedOut.should.be.eql(false)
-        return msg.finish()
+        msg.finish()
       }
 
       const check = () => {
         responseSpy.calledTwice.should.be.true()
-        return done()
+        done()
       }
 
       setTimeout(touch, touchIn)
       setTimeout(finish, finishIn)
-      return setTimeout(check, checkIn)
+      setTimeout(check, checkIn)
     })
 
     return it('should clear timeout on finish', done => {

@@ -2,6 +2,7 @@ const { EventEmitter } = require('events')
 const _ = require('lodash')
 const should = require('should')
 const sinon = require('sinon')
+const rawMessage = require('./rawmessage')
 
 const Message = require('../lib/message')
 const { NSQDConnection } = require('../lib/nsqdconnection')
@@ -49,12 +50,12 @@ class StubNSQDConnection extends EventEmitter {
   }
 
   createMessage (msgId, msgTimestamp, attempts, msgBody) {
-    const msgComponents = [msgId, msgTimestamp, attempts, msgBody]
-    const msgArgs = msgComponents.concat([
+    const msgArgs = [
+      rawMessage(msgId, msgTimestamp, attempts, msgBody),
       this.requeueDelay,
       this.msgTimeout,
       this.maxMsgTimeout
-    ])
+    ]
     const msg = new Message(...msgArgs)
 
     msg.on(Message.RESPOND, responseType => {
@@ -469,7 +470,7 @@ describe('ReaderRdy', () => {
       }
 
       const sendMessageOnce = _.once(() => {
-        connections[1].createMessage('1', Date.now(), Buffer.from('test'))
+        connections[1].createMessage('1', Date.now(), 0, Buffer.from('test'))
         setTimeout(checkRdyCount, 20)
       })
 
@@ -549,7 +550,7 @@ describe('ReaderRdy', () => {
       })
 
       const sendMessageOnce = _.once(() => {
-        connections[0].createMessage('1', Date.now(), Buffer.from('test'))
+        connections[0].createMessage('1', Date.now(), 0, Buffer.from('test'))
       })
 
       // Send a message on the 2nd connection when we can. Only send the message
@@ -619,7 +620,7 @@ describe('ReaderRdy', () => {
       }
 
       // Add 50ms to the delay so that we're confident that the event fired.
-      const delay = readerRdy.backoffTimer.getInterval().plus(0.05)
+      const delay = readerRdy.backoffTimer.getInterval() + 0.05
 
       setTimeout(afterBackoff, delay.valueOf() * 1000)
     })
@@ -679,7 +680,7 @@ describe('ReaderRdy', () => {
       }
 
       const delay = readerRdy.backoffTimer.getInterval() + 100
-      setTimeout(afterBackoff, delay * 1000)
+      setTimeout(afterBackoff, delay)
     })
   })
 
