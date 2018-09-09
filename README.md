@@ -294,6 +294,8 @@ Changes
   * Fix `close` behavior for Readers
   * Added `"ready"` and `"not_ready"` events for Reader.
   * Fix short timeout for connection IDENTIFY requests. (Thanks @emaincourt)
+  * Lazy deserialization of messages
+  * Cached Backoff Timer calculations
 * **0.10.1**
   * Fix debug.js memory leak when destroying NSQDConnection objects.
 * **0.10.0**
