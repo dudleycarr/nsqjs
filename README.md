@@ -38,6 +38,9 @@ options object.
   The frequency in seconds for querying lookupd instances.
 * ```lookupdPollJitter: 0.3``` <br/>
   The jitter applied to the start of querying lookupd instances periodically.
+* ```lowRdyTimeout: 50``` <br/>
+  The timeout in milliseconds for switching between connections when the Reader
+  maxInFlight is less than the number of connected NSQDs. 
 * ```tls: false``` <br/>
   Use TLS if nsqd has TLS support enabled.
 * ```tlsVerification: true``` <br/>
@@ -288,6 +291,9 @@ w.on('closed', () => {
 
 Changes
 -------
+* **0.12.0**
+  * Expose `lowRdyTimeout` parameter for Readers.
+  * Change the default value for `lowRdyTimeout` from 1.5s to 50ms.
 * **0.11.0**
   * Support NodeJS 10
   * Fix Snappy issues with NSQD 1.0 and 1.1
