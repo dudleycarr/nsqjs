@@ -170,7 +170,7 @@ Start [nsqd](http://nsq.io/components/nsqd.html) and
 ```bash
 # nsqdLookupd Listens on 4161 for HTTP requests and 4160 for TCP requests
 $ nsqlookupd &
-$ nsqd --lookupd-tcp-address=127.0.0.1:4160 &
+$ nsqd -lookupd-tcp-address=127.0.0.1:4160 -broadcast-address=127.0.0.1 &
 ```
 
 ```js
