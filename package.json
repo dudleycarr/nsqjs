@@ -1,7 +1,7 @@
 {
   "name": "nsqjs",
   "description": "NodeJS client for NSQ",
-  "version": "0.12.0",
+  "version": "0.12.1",
   "homepage": "https://github.com/dudleycarr/nsqjs",
   "author": {
     "name": "Dudley Carr",
@@ -58,6 +58,6 @@
     "request": "^2.79.0"
   },
   "optionalDependencies": {
-    "snappystream": "^1.3.1"
+    "snappystream": "^1.3.2"
   }
 }
