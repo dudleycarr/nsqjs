@@ -46,7 +46,7 @@
     "should": "^13.2.3",
     "sinon": "~7.4.1",
     "standard": "^13.0.0",
-    "temp": "^0.8.0"
+    "temp": "^0.9.1"
   },
   "dependencies": {
     "async": "^2.6.3",
