@@ -30,7 +30,7 @@ describe('writer', () => {
       const topic = 'test_topic'
       const msg = 'hello world!'
 
-      writer.publish(topic, msg, 300, () => {
+      writer.deferPublish(topic, msg, 300, () => {
         should.equal(writer.conn.produceMessages.calledOnce, true)
         should.equal(writer.conn.produceMessages.calledWith(topic, [msg]), true)
       })
