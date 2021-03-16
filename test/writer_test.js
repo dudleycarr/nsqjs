@@ -8,7 +8,7 @@ describe('writer', () => {
 
   beforeEach(() => {
     writer = new nsq.Writer('127.0.0.1', '4150')
-    writer.conn = { produceMessages: sinon.stub() }
+    writer.conn = {produceMessages: sinon.stub()}
   })
 
   afterEach(() => {
@@ -60,7 +60,7 @@ describe('writer', () => {
 
     it('should publish an object as JSON', () => {
       const topic = 'test_topic'
-      const msg = { a: 1 }
+      const msg = {a: 1}
 
       writer.publish(topic, msg, () => {
         should.equal(writer.conn.produceMessages.calledOnce, true)
@@ -83,7 +83,7 @@ describe('writer', () => {
 
     it('should publish a list of objects as JSON', () => {
       const topic = 'test_topic'
-      const msgs = [{ a: 1 }, { b: 2 }]
+      const msgs = [{a: 1}, {b: 2}]
       const encodedMsgs = Array.from(msgs).map(i => JSON.stringify(i))
 
       writer.publish(topic, msgs, () => {

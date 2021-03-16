@@ -31,21 +31,21 @@
     }
   ],
   "scripts": {
-    "format": "prettier --single-quote --trailing-comma es5 --write \"{lib,test}/**/*.js\"",
-    "lint": "standard lib",
+    "format": "prettier --write \"{lib,test}/**/*.js\"",
+    "lint": "eslint lib test",
     "test": "mocha -R spec -b"
   },
   "main": "lib/nsq",
   "engines": {
-    "node": ">= 6.0.0"
+    "node": ">= 10.24.0"
   },
   "devDependencies": {
+    "eslint": "^6.1.0",
     "mocha": "^5.2.0",
     "nock": "^10.0.6",
     "prettier": "^1.18.2",
     "should": "^13.2.3",
     "sinon": "~7.4.1",
-    "standard": "^13.0.0",
     "temp": "^0.8.0"
   },
   "dependencies": {
@@ -55,7 +55,8 @@
     "lodash": "^4.17.15",
     "node-int64": "~0.4.0",
     "node-state": "~1.4.4",
-    "request": "^2.88.0"
+    "request": "^2.88.0",
+    "snappystream": "^1.4.0"
   },
   "optionalDependencies": {
     "snappystream": "^1.4.0"

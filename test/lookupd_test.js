@@ -12,7 +12,7 @@ const NSQD_1 = {
   remote_address: 'localhost:12345',
   tcp_port: 4150,
   topics: ['sample_topic'],
-  version: '0.2.23'
+  version: '0.2.23',
 }
 const NSQD_2 = {
   address: 'localhost',
@@ -22,7 +22,7 @@ const NSQD_2 = {
   remote_address: 'localhost:56789',
   tcp_port: 5150,
   topics: ['sample_topic'],
-  version: '0.2.23'
+  version: '0.2.23',
 }
 const NSQD_3 = {
   address: 'localhost',
@@ -32,7 +32,7 @@ const NSQD_3 = {
   remote_address: 'localhost:23456',
   tcp_port: 6150,
   topics: ['sample_topic'],
-  version: '0.2.23'
+  version: '0.2.23',
 }
 const NSQD_4 = {
   address: 'localhost',
@@ -42,7 +42,7 @@ const NSQD_4 = {
   remote_address: 'localhost:34567',
   tcp_port: 7150,
   topics: ['sample_topic'],
-  version: '0.2.23'
+  version: '0.2.23',
 }
 
 const LOOKUPD_1 = '127.0.0.1:4161'
@@ -54,7 +54,7 @@ const nockUrlSplit = url => {
   const match = url.match(/^(https?:\/\/[^/]+)(\/.*$)/i)
   return {
     baseUrl: match[1],
-    path: match[2]
+    path: match[2],
   }
 }
 
@@ -69,12 +69,12 @@ const registerWithLookupd = (lookupdAddress, nsqd) => {
           .reply(200, {
             status_code: 200,
             status_txt: 'OK',
-            producers
+            producers,
           })
       } else {
         const params = nockUrlSplit(lookupdAddress)
-        const { baseUrl } = params
-        let { path } = params
+        const {baseUrl} = params
+        let {path} = params
         if (!path || path === '/') {
           path = '/lookup'
         }
@@ -84,7 +84,7 @@ const registerWithLookupd = (lookupdAddress, nsqd) => {
           .reply(200, {
             status_code: 200,
             status_txt: 'OK',
-            producers
+            producers,
           })
       }
     })
@@ -96,7 +96,7 @@ const setFailedTopicReply = (lookupdAddress, topic) =>
     .get(`/lookup?topic=${topic}`)
     .reply(200, {
       status_code: 404,
-      status_txt: 'TOPIC_NOT_FOUND'
+      status_txt: 'TOPIC_NOT_FOUND',
     })
 
 describe('lookupd.lookup', () => {
@@ -117,14 +117,11 @@ describe('lookupd.lookup', () => {
 
       lookup(LOOKUPD_1, 'sample_topic', (err, nodes) => {
         nodes.should.have.length(1)
-        ;[
-          'address',
-          'broadcast_address',
-          'tcp_port',
-          'http_port'
-        ].forEach(key => {
-          should.ok(_.keys(nodes[0]).includes(key))
-        })
+        ;['address', 'broadcast_address', 'tcp_port', 'http_port'].forEach(
+          key => {
+            should.ok(_.keys(nodes[0]).includes(key))
+          }
+        )
         done(err)
       })
     })
