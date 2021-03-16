@@ -37,7 +37,7 @@
   },
   "main": "lib/nsq",
   "engines": {
-    "node": ">= 6.0.0"
+    "node": ">= 10.24.0"
   },
   "devDependencies": {
     "eslint": "^6.1.0",
