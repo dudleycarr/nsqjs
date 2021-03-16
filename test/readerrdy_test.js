@@ -1,15 +1,15 @@
-const { EventEmitter } = require('events')
+const {EventEmitter} = require('events')
 const _ = require('lodash')
 const should = require('should')
 const sinon = require('sinon')
 const rawMessage = require('./rawmessage')
 
 const Message = require('../lib/message')
-const { NSQDConnection } = require('../lib/nsqdconnection')
-const { ReaderRdy, ConnectionRdy } = require('../lib/readerrdy')
+const {NSQDConnection} = require('../lib/nsqdconnection')
+const {ReaderRdy, ConnectionRdy} = require('../lib/readerrdy')
 
 class StubNSQDConnection extends EventEmitter {
-  constructor (
+  constructor(
     nsqdHost,
     nsqdPort,
     topic,
@@ -24,37 +24,37 @@ class StubNSQDConnection extends EventEmitter {
     this.channel = channel
     this.requeueDelay = requeueDelay
     this.heartbeatInterval = heartbeatInterval
-    this.conn = { localPort: 1 }
+    this.conn = {localPort: 1}
     this.maxRdyCount = 2500
     this.msgTimeout = 60 * 1000
     this.maxMsgTimeout = 15 * 60 * 1000
     this.rdyCounts = []
   }
 
-  id () {
+  id() {
     return `${this.nsqdHost}:${this.nsqdPort}`
   }
 
   // Empty
-  connect () {}
+  connect() {}
 
   // Empty
-  close () {}
+  close() {}
 
   // Empty
-  destroy () {}
+  destroy() {}
 
   // Empty
-  setRdy (rdyCount) {
+  setRdy(rdyCount) {
     this.rdyCounts.push(rdyCount)
   }
 
-  createMessage (msgId, msgTimestamp, attempts, msgBody) {
+  createMessage(msgId, msgTimestamp, attempts, msgBody) {
     const msgArgs = [
       rawMessage(msgId, msgTimestamp, attempts, msgBody),
       this.requeueDelay,
       this.msgTimeout,
-      this.maxMsgTimeout
+      this.maxMsgTimeout,
     ]
     const msg = new Message(...msgArgs)
 
@@ -219,7 +219,7 @@ describe('ReaderRdy', () => {
   it('should register listeners on a connection', () => {
     // Stub out creation of ConnectionRdy to ignore the events registered by
     // ConnectionRdy.
-    sinon.stub(readerRdy, 'createConnectionRdy').callsFake(() => ({ on () {} }))
+    sinon.stub(readerRdy, 'createConnectionRdy').callsFake(() => ({on() {}}))
     // Empty
 
     const conn = createNSQDConnection(1)

@@ -1,4 +1,4 @@
-const { ConnectionConfig, ReaderConfig } = require('../lib/config')
+const {ConnectionConfig, ReaderConfig} = require('../lib/config')
 
 describe('ConnectionConfig', () => {
   let config = null
@@ -17,7 +17,7 @@ describe('ConnectionConfig', () => {
   })
 
   it('should remove an unrecognized option', () => {
-    config = new ConnectionConfig({ unknownOption: 20 })
+    config = new ConnectionConfig({unknownOption: 20})
     config.should.not.have.property('unknownOption')
   })
 
@@ -185,7 +185,7 @@ describe('ConnectionConfig', () => {
     it('should validate against a validate address list of 1', () => {
       const check = () =>
         config.isLookupdHTTPAddresses('lookupdHTTPAddresses', [
-          '127.0.0.1:4150'
+          '127.0.0.1:4150',
         ])
       check.should.not.throw()
     })
@@ -196,7 +196,7 @@ describe('ConnectionConfig', () => {
           '127.0.0.1:4150',
           'localhost:4150',
           'http://localhost/nsq/lookup',
-          'https://localhost/nsq/lookup'
+          'https://localhost/nsq/lookup',
         ]
         config.isLookupdHTTPAddresses('lookupdHTTPAddresses', addrs)
       }
@@ -230,14 +230,14 @@ describe('ReaderConfig', () => {
 
   it('should validate with defaults', () => {
     const check = () => {
-      config = new ReaderConfig({ nsqdTCPAddresses: ['127.0.0.1:4150'] })
+      config = new ReaderConfig({nsqdTCPAddresses: ['127.0.0.1:4150']})
       config.validate()
     }
     check.should.not.throw()
   })
 
   it('should convert a string address to an array', () => {
-    config = new ReaderConfig({ lookupdHTTPAddresses: '127.0.0.1:4161' })
+    config = new ReaderConfig({lookupdHTTPAddresses: '127.0.0.1:4161'})
     config.validate()
     config.lookupdHTTPAddresses.length.should.equal(1)
   })

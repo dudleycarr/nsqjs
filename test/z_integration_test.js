@@ -18,7 +18,7 @@ const startNSQD = (dataPath, additionalOptions = {}, callback) => {
     'broadcast-address': '127.0.0.1',
     'data-path': dataPath,
     'tls-cert': './test/cert.pem',
-    'tls-key': './test/key.pem'
+    'tls-key': './test/key.pem',
   }
 
   _.extend(options, additionalOptions)
@@ -27,16 +27,16 @@ const startNSQD = (dataPath, additionalOptions = {}, callback) => {
   options = Object.keys(options).map(option => [`-${option}`, options[option]])
 
   const process = child_process.spawn('nsqd', _.flatten(options), {
-    stdio: ['ignore', 'ignore', 'ignore']
+    stdio: ['ignore', 'ignore', 'ignore'],
   })
 
   process.on('error', err => {
     throw err
   })
 
-  const retryOptions = { times: 10, interval: 50 }
+  const retryOptions = {times: 10, interval: 50}
   const liveliness = callback => {
-    request(`http://localhost:${HTTP_PORT}/ping`, (err, res, body) => {
+    request(`http://localhost:${HTTP_PORT}/ping`, (err, res) => {
       if (err || res.statusCode != 200) {
         return callback(new Error('nsqd not ready'))
       }
@@ -54,8 +54,8 @@ const topicOp = (op, topic, callback) => {
     method: 'POST',
     uri: `http://127.0.0.1:${HTTP_PORT}/${op}`,
     qs: {
-      topic
-    }
+      topic,
+    },
   }
 
   request(options, err => callback(err))
@@ -70,9 +70,9 @@ const publish = (topic, message, callback = () => {}) => {
     uri: `http://127.0.0.1:${HTTP_PORT}/pub`,
     method: 'POST',
     qs: {
-      topic
+      topic,
     },
-    body: message
+    body: message,
   }
 
   request(options, err => callback(err))
@@ -99,7 +99,7 @@ describe('integration', () => {
         // Create the test topic
         callback => {
           createTopic('test', callback)
-        }
+        },
       ],
       done
     )
@@ -109,7 +109,7 @@ describe('integration', () => {
     async.series(
       [
         callback => {
-          reader.on('nsqd_closed', nsqdAddress => {
+          reader.on('nsqd_closed', () => {
             callback()
           })
           reader.close()
@@ -122,7 +122,7 @@ describe('integration', () => {
             callback(err)
           })
           nsqdProcess.kill('SIGKILL')
-        }
+        },
       ],
       err => {
         // After each start, increment the ports to prevent possible conflict the
@@ -139,11 +139,11 @@ describe('integration', () => {
 
   describe('stream compression and encryption', () => {
     const optionPermutations = [
-      { deflate: true },
-      { snappy: true },
-      { tls: true, tlsVerification: false },
-      { tls: true, tlsVerification: false, snappy: true },
-      { tls: true, tlsVerification: false, deflate: true }
+      {deflate: true},
+      {snappy: true},
+      {tls: true, tlsVerification: false},
+      {tls: true, tlsVerification: false, snappy: true},
+      {tls: true, tlsVerification: false, deflate: true},
     ]
 
     optionPermutations.forEach(options => {
@@ -154,8 +154,9 @@ describe('integration', () => {
       compression.push('none')
 
       // Figure out what compression is enabled
-      const description = `reader with compression (${compression[0]}) and tls (${options.tls !=
-        null})`
+      const description = `reader with compression (${
+        compression[0]
+      }) and tls (${options.tls != null})`
 
       describe(description, () => {
         it('should send and receive a message', done => {
@@ -168,7 +169,7 @@ describe('integration', () => {
           reader = new nsq.Reader(
             topic,
             channel,
-            _.extend({ nsqdTCPAddresses: [`127.0.0.1:${TCP_PORT}`] }, options)
+            _.extend({nsqdTCPAddresses: [`127.0.0.1:${TCP_PORT}`]}, options)
           )
 
           reader.on('message', msg => {
@@ -194,7 +195,7 @@ describe('integration', () => {
           reader = new nsq.Reader(
             topic,
             channel,
-            _.extend({ nsqdTCPAddresses: [`127.0.0.1:${TCP_PORT}`] }, options)
+            _.extend({nsqdTCPAddresses: [`127.0.0.1:${TCP_PORT}`]}, options)
           )
 
           reader.on('message', msg => {
@@ -221,9 +222,9 @@ describe('integration', () => {
       writer = new nsq.Writer('127.0.0.1', TCP_PORT)
       writer.on('ready', () => {
         reader = new nsq.Reader(topic, channel, {
-          nsqdTCPAddresses: [`127.0.0.1:${TCP_PORT}`]
+          nsqdTCPAddresses: [`127.0.0.1:${TCP_PORT}`],
         })
-        reader.on('nsqd_connected', addr => done())
+        reader.on('nsqd_connected', () => done())
         reader.connect()
       })
 
@@ -284,7 +285,7 @@ describe('integration', () => {
     })
 
     it('should not receive any new messages when paused', done => {
-      writer.publish(topic, { messageShouldArrive: true })
+      writer.publish(topic, {messageShouldArrive: true})
 
       reader.on('error', err => {
         console.log(err)
@@ -301,7 +302,7 @@ describe('integration', () => {
 
         process.nextTick(() => {
           // send it again, shouldn't get this one
-          writer.publish(topic, { messageShouldArrive: false })
+          writer.publish(topic, {messageShouldArrive: false})
           setTimeout(done, 50)
         })
       })
@@ -384,7 +385,7 @@ describe('integration', () => {
 
             reader.unpause()
             paused = false
-          }
+          },
         ],
         done
       )
@@ -452,7 +453,7 @@ describe('failures', () => {
                   callback()
                 }
               )
-            }
+            },
           ],
           done
         )

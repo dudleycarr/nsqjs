@@ -28,7 +28,7 @@ describe('FrameBuffer', () => {
     const firstFrame = createFrame(wire.FRAME_TYPE_RESPONSE, 'OK')
     const secondFrame = createFrame(
       wire.FRAME_TYPE_ERROR,
-      JSON.stringify({ shortname: 'localhost' })
+      JSON.stringify({shortname: 'localhost'})
     )
 
     frameBuffer.consume(Buffer.concat([firstFrame, secondFrame]))
@@ -38,10 +38,9 @@ describe('FrameBuffer', () => {
     let [frameId, data] = Array.from(frames.shift())
     frameId.should.eql(wire.FRAME_TYPE_RESPONSE)
     data.toString().should.eql('OK')
-
     ;[frameId, data] = Array.from(frames.shift())
     frameId.should.eql(wire.FRAME_TYPE_ERROR)
-    data.toString().should.eql(JSON.stringify({ shortname: 'localhost' }))
+    data.toString().should.eql(JSON.stringify({shortname: 'localhost'}))
   })
 
   it('should parse frame delivered in partials', () => {

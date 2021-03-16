@@ -10,7 +10,7 @@ describe('nsq wire', () => {
   it('should construct an identity message', () => {
     matchCommand(
       wire.identify,
-      [{ short_id: 1, long_id: 2 }],
+      [{short_id: 1, long_id: 2}],
       'IDENTIFY\n\u0000\u0000\u0000\u001a{"short_id":1,"long_id":2}'
     )
   })
@@ -18,7 +18,7 @@ describe('nsq wire', () => {
   it('should construct an identity message with unicode', () =>
     matchCommand(
       wire.identify,
-      [{ long_id: 'w\u00c3\u00a5\u00e2\u0080\u00a0' }],
+      [{long_id: 'w\u00c3\u00a5\u00e2\u0080\u00a0'}],
       'IDENTIFY\n\u0000\u0000\u0000-{"long_id":"w\\u00c3\\u00a5\\u00e2' +
         '\\u0080\\u00a0"}'
     ))
@@ -77,7 +77,7 @@ describe('nsq wire', () => {
         'MPUB test_topic\n\u0000\u0000\u0000\u001c\u0000\u0000\u0000\u0003',
         '\u0000\u0000\u0000\u0004abcd',
         '\u0000\u0000\u0000\u0004efgh',
-        '\u0000\u0000\u0000\u0004ijkl'
+        '\u0000\u0000\u0000\u0004ijkl',
       ].join('')
     ))
 
@@ -88,14 +88,14 @@ describe('nsq wire', () => {
       [
         'MPUB test_topic\n\u0000\u0000\u0000\u0014\u0000\u0000\u0000\u0002',
         '\u0000\u0000\u0000\u0004abcd',
-        '\u0000\u0000\u0000\u0004efgh'
+        '\u0000\u0000\u0000\u0004efgh',
       ].join('')
     ))
 
   return it('should unpack a received message', () => {
     const msgPayload = [
       '132cb60626e9fd7a00013035356335626531636534333330323769747265616c6c7974',
-      '696564746865726f6f6d746f676574686572'
+      '696564746865726f6f6d746f676574686572',
     ]
     const msgParts = wire.unpackMessage(Buffer.from(msgPayload.join(''), 'hex'))
 
