@@ -5,7 +5,6 @@ node_js:
   - "10"
   - "12"
   - "14"
-  - "15"
 language: node_js
 install:
   - wget "https://s3.amazonaws.com/bitly-downloads/nsq/nsq-1.1.0.linux-amd64.go1.10.3.tar.gz"
