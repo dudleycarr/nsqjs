@@ -56,7 +56,7 @@
     "node-int64": "~0.4.0",
     "node-state": "~1.4.4",
     "request": "^2.88.0",
-    "snappystream": "^1.4.0"
+    "snappystream": "^1.5.0"
   },
   "optionalDependencies": {
     "snappystream": "^1.4.0"
