@@ -40,7 +40,7 @@
     "node": ">= 10.24.0"
   },
   "devDependencies": {
-    "eslint": "^6.1.0",
+    "eslint": "^7.22.0",
     "mocha": "^8.3.2",
     "nock": "^10.0.6",
     "prettier": "^2.2.1",
