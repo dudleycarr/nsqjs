@@ -46,7 +46,7 @@
     "prettier": "^2.2.1",
     "should": "^13.2.3",
     "sinon": "~7.4.1",
-    "temp": "^0.8.0"
+    "temp": "^0.9.4"
   },
   "dependencies": {
     "async": "^3.2.0",
