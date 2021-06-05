@@ -1,4 +1,4 @@
-name: CI
+name: ci
 
 on:
   push:
@@ -15,19 +15,21 @@ jobs:
       matrix:
         node: [12,14]
     steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+
       - name: "System dependencies"
         run: |
-          apt-get -q -y update
-          apt-get -q -y install libsnappy-dev python3 build-essential
+          apt-get -y update
+          apt-get -y install libsnappy-dev python3 build-essential
       - name: "Install nsq"
         run: |
           NSQ_DIST="nsq-1.2.0.linux-amd64.go1.12.9"
           curl -sSL "https://bitly-downloads.s3.amazonaws.com/nsq/${NSQ_DIST}.tar.gz" \
             | tar -xzv --strip-components=1
-      - uses: actions/setup-node@v2
-        with:
-          node-version: ${{ matrix.node }}
-      - uses: actions/checkout@v2
       - run: npm install
       - run: |
           export PATH=bin:$PATH
