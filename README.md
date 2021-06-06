@@ -4,9 +4,6 @@ nsqjs
 The official NodeJS client for the [nsq](http://nsq.io/) client protocol. This implementation attempts to be
 fully compliant and maintain feature parity with the official Go ([go-nsq](https://github.com/nsqio/go-nsq)) and Python ([pynsq](https://github.com/nsqio/pynsq)) clients.
 
-[![Build Status](https://travis-ci.org/dudleycarr/nsqjs.svg?branch=master)](https://travis-ci.org/dudleycarr/nsqjs)
-
-[![NPM](https://nodei.co/npm/nsqjs.svg?downloads=true)](https://nodei.co/npm/nsqjs/)
 
 Usage
 -----
