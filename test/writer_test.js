@@ -84,7 +84,7 @@ describe('writer', () => {
     it('should publish a list of objects as JSON', () => {
       const topic = 'test_topic'
       const msgs = [{a: 1}, {b: 2}]
-      const encodedMsgs = Array.from(msgs).map(i => JSON.stringify(i))
+      const encodedMsgs = Array.from(msgs).map((i) => JSON.stringify(i))
 
       writer.publish(topic, msgs, () => {
         should.equal(writer.conn.produceMessages.calledOnce, true)
@@ -95,49 +95,49 @@ describe('writer', () => {
       })
     })
 
-    it('should fail when publishing Null', done => {
+    it('should fail when publishing Null', (done) => {
       const topic = 'test_topic'
       const msg = null
 
-      writer.publish(topic, msg, err => {
+      writer.publish(topic, msg, (err) => {
         should.exist(err)
         done()
       })
     })
 
-    it('should fail when publishing Undefined', done => {
+    it('should fail when publishing Undefined', (done) => {
       const topic = 'test_topic'
       const msg = undefined
 
-      writer.publish(topic, msg, err => {
+      writer.publish(topic, msg, (err) => {
         should.exist(err)
         done()
       })
     })
 
-    it('should fail when publishing an empty string', done => {
+    it('should fail when publishing an empty string', (done) => {
       const topic = 'test_topic'
       const msg = ''
 
-      writer.publish(topic, msg, err => {
+      writer.publish(topic, msg, (err) => {
         should.exist(err)
         done()
       })
     })
 
-    it('should fail when publishing an empty list', done => {
+    it('should fail when publishing an empty list', (done) => {
       const topic = 'test_topic'
       const msg = []
 
-      writer.publish(topic, msg, err => {
+      writer.publish(topic, msg, (err) => {
         should.exist(err)
         done()
       })
     })
 
-    it('should fail when the Writer is not connected', done => {
+    it('should fail when the Writer is not connected', (done) => {
       writer = new nsq.Writer('127.0.0.1', '4150')
-      writer.publish('test_topic', 'a briliant message', err => {
+      writer.publish('test_topic', 'a briliant message', (err) => {
         should.exist(err)
         done()
       })
