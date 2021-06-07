@@ -221,6 +221,23 @@ describe('integration', () => {
       })
     })
 
+    it('should send and receive a String object', (done) => {
+      const message = new String('hello world')
+      writer.publish(topic, message, (err) => {
+        if (err) done(err)
+      })
+
+      reader.on('error', (err) => {
+        console.log(err)
+      })
+
+      reader.on('message', (msg) => {
+        msg.body.toString().should.eql(message.toString())
+        msg.finish()
+        done()
+      })
+    })
+
     it('should send and receive a Buffer', (done) => {
       const message = Buffer.from([0x11, 0x22, 0x33])
       writer.publish(topic, message)
