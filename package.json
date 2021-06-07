@@ -40,20 +40,21 @@
     "node": ">= 12.13.0"
   },
   "devDependencies": {
+    "async-retry": "^1.3.1",
     "eslint": "^7.24.0",
     "mocha": "^8.3.2",
     "nock": "^13.0.11",
+    "p-event": "^4.2.0",
     "prettier": "^2.2.1",
     "should": "^13.2.3",
     "sinon": "~11.1.1",
     "temp": "^0.9.4"
   },
   "dependencies": {
-    "async": "^3.2.0",
     "debug": "^4.1.1",
     "lodash": "^4.17.15",
-    "node-state": "~1.4.4",
-    "request": "^2.88.0"
+    "node-fetch": "^2.6.1",
+    "node-state": "~1.4.4"
   },
   "optionalDependencies": {
     "snappystream": "^1.5.0"
