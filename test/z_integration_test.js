@@ -292,9 +292,7 @@ describe('integration', () => {
         setTimeout(done, 50)
       })
 
-      reader.on('error', (err) => {
-        console.log(err)
-      })
+      reader.on('error', () => {})
     })
 
     it('should start receiving messages again after unpause async', async () => {
