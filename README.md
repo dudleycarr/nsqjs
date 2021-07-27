@@ -1,14 +1,13 @@
-nsqjs
-=====
+# nsqjs
 
 The official NodeJS client for the [nsq](http://nsq.io/) client protocol. This implementation attempts to be
 fully compliant and maintain feature parity with the official Go ([go-nsq](https://github.com/nsqio/go-nsq)) and Python ([pynsq](https://github.com/nsqio/pynsq)) clients.
 
 
-Usage
------
+## Usage
 
 ### new Reader(topic, channel, options)
+
 The topic and channel arguments are strings and must be specified. The options
 argument is optional. Below are the parameters that can be specified in the
 options object.
@@ -93,8 +92,8 @@ These methods are available on a Reader object:
 * `isPaused()` <br/>
   `true` if paused, `false` otherwise.
 
-
 ### Message
+
 The following properties and methods are available on Message objects produced by a Reader
 instance.
 
@@ -125,9 +124,11 @@ instance.
   soft timeout by the normal timeout amount.
 
 ### new Writer(nsqdHost, nsqdPort, options)
-Allows messages to be sent to an nsqd. 
+
+Allows messages to be sent to an nsqd.
 
 Available Writer options:
+
 * ```tls: false``` <br/>
   Use TLS if nsqd has TLS support enabled.
 * ```tlsVerification: true``` <br/>
@@ -149,6 +150,7 @@ Writer events are:
 * `Writer.ERROR` or `error`
 
 These methods are available on a Writer object:
+
 * `connect()` <br/>
   Connect to the nsqd specified.
 * `close()` <br/>
@@ -163,6 +165,7 @@ These methods are available on a Writer object:
 
 Start [nsqd](http://nsq.io/components/nsqd.html) and
 [nsqdlookupd](http://nsq.io/components/nsqlookupd.html)
+
 ```bash
 # nsqdLookupd Listens on 4161 for HTTP requests and 4160 for TCP requests
 $ nsqlookupd &
@@ -185,6 +188,7 @@ reader.on('message', msg => {
 ```
 
 Publish a message to nsqd to be consumed by the sample client:
+
 ```bash
 $ curl -d "it really tied the room together" http://localhost:4151/pub?topic=sample_topic
 ```
@@ -231,6 +235,7 @@ reader.on('message', msg => {
 ```
 
 ### Enable nsqjs debugging
+
 nsqjs uses [debug](https://github.com/visionmedia/debug) to log debug output.
 
 To see all nsqjs events:
@@ -253,7 +258,6 @@ To see all writer events:
 ```
 $ DEBUG=nsqjs:writer:* node my_nsqjs_script.js
 ```
-
 
 ### A Writer Example
 
@@ -285,8 +289,18 @@ w.on('closed', () => {
 })
 ```
 
-Changes
--------
+## Changes
+
+* **0.13.0**
+  * Fix: SnappyStream initialization race condition. (#353)
+  * Fix: IPv6 address support (#352)
+  * Fix: Support JavaScript String objects as messages (#341)
+  * Deprecated: Node versions < 12 (#346)
+  * Change: Debug is now a dev dependency (#349)
+  * Change: Use SnappyStream 2.0 (#354)
+  * Change: Replaced BigNumber.js with built-in BigInt (#337)
+  * Change: Replaced request.js with node-fetch (#347)
+  * Change: Removed dependency on async.js (#347)
 * **0.12.0**
   * Expose `lowRdyTimeout` parameter for Readers.
   * Change the default value for `lowRdyTimeout` from 1.5s to 50ms.
@@ -355,8 +369,8 @@ Changes
   * Slightly better invalid topic and channel error messages.
   * Handle more conditions for failing to publish a message.
 * **0.7.2**
-	* Fix build for iojs and node v0.12
-	* Bumped snappystream version.
+  * Fix build for iojs and node v0.12
+  * Bumped snappystream version.
 * **0.7.1**
   * Fix connection returning to max connection RDY after backoff
   * Fix backoff ignored when `message.finish` is called after backoff event.
@@ -388,10 +402,10 @@ Changes
   * Added Deflate support
   * Added Snappy support
 * **0.4.1**
-	* Fixed a logging issue on NSQConnection disconnected
+  * Fixed a logging issue on NSQConnection disconnected
 * **0.4.0**
-	* Added `close`, `pause`, and `unpause` to Reader
-	* Added callback for Writer publish
+  * Added `close`, `pause`, and `unpause` to Reader
+  * Added callback for Writer publish
   * Expose error events on Reader/Writer
   * Expose nsqd connect / disconnect events
   * Fix crash when Message `finish`, `requeue`, etc after nsqd disconnect
