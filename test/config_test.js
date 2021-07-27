@@ -166,6 +166,12 @@ describe('ConnectionConfig', () => {
       check.should.not.throw()
     })
 
+    it('should validate against a validate ipv6 address list of 1', () => {
+      const check = () =>
+        config.isBareAddresses('nsqdTCPAddresses', ['[::1]:4150'])
+      check.should.not.throw()
+    })
+
     it('should validate against a validate address list of 2', () => {
       const check = () => {
         const addrs = ['127.0.0.1:4150', 'localhost:4150']
@@ -174,9 +180,21 @@ describe('ConnectionConfig', () => {
       check.should.not.throw()
     })
 
+    it('should validate against a validate ipv6 address list of 2', () => {
+      const check = () =>
+        config.isBareAddresses('nsqdTCPAddresses', ['[::1]:4150', '[::]:4150'])
+      check.should.not.throw()
+    })
+
     it('should not validate non-numeric port', () => {
       const check = () =>
         config.isBareAddresses('nsqdTCPAddresses', ['localhost'])
+      check.should.throw()
+    })
+
+    it('should invalidate ipv6 address port', () => {
+      const check = () =>
+        config.isBareAddresses('nsqdTCPAddresses', ['[::1]'])
       check.should.throw()
     })
   })
@@ -195,6 +213,8 @@ describe('ConnectionConfig', () => {
         const addrs = [
           '127.0.0.1:4150',
           'localhost:4150',
+          '[::1]:4150',
+          '[::]:4150',
           'http://localhost/nsq/lookup',
           'https://localhost/nsq/lookup',
         ]
