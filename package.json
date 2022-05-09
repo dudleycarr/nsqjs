@@ -48,7 +48,7 @@
     "p-event": "^4.2.0",
     "prettier": "^2.2.1",
     "should": "^13.2.3",
-    "sinon": "^13.0.1",
+    "sinon": "^14.0.0",
     "temp": "^0.9.4"
   },
   "dependencies": {
