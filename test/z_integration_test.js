@@ -1,211 +1,180 @@
 const _ = require('lodash')
-const async = require('async')
 const child_process = require('child_process') // eslint-disable-line camelcase
-const request = require('request')
+const fetch = require('node-fetch')
+const pEvent = require('p-event')
+const retry = require('async-retry')
 const should = require('should')
+const temp = require('temp').track()
+const url = require('url')
+const util = require('util')
 
 const nsq = require('../lib/nsq')
-
-const temp = require('temp').track()
+const EventEmitter = require('events')
 
 let TCP_PORT = 4150
 let HTTP_PORT = 4151
 
-const startNSQD = (dataPath, additionalOptions = {}, callback) => {
+const startNSQD = async (dataPath, additionalOptions = {}) => {
   let options = {
     'http-address': `127.0.0.1:${HTTP_PORT}`,
     'tcp-address': `127.0.0.1:${TCP_PORT}`,
     'broadcast-address': '127.0.0.1',
     'data-path': dataPath,
     'tls-cert': './test/cert.pem',
-    'tls-key': './test/key.pem'
+    'tls-key': './test/key.pem',
   }
 
   _.extend(options, additionalOptions)
 
   // Convert to array for child_process.
-  options = Object.keys(options).map(option => [`-${option}`, options[option]])
+  options = Object.keys(options).map((option) => [
+    `-${option}`,
+    options[option],
+  ])
 
   const process = child_process.spawn('nsqd', _.flatten(options), {
-    stdio: ['ignore', 'ignore', 'ignore']
+    stdio: ['ignore', 'ignore', 'ignore'],
   })
 
-  process.on('error', err => {
+  process.on('error', (err) => {
     throw err
   })
 
-  const retryOptions = { times: 10, interval: 50 }
-  const liveliness = callback => {
-    request(`http://localhost:${HTTP_PORT}/ping`, (err, res, body) => {
-      if (err || res.statusCode != 200) {
-        return callback(new Error('nsqd not ready'))
+  await retry(
+    async () => {
+      const response = await fetch(`http://localhost:${HTTP_PORT}/ping`)
+      if (!response.ok) {
+        throw new Error('not ready')
       }
-      callback()
-    })
-  }
+    },
+    {retries: 10, minTimeout: 50}
+  )
 
-  async.retry(retryOptions, liveliness, err => {
-    callback(err, process)
-  })
+  return process
 }
 
-const topicOp = (op, topic, callback) => {
-  const options = {
-    method: 'POST',
-    uri: `http://127.0.0.1:${HTTP_PORT}/${op}`,
-    qs: {
-      topic
-    }
-  }
+const topicOp = async (op, topic) => {
+  const u = new url.URL(`http://127.0.0.1:${HTTP_PORT}/${op}`)
+  u.searchParams.set('topic', topic)
 
-  request(options, err => callback(err))
+  await fetch(u.toString(), {method: 'POST'})
 }
 
-const createTopic = _.partial(topicOp, 'topic/create')
-const deleteTopic = _.partial(topicOp, 'topic/delete')
+const createTopic = async (topic) => topicOp('topic/create', topic)
+const deleteTopic = async (topic) => topicOp('topic/delete', topic)
 
 // Publish a single message via HTTP
-const publish = (topic, message, callback = () => {}) => {
-  const options = {
-    uri: `http://127.0.0.1:${HTTP_PORT}/pub`,
-    method: 'POST',
-    qs: {
-      topic
-    },
-    body: message
-  }
+const publish = async (topic, message) => {
+  const u = new url.URL(`http://127.0.0.1:${HTTP_PORT}/pub`)
+  u.searchParams.set('topic', topic)
 
-  request(options, err => callback(err))
+  await fetch(u.toString(), {
+    method: 'POST',
+    body: message,
+  })
 }
 
 describe('integration', () => {
   let nsqdProcess = null
   let reader = null
 
-  beforeEach(done => {
-    async.series(
-      [
-        // Start NSQD
-        callback => {
-          temp.mkdir('/nsq', (err, dirPath) => {
-            if (err) return callback(err)
-
-            startNSQD(dirPath, {}, (err, process) => {
-              nsqdProcess = process
-              callback(err)
-            })
-          })
-        },
-        // Create the test topic
-        callback => {
-          createTopic('test', callback)
-        }
-      ],
-      done
-    )
+  beforeEach(async () => {
+    nsqdProcess = await startNSQD(await temp.mkdir('/nsq'))
+    await createTopic('test')
   })
 
-  afterEach(done => {
-    async.series(
-      [
-        callback => {
-          reader.on('nsqd_closed', nsqdAddress => {
-            callback()
-          })
-          reader.close()
-        },
-        callback => {
-          deleteTopic('test', callback)
-        },
-        callback => {
-          nsqdProcess.on('exit', err => {
-            callback(err)
-          })
-          nsqdProcess.kill('SIGKILL')
-        }
-      ],
-      err => {
-        // After each start, increment the ports to prevent possible conflict the
-        // next time an NSQD instance is started. Sometimes NSQD instances do not
-        // exit cleanly causing odd behavior for tests and the test suite.
-        TCP_PORT = TCP_PORT + 50
-        HTTP_PORT = HTTP_PORT + 50
+  afterEach(async () => {
+    const closeEvent = pEvent(reader, 'nsqd_closed')
+    const exitEvent = pEvent(nsqdProcess, 'exit')
 
-        reader = null
-        done(err)
-      }
-    )
+    reader.close()
+    await closeEvent
+
+    await deleteTopic('test')
+
+    nsqdProcess.kill('SIGKILL')
+    await exitEvent
+
+    // After each start, increment the ports to prevent possible conflict the
+    // next time an NSQD instance is started. Sometimes NSQD instances do not
+    // exit cleanly causing odd behavior for tests and the test suite.
+    TCP_PORT = TCP_PORT + 50
+    HTTP_PORT = HTTP_PORT + 50
+
+    reader = null
   })
 
   describe('stream compression and encryption', () => {
     const optionPermutations = [
-      { deflate: true },
-      { snappy: true },
-      { tls: true, tlsVerification: false },
-      { tls: true, tlsVerification: false, snappy: true },
-      { tls: true, tlsVerification: false, deflate: true }
+      {deflate: true},
+      {snappy: true},
+      {tls: true, tlsVerification: false},
+      {tls: true, tlsVerification: false, snappy: true},
+      {tls: true, tlsVerification: false, deflate: true},
     ]
 
-    optionPermutations.forEach(options => {
+    optionPermutations.forEach((options) => {
       const compression = ['deflate', 'snappy']
-        .filter(key => key in options)
-        .map(key => key)
+        .filter((key) => key in options)
+        .map((key) => key)
 
       compression.push('none')
 
       // Figure out what compression is enabled
-      const description = `reader with compression (${compression[0]}) and tls (${options.tls !=
-        null})`
+      const description = `reader with compression (${
+        compression[0]
+      }) and tls (${options.tls != null})`
 
       describe(description, () => {
-        it('should send and receive a message', done => {
+        it('should send and receive a message', async () => {
           const topic = 'test'
           const channel = 'default'
           const message = 'a message for our reader'
 
-          publish(topic, message)
+          await publish(topic, message)
 
           reader = new nsq.Reader(
             topic,
             channel,
-            _.extend({ nsqdTCPAddresses: [`127.0.0.1:${TCP_PORT}`] }, options)
+            Object.assign(
+              {nsqdTCPAddresses: [`127.0.0.1:${TCP_PORT}`]},
+              options
+            )
           )
-
-          reader.on('message', msg => {
-            should.equal(msg.body.toString(), message)
-            msg.finish()
-            done()
-          })
-
           reader.on('error', () => {})
 
+          const messageEvent = pEvent(reader, 'message')
           reader.connect()
+
+          const msg = await messageEvent
+          should.equal(msg.body.toString(), message)
+          msg.finish()
         })
 
-        it('should send and receive a large message', done => {
+        it('should send and receive a large message', async () => {
           const topic = 'test'
           const channel = 'default'
           const message = _.range(0, 100000)
             .map(() => 'a')
             .join('')
 
-          publish(topic, message)
+          await publish(topic, message)
 
           reader = new nsq.Reader(
             topic,
             channel,
-            _.extend({ nsqdTCPAddresses: [`127.0.0.1:${TCP_PORT}`] }, options)
+            Object.assign(
+              {nsqdTCPAddresses: [`127.0.0.1:${TCP_PORT}`]},
+              options
+            )
           )
-
-          reader.on('message', msg => {
-            should.equal(msg.body.toString(), message)
-            msg.finish()
-            done()
-          })
-
           reader.on('error', () => {})
-
+          const messageEvent = pEvent(reader, 'message')
           reader.connect()
+
+          const msg = await messageEvent
+          should.equal(msg.body.toString(), message)
+          msg.finish()
         })
       })
     })
@@ -217,13 +186,13 @@ describe('integration', () => {
     let writer = null
     reader = null
 
-    beforeEach(done => {
+    beforeEach((done) => {
       writer = new nsq.Writer('127.0.0.1', TCP_PORT)
       writer.on('ready', () => {
         reader = new nsq.Reader(topic, channel, {
-          nsqdTCPAddresses: [`127.0.0.1:${TCP_PORT}`]
+          nsqdTCPAddresses: [`127.0.0.1:${TCP_PORT}`],
         })
-        reader.on('nsqd_connected', addr => done())
+        reader.on('nsqd_connected', () => done())
         reader.connect()
       })
 
@@ -235,30 +204,47 @@ describe('integration', () => {
       writer.close()
     })
 
-    it('should send and receive a string', done => {
+    it('should send and receive a string', (done) => {
       const message = 'hello world'
-      writer.publish(topic, message, err => {
+      writer.publish(topic, message, (err) => {
         if (err) done(err)
       })
 
-      reader.on('error', err => {
+      reader.on('error', (err) => {
         console.log(err)
       })
 
-      reader.on('message', msg => {
+      reader.on('message', (msg) => {
         msg.body.toString().should.eql(message)
         msg.finish()
         done()
       })
     })
 
-    it('should send and receive a Buffer', done => {
+    it('should send and receive a String object', (done) => {
+      const message = new String('hello world')
+      writer.publish(topic, message, (err) => {
+        if (err) done(err)
+      })
+
+      reader.on('error', (err) => {
+        console.log(err)
+      })
+
+      reader.on('message', (msg) => {
+        msg.body.toString().should.eql(message.toString())
+        msg.finish()
+        done()
+      })
+    })
+
+    it('should send and receive a Buffer', (done) => {
       const message = Buffer.from([0x11, 0x22, 0x33])
       writer.publish(topic, message)
 
       reader.on('error', () => {})
 
-      reader.on('message', readMsg => {
+      reader.on('message', (readMsg) => {
         for (let i = 0; i < readMsg.body.length; i++) {
           should.equal(readMsg.body[i], message[i])
         }
@@ -267,7 +253,7 @@ describe('integration', () => {
       })
     })
 
-    it('should not receive messages when immediately paused', done => {
+    it('should not receive messages when immediately paused', (done) => {
       setTimeout(done, 50)
 
       // Note: because NSQDConnection.connect() does most of it's work in
@@ -275,7 +261,7 @@ describe('integration', () => {
       // connected.
       //
       reader.pause()
-      reader.on('message', msg => {
+      reader.on('message', (msg) => {
         msg.finish()
         done(new Error('Should not have received a message while paused'))
       })
@@ -283,14 +269,14 @@ describe('integration', () => {
       writer.publish(topic, 'pause test')
     })
 
-    it('should not receive any new messages when paused', done => {
-      writer.publish(topic, { messageShouldArrive: true })
+    it('should not receive any new messages when paused', (done) => {
+      writer.publish(topic, {messageShouldArrive: true})
 
-      reader.on('error', err => {
+      reader.on('error', (err) => {
         console.log(err)
       })
 
-      reader.on('message', msg => {
+      reader.on('message', (msg) => {
         // check the message
         msg.json().messageShouldArrive.should.be.true()
         msg.finish()
@@ -301,17 +287,17 @@ describe('integration', () => {
 
         process.nextTick(() => {
           // send it again, shouldn't get this one
-          writer.publish(topic, { messageShouldArrive: false })
+          writer.publish(topic, {messageShouldArrive: false})
           setTimeout(done, 50)
         })
       })
     })
 
-    it('should not receive any requeued messages when paused', done => {
+    it('should not receive any requeued messages when paused', (done) => {
       writer.publish(topic, 'requeue me')
       let id = ''
 
-      reader.on('message', msg => {
+      reader.on('message', (msg) => {
         // this will fail if the msg comes through again
         id.should.equal('')
         id = msg.id
@@ -323,74 +309,52 @@ describe('integration', () => {
         setTimeout(done, 50)
       })
 
-      reader.on('error', err => {
-        console.log(err)
-      })
+      reader.on('error', () => {})
     })
 
-    it('should start receiving messages again after unpause', done => {
+    it('should start receiving messages again after unpause async', async () => {
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+      const publish = util.promisify((topic, msg, cb) => {
+        writer.publish(topic, msg, cb)
+      })
+
       let paused = false
-      let handlerFn = null
-      let afterHandlerFn = null
+      const messageEvents = new EventEmitter()
+      const firstEvent = pEvent(messageEvents, 'first')
+      const secondEvent = pEvent(messageEvents, 'second')
 
-      const firstMessage = msg => {
-        reader.pause()
-        paused = true
-        msg.requeue()
-      }
-
-      const secondMessage = msg => {
-        msg.finish()
-      }
-
-      reader.on('message', msg => {
+      reader.on('message', (msg) => {
         should.equal(paused, false)
-        handlerFn(msg)
-
-        if (afterHandlerFn) {
-          afterHandlerFn()
-        }
+        messageEvents.emit(msg.body.toString(), msg)
       })
 
-      async.series(
-        [
-          // Publish and handle first message
-          callback => {
-            handlerFn = firstMessage
-            afterHandlerFn = callback
+      // Pubish message
+      publish(topic, 'first')
 
-            writer.publish(topic, 'not paused', err => {
-              if (err) {
-                callback(err)
-              }
-            })
-          },
-          // Publish second message
-          callback => {
-            afterHandlerFn = callback
-            writer.publish(topic, 'paused', callback)
-          },
-          // Wait for 50ms
-          callback => {
-            setTimeout(callback, 50)
-          },
-          // Unpause. Processed queued message.
-          callback => {
-            handlerFn = secondMessage
-            // Note: We know a message was processed after unpausing when this
-            // callback is called. No need to explicitly note a 2nd message was
-            // processed.
-            afterHandlerFn = callback
+      // Handle first message
+      let msg = await firstEvent
+      paused.should.be.false()
+      msg.finish()
 
-            reader.unpause()
-            paused = false
-          }
-        ],
-        done
-      )
+      // Pause reader
+      reader.pause()
+      paused = true
+
+      // Publish second message
+      await publish(topic, 'second')
+
+      // Unpause after delay
+      await wait(50)
+      reader.unpause()
+      paused = false
+
+      // Handle second message
+      msg = await secondEvent
+      msg.finish()
     })
 
-    it('should successfully publish a message before fully connected', done => {
+    it('should successfully publish a message before fully connected', (done) => {
       writer = new nsq.Writer('127.0.0.1', TCP_PORT)
       writer.connect()
 
@@ -401,7 +365,7 @@ describe('integration', () => {
 
       // Publish the message. It should succeed since the writer will queue up
       // the message while connecting.
-      writer.publish('a_topic', 'a message', err => {
+      writer.publish('a_topic', 'a message', (err) => {
         should.not.exist(err)
         done()
       })
@@ -412,50 +376,34 @@ describe('integration', () => {
 describe('failures', () => {
   let nsqdProcess = null
 
-  before(done => {
-    temp.mkdir('/nsq', (err, dirPath) => {
-      if (err) return done(err)
-
-      startNSQD(dirPath, {}, (err, process) => {
-        nsqdProcess = process
-        done(err)
-      })
-    })
+  before(async () => {
+    nsqdProcess = await startNSQD(await temp.mkdir('/nsq'))
   })
 
   describe('Writer', () => {
     describe('nsqd disconnect before publish', () => {
-      it('should fail to publish a message', done => {
+      it('should fail to publish a message', async () => {
         const writer = new nsq.Writer('127.0.0.1', TCP_PORT)
-        async.series(
-          [
-            // Connect the writer to the nsqd.
-            callback => {
-              writer.connect()
-              writer.on('ready', callback)
-              writer.on('error', () => {}) // Ensure error message is handled.
-            },
+        writer.on('error', () => {})
 
-            // Stop the nsqd process.
-            callback => {
-              nsqdProcess.on('exit', callback)
-              nsqdProcess.kill('SIGKILL')
-            },
+        const readyEvent = pEvent(writer, 'ready')
+        const exitEvent = pEvent(nsqdProcess, 'exit')
 
-            // Attempt to publish a message.
-            callback => {
-              writer.publish(
-                'test_topic',
-                'a message that should fail',
-                err => {
-                  should.exist(err)
-                  callback()
-                }
-              )
-            }
-          ],
-          done
+        writer.connect()
+        await readyEvent
+
+        nsqdProcess.kill('SIGKILL')
+        await exitEvent
+
+        const publish = util.promisify((topic, msg, cb) =>
+          writer.publish(topic, msg, cb)
         )
+        try {
+          await publish('test_topic', 'a failing message')
+          should.fail()
+        } catch (e) {
+          should.exist(e)
+        }
       })
     })
   })

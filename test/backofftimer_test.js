@@ -50,44 +50,29 @@ describe('backofftimer', () => {
 
   describe('getInterval', () => {
     it('should initially be 0', () => {
-      timer
-        .getInterval()
-        .toString()
-        .should.eql('0')
+      timer.getInterval().toString().should.eql('0')
     })
 
     it('should be 0 after 1 success', () => {
       timer.success()
-      timer
-        .getInterval()
-        .toString()
-        .should.eql('0')
+      timer.getInterval().toString().should.eql('0')
     })
 
     it('should be 0 after 2 successes', () => {
       timer.success()
       timer.success()
-      timer
-        .getInterval()
-        .toString()
-        .should.eql('0')
+      timer.getInterval().toString().should.eql('0')
     })
 
     it('should be 3.584 after 1 failure', () => {
       timer.failure()
-      timer
-        .getInterval()
-        .toString()
-        .should.eql('3.584')
+      timer.getInterval().toString().should.eql('3.584')
     })
 
     it('should be 7.168 after 2 failure', () => {
       timer.failure()
       timer.failure()
-      timer
-        .getInterval()
-        .toString()
-        .should.eql('7.168')
+      timer.getInterval().toString().should.eql('7.168')
     })
   })
 })

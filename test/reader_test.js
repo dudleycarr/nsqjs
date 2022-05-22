@@ -4,15 +4,15 @@ const sinon = require('sinon')
 const nsq = require('../lib/nsq')
 
 describe('reader', () => {
-  const readerWithAttempts = attempts =>
+  const readerWithAttempts = (attempts) =>
     new nsq.Reader('topic', 'default', {
       nsqdTCPAddresses: ['127.0.0.1:4150'],
-      maxAttempts: attempts
+      maxAttempts: attempts,
     })
 
   describe('max attempts', () =>
     describe('exceeded', () => {
-      it('should process msg while attempts do not exceed max', done => {
+      it('should process msg while attempts do not exceed max', (done) => {
         const maxAttempts = 1
         const reader = readerWithAttempts(maxAttempts)
 
@@ -23,14 +23,14 @@ describe('reader', () => {
         reader.handleMessage({attempts: 1, finish: () => {}})
       })
 
-      it('should finish after exceeding specified max attempts', done => {
+      it('should finish after exceeding specified max attempts', (done) => {
         const maxAttempts = 2
         const reader = readerWithAttempts(maxAttempts)
 
         // Message that has exceed the maximum number of attempts
         const message = {
           attempts: maxAttempts + 1,
-          finish: sinon.spy()
+          finish: sinon.spy(),
         }
 
         reader.handleMessage(message)
@@ -41,26 +41,26 @@ describe('reader', () => {
         })
       })
 
-      it('should call the DISCARD message hanlder if registered', done => {
+      it('should call the DISCARD message hanlder if registered', (done) => {
         const maxAttempts = 2
         const reader = readerWithAttempts(maxAttempts)
 
         const message = {
           attempts: maxAttempts + 1,
-          finish () {}
+          finish() {},
         }
 
         reader.on(nsq.Reader.DISCARD, () => done())
         reader.handleMessage(message)
       })
 
-      it('should call the MESSAGE handler by default', done => {
+      it('should call the MESSAGE handler by default', (done) => {
         const maxAttempts = 2
         const reader = readerWithAttempts(maxAttempts)
 
         const message = {
           attempts: maxAttempts + 1,
-          finish () {}
+          finish() {},
         }
 
         reader.on(nsq.Reader.MESSAGE, () => done())
@@ -69,12 +69,12 @@ describe('reader', () => {
     }))
 
   describe('off by default', () =>
-    it('should not finish the message', done => {
+    it('should not finish the message', (done) => {
       const reader = readerWithAttempts(0)
 
       const message = {
         attempts: 100,
-        finish: sinon.spy()
+        finish: sinon.spy(),
       }
 
       // Registering this to make sure that even if the listener is available,

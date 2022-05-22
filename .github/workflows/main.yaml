@@ -1,0 +1,36 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  test:
+    runs-on: ubuntu-18.04
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        node: [12,14,16]
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: "System dependencies"
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install libsnappy-dev python3 build-essential
+      - name: "Install nsq"
+        run: |
+          NSQ_DIST="nsq-1.2.0.linux-amd64.go1.12.9"
+          curl -sSL "https://bitly-downloads.s3.amazonaws.com/nsq/${NSQ_DIST}.tar.gz" \
+            | tar -xzv --strip-components=1
+      - run: npm install
+      - run: |
+          export PATH=bin:$PATH
+          npm test
