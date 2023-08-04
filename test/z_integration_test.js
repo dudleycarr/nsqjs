@@ -42,7 +42,7 @@ const startNSQD = async (dataPath, additionalOptions = {}) => {
 
   await retry(
     async () => {
-      const response = await fetch(`http://localhost:${HTTP_PORT}/ping`)
+      const response = await fetch(`http://127.0.0.1:${HTTP_PORT}/ping`)
       if (!response.ok) {
         throw new Error('not ready')
       }
