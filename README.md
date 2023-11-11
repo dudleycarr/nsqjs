@@ -1,4 +1,6 @@
 # nsqjs
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fdudleycarr%2Fnsqjs.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fdudleycarr%2Fnsqjs?ref=badge_shield)
+
 
 The official NodeJS client for the [nsq](http://nsq.io/) client protocol. This implementation attempts to be
 fully compliant and maintain feature parity with the official Go ([go-nsq](https://github.com/nsqio/go-nsq)) and Python ([pynsq](https://github.com/nsqio/pynsq)) clients.
@@ -434,3 +436,7 @@ w.on('closed', () => {
   * `NSQDConnection` implementation
   * `wire` implementation
   * `Message` implementation
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fdudleycarr%2Fnsqjs.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fdudleycarr%2Fnsqjs?ref=badge_large)
