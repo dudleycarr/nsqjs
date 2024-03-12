@@ -50,7 +50,7 @@
   },
   "dependencies": {
     "lodash": "^4.17.21",
-    "node-fetch": "^2.6.12",
+    "node-fetch": "^3.3.2",
     "node-state": "~1.4.4"
   },
   "optionalDependencies": {
