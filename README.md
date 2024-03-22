@@ -37,7 +37,7 @@ options object.
   The jitter applied to the start of querying lookupd instances periodically.
 * ```lowRdyTimeout: 50``` <br/>
   The timeout in milliseconds for switching between connections when the Reader
-  maxInFlight is less than the number of connected NSQDs. 
+  maxInFlight is less than the number of connected NSQDs.
 * ```tls: false``` <br/>
   Use TLS if nsqd has TLS support enabled.
 * ```tlsVerification: true``` <br/>
@@ -160,8 +160,9 @@ These methods are available on a Writer object:
 * `publish(topic, msgs, [callback])` <br/>
   `topic` is a string. `msgs` is either a string, a `Buffer`, JSON serializable
   object, a list of strings / `Buffers` / JSON serializable objects. `callback` takes a single `error` argument.
-* `deferPublish(topic, msg, timeMs, [callback])` <br/>
-  `topic` is a string. `msg` is either a string, a `Buffer`, JSON serializable object. `timeMs` is the delay by which the message should be delivered. `callback` takes a single `error` argument.
+* `deferPublish(topic, msgs, timeMs, [callback])` <br/>
+  `topic` is a string. `msgs` is either a string, a `Buffer`, JSON serializable
+  object, a list of strings / `Buffers` / JSON serializable objects. `timeMs` is the delay by which the message should be delivered, and `-max-req-timeout` on NSQD must larger than `timeMS`. `callback` takes a single `error` argument.
 
 ### Simple example
 
@@ -276,7 +277,7 @@ w.on('ready', () => {
   w.publish('sample_topic', 'it really tied the room together')
   w.deferPublish('sample_topic', ['This message gonna arrive 1 sec later.'], 1000)
   w.publish('sample_topic', [
-    'Uh, excuse me. Mark it zero. Next frame.', 
+    'Uh, excuse me. Mark it zero. Next frame.',
     'Smokey, this is not \'Nam. This is bowling. There are rules.'
   ])
   w.publish('sample_topic', 'Wu?',  err => {
@@ -358,7 +359,7 @@ w.on('closed', () => {
   * Bug: Non-fatal nsqd errors would cause RDY count to decrease and never
     return to normal. This will happen for example when finishing messages
     that have exceeded their amount of time to process a message.
-  * 
+  *
 * **0.7.10**
   * Properly handles non-string errors
 * **0.7.9**
